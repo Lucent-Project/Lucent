@@ -55,7 +55,6 @@ import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
@@ -68,7 +67,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -88,7 +86,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -237,16 +234,9 @@ fun AssistantChatBody(
 
     var attachMenuOpen by remember { mutableStateOf(false) }
 
-    var selectionMode by remember { mutableStateOf(false) }
     var contextMenuMessage by remember { mutableStateOf<ChatMessage?>(null) }
     var contextMenuOffset by remember { mutableStateOf(Offset.Zero) }
-    val selectedIds = remember { mutableStateListOf<Long>() }
-    var showBatchDeleteConfirm by remember { mutableStateOf(false) }
-
-    fun exitSelection() {
-        selectionMode = false
-        selectedIds.clear()
-    }
+    var messageToDelete by remember { mutableStateOf<ChatMessage?>(null) }
     var showClearConfirm by remember { mutableStateOf(false) }
     var conversationMenuOpen by remember { mutableStateOf(false) }
     var conversationSearch by remember { mutableStateOf("") }
@@ -271,8 +261,8 @@ fun AssistantChatBody(
             convoActions = null
             convoToDelete = null
             showClearConfirm = false
-            selectionMode = false
-            selectedIds.clear()
+            contextMenuMessage = null
+            messageToDelete = null
         }
     }
 
@@ -371,8 +361,8 @@ fun AssistantChatBody(
         if (autoScroll && pendingJump == null) listState.scrollToLatest()
     }
     LaunchedEffect(AssistantController.currentConversationId) {
-        selectionMode = false
-        selectedIds.clear()
+        contextMenuMessage = null
+        messageToDelete = null
         if (pendingJump == null) {
             autoScroll = true
             listState.scrollToLatest()
@@ -541,85 +531,28 @@ fun AssistantChatBody(
     }
 
 
-    if (showBatchDeleteConfirm) {
+    messageToDelete?.let { target ->
         AlertDialog(
-            onDismissRequest = { showBatchDeleteConfirm = false },
+            onDismissRequest = { messageToDelete = null },
             title = { Text(com.lucent.app.i18n.S.batchDeleteTitle) },
-            text = { Text(com.lucent.app.i18n.S.batchDeleteBody(selectedIds.size)) },
+            text = { Text(com.lucent.app.i18n.S.batchDeleteBody(1)) },
             confirmButton = {
                 TextButton(onClick = {
-                    val ids = selectedIds.toSet()
-                    showBatchDeleteConfirm = false
-                    exitSelection()
-                    AssistantController.deleteMessages(context.applicationContext, ids)
+                    messageToDelete = null
+                    AssistantController.deleteMessages(context.applicationContext, setOf(target.id))
                 }) { Text(com.lucent.app.i18n.S.actionDelete) }
             },
             dismissButton = {
-                TextButton(onClick = { showBatchDeleteConfirm = false }) { Text(com.lucent.app.i18n.S.actionCancel) }
+                TextButton(onClick = { messageToDelete = null }) { Text(com.lucent.app.i18n.S.actionCancel) }
             }
         )
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(12.dp).padding(bottom = LocalBottomBarInset.current)) {
-        if (selectionMode) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = { exitSelection() }) {
-                    Icon(Icons.Default.Close, contentDescription = com.lucent.app.i18n.S.actionCancel, tint = onGradient)
-                }
-                Text(
-                    com.lucent.app.i18n.S.selectedCount(selectedIds.size),
-                    color = onGradient,
-                    fontSize = 14.sp,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = {
-                    if (selectedIds.size == messages.size) selectedIds.clear()
-                    else { selectedIds.clear(); messages.forEach { selectedIds.add(it.id) } }
-                }) {
-                    Icon(Icons.Default.SelectAll, contentDescription = com.lucent.app.i18n.S.selectAll, tint = onGradient)
-                }
-                if (selectedIds.size == 1) {
-                    val only = messages.firstOrNull { it.id == selectedIds.first() }
-                    if (only != null) {
-                        IconButton(onClick = {
-                            copyToClipboard(context, only.content)
-                            exitSelection()
-                        }) {
-                            Icon(
-                                Icons.Default.ContentCopy,
-                                contentDescription = com.lucent.app.i18n.S.msgCopyWhole,
-                                tint = onGradient
-                            )
-                        }
-                    }
-                }
-                IconButton(
-                    enabled = selectedIds.isNotEmpty(),
-                    onClick = {
-                        val chosen = messages.filter { it.id in selectedIds }
-                        onSaveZip(
-                            "lucent-selection.zip",
-                            buildChatExportEntries(chosen, assistantName.ifBlank { "Lucent" }, exportLocale)
-                        )
-                    }
-                ) {
-                    Icon(Icons.Default.Archive, contentDescription = com.lucent.app.i18n.S.a11yExportChat, tint = onGradient)
-                }
-                IconButton(
-                    enabled = selectedIds.isNotEmpty(),
-                    onClick = { showBatchDeleteConfirm = true }
-                ) {
-                    Icon(Icons.Default.Delete, contentDescription = com.lucent.app.i18n.S.actionDelete, tint = OverdueColor)
-                }
-            }
-        } else
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box(modifier = Modifier.weight(1f)) {
                 Row(
                     modifier = Modifier
@@ -886,53 +819,31 @@ fun AssistantChatBody(
                             }
                         }
                     }
-                    val isSelected = msg.id in selectedIds
                     var messageSize by remember(msg.id) { mutableStateOf(IntSize.Zero) }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (selectionMode) {
-                            Checkbox(
-                                checked = isSelected,
-                                onCheckedChange = { on ->
-                                    if (on) selectedIds.add(msg.id) else selectedIds.remove(msg.id)
-                                }
-                            )
-                        }
                         Box(modifier = Modifier.weight(1f)) {
                         Column(
                             modifier = Modifier
                                 .align(if (isUser) Alignment.CenterEnd else Alignment.CenterStart)
                                 .graphicsLayer { scaleX = bounce.value; scaleY = bounce.value }
                                 .frostedGlass()
-                                .then(
-                                    if (isSelected) Modifier.background(Color.White.copy(alpha = 0.10f))
-                                    else Modifier
-                                )
                                 .onSizeChanged { messageSize = it }
-                                .pointerInput(msg.id, selectionMode) {
+                                .pointerInput(msg.id) {
                                     detectTapGestures(
                                         onLongPress = { pressOffset ->
-                                            if (!selectionMode) {
-                                                Haptics.tick(context)
-                                                contextMenuOffset = pressOffset
-                                                contextMenuMessage = msg
-                                            }
-                                        },
-                                        onTap = {
-                                            if (selectionMode) {
-                                                if (isSelected) selectedIds.remove(msg.id) else selectedIds.add(msg.id)
-                                            }
+                                            Haptics.tick(context)
+                                            contextMenuOffset = pressOffset
+                                            contextMenuMessage = msg
                                         }
                                     )
                                 }
                                 .onSecondaryClick {
-                                    if (!selectionMode) {
-                                        Haptics.tick(context)
-                                        contextMenuOffset = Offset.Zero
-                                        contextMenuMessage = msg
-                                    }
+                                    Haptics.tick(context)
+                                    contextMenuOffset = Offset.Zero
+                                    contextMenuMessage = msg
                                 }
                                 .padding(12.dp)
                         ) {
@@ -1130,22 +1041,10 @@ fun AssistantChatBody(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text(com.lucent.app.i18n.S.actionSelect) },
-                                onClick = {
-                                    contextMenuMessage = null
-                                    selectionMode = true
-                                    selectedIds.clear()
-                                    selectedIds.add(msg.id)
-                                }
-                            )
-                            DropdownMenuItem(
                                 text = { Text(com.lucent.app.i18n.S.actionDelete) },
                                 onClick = {
                                     contextMenuMessage = null
-                                    selectionMode = true
-                                    selectedIds.clear()
-                                    selectedIds.add(msg.id)
-                                    showBatchDeleteConfirm = true
+                                    messageToDelete = msg
                                 }
                             )
                         }

@@ -409,8 +409,7 @@ fun Modifier.reorderableGridItem(
 fun Modifier.reorderVisuals(
     id: Long,
     state: ReorderDragState,
-    slots: () -> ReorderSlots = { ReorderSlots.EMPTY },
-    shadow: Boolean = true
+    slots: () -> ReorderSlots = { ReorderSlots.EMPTY }
 ): Modifier = composed {
     val mine = state.draggingId == id
     val inHand = mine && state.dragging
@@ -490,13 +489,11 @@ fun Modifier.reorderVisuals(
                 scaleX = liftScale * stretch
                 scaleY = liftScale / stretch
                 alpha = 1f - (1f - LIFT_ALPHA) * lift
-                shadowElevation = if (shadow) LIFT_ELEVATION * lift else 0f
             } else {
                 val breathe = JELLY_BREATHE * phase * wobble * JELLY_WOBBLE_GAIN
                 scaleX = 1f + breathe * 0.5f
                 scaleY = 1f - breathe
                 alpha = 1f
-                shadowElevation = 0f
             }
         }
 }
@@ -534,7 +531,6 @@ fun rememberReorderPlacementSpec(): FiniteAnimationSpec<IntOffset>? {
 
 private const val LIFT_SCALE = 1.05f
 private const val LIFT_ALPHA = 0.93f
-private const val LIFT_ELEVATION = 16f
 private const val JELLY_PERIOD_MS = 620
 private const val JELLY_STRETCH = 0.022f
 private const val JELLY_BREATHE = 0.016f

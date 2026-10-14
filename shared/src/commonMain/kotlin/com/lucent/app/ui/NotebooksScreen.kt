@@ -502,7 +502,7 @@ fun NotebooksScreen(
                     selected = notebook.id in selectedIds,
                     itemModifier = Modifier
                         .animateItem(placementSpec = placementSpec)
-                        .reorderVisuals(notebook.id, reorderState, reorderSlots, shadow = false),
+                        .reorderVisuals(notebook.id, reorderState, reorderSlots),
                     reorderModifier = Modifier.reorderableGridItem(
                         id = notebook.id,
                         enabled = reorderEnabled,
