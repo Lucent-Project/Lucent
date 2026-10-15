@@ -207,7 +207,6 @@ fun Modifier.glassJellySurface(
         onDrawWithContent {
             drawRect(brush = highlightBrush)
             drawRect(brush = bottomReflectionBrush)
-            // drawOutline is unavailable in this Compose Multiplatform version — draw per outline type
             when (outline) {
                 is Outline.Rounded -> drawRoundRect(
                     color = tokens.innerGlowColor,
