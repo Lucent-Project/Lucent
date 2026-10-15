@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import com.lucent.app.ui.LucentGlassDropdownMenu
+import com.lucent.app.ui.LucentGlassDropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -150,9 +150,9 @@ fun <T> SortMenuButton(
                 tint = if (isDefault) tint else activeTint
             )
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        LucentGlassDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { option ->
-                DropdownMenuItem(
+                LucentGlassDropdownMenuItem(
                     text = {
                         Text(
                             label(option),

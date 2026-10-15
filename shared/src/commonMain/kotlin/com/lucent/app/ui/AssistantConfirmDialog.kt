@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -60,7 +60,7 @@ fun AssistantConfirmationDialog() {
 
     val hasForm = pending.edits.isNotEmpty()
 
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = { },
         properties = DialogProperties(
             dismissOnBackPress = false,

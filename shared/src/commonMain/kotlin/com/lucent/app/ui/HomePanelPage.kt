@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -75,7 +75,7 @@ fun HomePanelPage(panel: HomePanel, from: Screen, initialMode: HomeMode? = null)
     }
 
     noteToTrash?.let { note ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { noteToTrash = null },
             title = { Text(com.lucent.app.i18n.S.moveToTrashTitle) },
             text = {
@@ -96,7 +96,7 @@ fun HomePanelPage(panel: HomePanel, from: Screen, initialMode: HomeMode? = null)
     }
 
     taskToTrash?.let { task ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { taskToTrash = null },
             title = { Text(com.lucent.app.i18n.S.moveToTrashTitle) },
             text = {

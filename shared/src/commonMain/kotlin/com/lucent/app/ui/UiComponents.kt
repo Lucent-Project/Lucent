@@ -43,7 +43,8 @@ import androidx.compose.material.icons.filled.KeyboardDoubleArrowDown
 import androidx.compose.material.icons.filled.KeyboardDoubleArrowUp
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
+import com.lucent.app.ui.LucentGlassDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
@@ -305,7 +306,7 @@ fun SearchHelpButton(modifier: Modifier = Modifier) {
     }
 
     if (showing) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showing = false },
             title = { Text(com.lucent.app.i18n.S.searchTipsTitle) },
             text = {
@@ -483,7 +484,7 @@ fun LucentExpandedInput(
 ) {
     val onGradient = LocalOnGradient.current
     val onGradientMuted = LocalOnGradientMuted.current
-    androidx.compose.ui.window.Dialog(
+    LucentGlassDialog(
         onDismissRequest = onCollapse,
         properties = androidx.compose.ui.window.DialogProperties(
             usePlatformDefaultWidth = false

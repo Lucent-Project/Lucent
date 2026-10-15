@@ -18,8 +18,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import com.lucent.app.ui.LucentGlassDropdownMenu
+import com.lucent.app.ui.LucentGlassDropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -290,7 +290,7 @@ fun CloudModelSettingsPage(
                 onClick = { menuExpanded = true },
                 enabled = models.isNotEmpty()
             )
-            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+            LucentGlassDropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                 var query by remember(menuExpanded) { mutableStateOf("") }
                 Column(modifier = Modifier.width(280.dp)) {
                     OutlinedTextField(
@@ -307,7 +307,7 @@ fun CloudModelSettingsPage(
                     ) {
                         val shown = ModelSearch.rankModels(models, query)
                         shown.forEach { m ->
-                            DropdownMenuItem(text = { Text(m) }, onClick = {
+                            LucentGlassDropdownMenuItem(text = { Text(m) }, onClick = {
                                 onSelectedModelChange(m)
                                 menuExpanded = false
                             })

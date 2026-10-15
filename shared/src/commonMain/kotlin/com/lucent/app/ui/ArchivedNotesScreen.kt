@@ -20,7 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Unarchive
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -69,7 +69,7 @@ fun ArchivedNotesScreen(
     var noteToRestore by remember { mutableStateOf<Note?>(null) }
 
     noteToRestore?.let { note ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { noteToRestore = null },
             title = { Text(com.lucent.app.i18n.S.restoreNoteTitle) },
             text = {

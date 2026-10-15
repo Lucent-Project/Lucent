@@ -22,7 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -103,7 +103,7 @@ fun TodoPanelDialog(
         }
     }
 
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(S.todoPanelTitle, color = tint, fontSize = 15.sp) },
         text = {

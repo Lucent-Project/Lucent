@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -87,7 +87,7 @@ fun AboutSettingsPage(
 
     val target = pendingChannel.value
     if (target != null) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { pendingChannel.value = null },
             title = {
                 Text(if (target == "preview") S.trackSwitchTitlePreview else S.trackSwitchTitleOfficial)

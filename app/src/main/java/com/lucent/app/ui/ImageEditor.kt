@@ -51,7 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import com.lucent.app.ui.LucentGlassDialog
 import androidx.compose.ui.window.DialogProperties
 import com.lucent.app.AppScope
 import com.lucent.app.data.Attachment
@@ -86,7 +86,7 @@ fun ImageEditorDialog(att: Attachment, onDismiss: () -> Unit, onSaved: () -> Uni
         if (bmp != null) working = bmp else failed = true
     }
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    LucentGlassDialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.96f))) {
             val bmp = working
             when {

@@ -18,7 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Unarchive
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -56,7 +56,7 @@ fun DraftNotesScreen(onBack: () -> Unit, onOpen: (Note) -> Unit) {
     var toPurge by remember { mutableStateOf<Note?>(null) }
 
     toPurge?.let { note ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { toPurge = null },
             title = { Text(com.lucent.app.i18n.S.actionDelete) },
             text = { Text(note.title.ifBlank { com.lucent.app.i18n.S.untitled }) },
@@ -109,7 +109,7 @@ fun DraftTasksScreen(onBack: () -> Unit, onOpen: (Task) -> Unit) {
     var toPurge by remember { mutableStateOf<Task?>(null) }
 
     toPurge?.let { task ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { toPurge = null },
             title = { Text(com.lucent.app.i18n.S.actionDelete) },
             text = { Text(task.title.ifBlank { com.lucent.app.i18n.S.untitled }) },
@@ -236,7 +236,7 @@ fun DraftRestoreDialog(draftCount: Int, onOpenDrafts: () -> Unit) {
     var visible by remember { mutableStateOf(!DraftRestorePrompt.asked && draftCount > 0) }
     if (!visible) return
     DraftRestorePrompt.asked = true
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = { visible = false },
         title = { Text(com.lucent.app.i18n.S.draftRestoreTitle) },
         text = { Text(com.lucent.app.i18n.S.draftRestoreBody(draftCount)) },

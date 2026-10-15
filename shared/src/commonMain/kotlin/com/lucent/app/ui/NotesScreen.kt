@@ -82,7 +82,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Unarchive
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -780,7 +780,7 @@ fun NotesScreen(active: Boolean = true) {
 
 
     if (showUnsavedDialog) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showUnsavedDialog = false },
             title = { Text(com.lucent.app.i18n.S.unsavedChangesTitle) },
             text = { Text(if (editingId != null) com.lucent.app.i18n.S.unsavedNoteExistingBody else com.lucent.app.i18n.S.unsavedNoteNewBody) },
@@ -804,7 +804,7 @@ fun NotesScreen(active: Boolean = true) {
 
     val templateMenu = pendingTemplateMenu
     if (templateMenu != null) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { pendingTemplateMenu = null },
             title = {
                 Text(
@@ -842,7 +842,7 @@ fun NotesScreen(active: Boolean = true) {
     }
 
     pendingBuiltinHide?.let { builtin ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { pendingBuiltinHide = null },
             title = { Text(com.lucent.app.i18n.S.tplDeleteTitle) },
             text = { Text(com.lucent.app.i18n.S.tplDeleteBody(builtin.label)) },
@@ -862,7 +862,7 @@ fun NotesScreen(active: Boolean = true) {
 
     if (showRestoreBuiltins) {
         val hiddenList = NoteTemplate.entries.filter { it.name in hiddenBuiltins }
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showRestoreBuiltins = false },
             title = { Text(com.lucent.app.i18n.S.tplRestoreBuiltins) },
             text = {
@@ -891,7 +891,7 @@ fun NotesScreen(active: Boolean = true) {
 
     val pendingDelete = customTemplates.firstOrNull { it.id == pendingTemplateDeleteId }
     if (pendingDelete != null) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { pendingTemplateDeleteId = null },
             title = { Text(com.lucent.app.i18n.S.tplDeleteTitle) },
             text = { Text(com.lucent.app.i18n.S.tplDeleteBody(pendingDelete.name)) },
@@ -1017,7 +1017,7 @@ fun NotesScreen(active: Boolean = true) {
     }
 
     noteToDelete?.let { note ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { noteToDelete = null },
             title = { Text(com.lucent.app.i18n.S.moveToTrashTitle) },
             text = {
@@ -1038,7 +1038,7 @@ fun NotesScreen(active: Boolean = true) {
 
     if (showBatchDeleteConfirm) {
         val count = selectedNoteIds.size
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showBatchDeleteConfirm = false },
             title = { Text(com.lucent.app.i18n.S.moveToTrashTitle) },
             text = {
@@ -1072,7 +1072,7 @@ fun NotesScreen(active: Boolean = true) {
 
     noteToToggleArchive?.let { note ->
         val willArchive = !note.archived
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { noteToToggleArchive = null },
             title = { Text(if (willArchive) com.lucent.app.i18n.S.archiveNoteTitle else com.lucent.app.i18n.S.restoreNoteTitle) },
             text = {
@@ -1101,7 +1101,7 @@ fun NotesScreen(active: Boolean = true) {
 
     noteToTogglePin?.let { note ->
         val willPin = !note.pinned
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { noteToTogglePin = null },
             title = { Text(if (willPin) com.lucent.app.i18n.S.pinNoteTitle else com.lucent.app.i18n.S.unpinNoteTitle) },
             text = {

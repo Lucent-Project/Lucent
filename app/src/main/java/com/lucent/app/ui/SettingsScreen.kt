@@ -28,7 +28,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -796,7 +796,7 @@ fun SettingsScreen(active: Boolean = true) {
 
 
     if (showSmallModelWarn) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showSmallModelWarn = false },
             title = { Text(S.smallModelModeTitle) },
             text = { Text(S.smallModelModeWarn) },
@@ -816,7 +816,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun UnsavedChangesDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showUnsavedDialog = false },
             title = { Text(S.unsavedChangesTitle) },
             text = { Text(S.settingsUnsavedBody) },
@@ -929,7 +929,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ExportBackupDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showExportDialog = false },
             title = { Text(S.exportBackupTitle) },
             text = {
@@ -1184,7 +1184,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ImportPasswordDialog(uri: Uri) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { discardImportSource() },
             title = { Text(if (importRecoveryMode) S.backupRecoveryTitle else S.backupPasswordTitle) },
             text = {
@@ -1331,7 +1331,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ImportPreviewDialog(preview: BackupManager.BackupPreview) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { importPreview = null; discardImportSource() },
             title = { Text(S.restoreBackupTitle) },
             text = {
@@ -1491,7 +1491,7 @@ fun SettingsScreen(active: Boolean = true) {
     importPreview?.let { ImportPreviewDialog(it) }
 
     if (active) backupBusyLabel?.let { busyLabel ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = {  },
             properties = androidx.compose.ui.window.DialogProperties(
                 dismissOnBackPress = false,
@@ -1614,7 +1614,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun AppLockSetupDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showAppLockSetup = false },
             title = { Text(S.appLockSetupTitle) },
             text = {
@@ -1687,7 +1687,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun AppLockDisableDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showAppLockDisable = false },
             title = { Text(S.appLockDisableTitle) },
             text = {
@@ -1743,7 +1743,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun NoRecoveryWarningDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showNoRecoveryWarning = false },
             title = { Text(S.noRecoveryTitle) },
             text = { Text(S.noRecoveryBody) },
@@ -1763,7 +1763,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ShareWarningDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showShareWarning = false },
             title = { Text(S.shareWarnTitle) },
             text = { Text(S.shareWarnBody) },
@@ -1789,7 +1789,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun BlackoutWarningDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showBlackoutWarning = false },
             title = { Text(S.blackoutWarnTitle) },
             text = {
@@ -1828,7 +1828,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun CrashShieldInfoDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showCrashShieldInfo = false },
             title = { Text(S.crashShieldLimitsTitle) },
             text = {
@@ -1858,7 +1858,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun OpenLinksWarningDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showOpenLinksWarning = false },
             title = { Text(S.openLinksWarnTitle) },
             text = {
@@ -1886,7 +1886,7 @@ fun SettingsScreen(active: Boolean = true) {
     @NonRestartableComposable
     fun SelfDestructWarningDialog() {
         val phrase = S.selfDestructConfirmPhrase
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showSelfDestructWarning = false },
             title = { Text(S.selfDestructWarnTitle) },
             text = {
@@ -1941,7 +1941,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun DangerAuthDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { dangerAuthAction = null; dangerAuthPw = ""; dangerAuthError = "" },
             title = { Text(S.dangerAuthTitle) },
             text = {
@@ -1996,7 +1996,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ClearDataDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showClearData = false },
             title = { Text(S.clearAllDataTitle) },
             text = { Text(S.clearAllDataBody) },
@@ -2024,7 +2024,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ClearNotesDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showClearNotes = false },
             title = { Text(S.clearNotesTitle) },
             text = { Text(S.clearNotesBody) },
@@ -2048,7 +2048,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ClearTasksDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showClearTasks = false },
             title = { Text(S.clearTasksTitle) },
             text = { Text(S.clearTasksBody) },
@@ -2076,7 +2076,7 @@ fun SettingsScreen(active: Boolean = true) {
     @NonRestartableComposable
     fun DeleteApiProfileDialog(idx: Int) {
         val name = profiles.getOrNull(idx)?.name?.ifBlank { S.apiFallbackName(idx + 1) } ?: S.thisApiFallback
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { profilePendingDelete = null },
             title = { Text(S.apiDeleteConfirmTitle) },
             text = { Text(S.apiDeleteConfirmBody(name)) },
@@ -2094,7 +2094,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ClearChatsDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showClearChats = false },
             title = { Text(S.clearChatsTitle) },
             text = { Text(S.clearChatsBody) },
@@ -2117,7 +2117,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun DeleteLocalModelDialog(slot: LocalModelStore.ModelSlot) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { lmSlotPendingDelete = null },
             title = { Text(S.lmDeleteTitle) },
             text = { Text(S.lmDeleteBody(slot.name.ifBlank { "model.gguf" })) },
@@ -2135,7 +2135,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun NameLocalModelDialog(uri: Uri) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { lmPendingImportUri = null },
             title = { Text(S.lmNameModelTitle) },
             text = {
@@ -2165,7 +2165,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun RenameLocalModelDialog(slot: LocalModelStore.ModelSlot) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { lmRenameTarget = null },
             title = { Text(S.lmRenameTitle) },
             text = {
@@ -2196,7 +2196,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun DeleteImportedFontDialog(slot: FontStore.FontSlot) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { fontPendingDelete = null },
             title = { Text(S.fontDeleteTitle) },
             text = { Text(S.fontDeleteBody(slot.name.ifBlank { slot.fileName })) },
@@ -2214,7 +2214,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun NameImportedFontDialog(uri: Uri) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { fontPendingImportUri = null },
             title = { Text(S.fontNameTitle) },
             text = {
@@ -2244,7 +2244,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ConfirmUseLocalDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { lmConfirmUseLocalOn = false },
             title = { Text(S.lmUseLocalWarnTitle) },
             text = { Text(S.lmUseLocalWarnBody) },
@@ -2263,7 +2263,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ConfirmToolsDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { lmConfirmToolsOn = false },
             title = { Text(S.lmToolsWarnTitle) },
             text = { Text(S.lmToolsWarnBody) },
@@ -2282,7 +2282,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ConfirmGpuDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { lmConfirmGpuOn = false },
             title = { Text(S.lmGpuWarnTitle) },
             text = { Text(S.lmGpuWarnBody) },
@@ -2301,7 +2301,7 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ConfirmBackgroundDialog() {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { lmConfirmBackgroundOn = false },
             title = { Text(S.lmBackgroundWarnTitle) },
             text = { Text(S.lmBackgroundWarnBody) },

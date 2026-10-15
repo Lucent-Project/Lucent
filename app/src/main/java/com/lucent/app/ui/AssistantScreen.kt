@@ -15,7 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material3.DropdownMenuItem
+import com.lucent.app.ui.LucentGlassDropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -199,7 +199,7 @@ fun AssistantScreen(active: Boolean = true) {
         draft = draft,
         exportLocale = com.lucent.app.i18n.lucentLocale(),
         attachMenuContent = { close ->
-            DropdownMenuItem(
+            LucentGlassDropdownMenuItem(
                 text = { Text(com.lucent.app.i18n.S.attachFromFiles) },
                 leadingIcon = {
                     Icon(
@@ -210,7 +210,7 @@ fun AssistantScreen(active: Boolean = true) {
                 },
                 onClick = { close(); filePickerLauncher.launch("*/*") }
             )
-            DropdownMenuItem(
+            LucentGlassDropdownMenuItem(
                 text = { Text(com.lucent.app.i18n.S.attachFromCamera) },
                 leadingIcon = {
                     Icon(Icons.Default.PhotoCamera, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -226,7 +226,7 @@ fun AssistantScreen(active: Boolean = true) {
                     }
                 }
             )
-            DropdownMenuItem(
+            LucentGlassDropdownMenuItem(
                 text = { Text(com.lucent.app.i18n.S.attachFromGallery) },
                 leadingIcon = {
                     Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -242,7 +242,7 @@ fun AssistantScreen(active: Boolean = true) {
                     }
                 }
             )
-            DropdownMenuItem(
+            LucentGlassDropdownMenuItem(
                 text = { Text(com.lucent.app.i18n.S.attachFromCloud) },
                 leadingIcon = {
                     Icon(Icons.Default.CloudQueue, contentDescription = null, modifier = Modifier.size(18.dp))

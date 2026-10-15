@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -133,7 +133,7 @@ fun PrivacySettingsPage(
         Spacer(modifier = Modifier.height(12.dp))
         var showLoggingConsent by remember { mutableStateOf(false) }
         if (showLoggingConsent) {
-            AlertDialog(
+            LucentGlassAlertDialog(
                 onDismissRequest = { showLoggingConsent = false },
                 title = { Text(S.loggingConsentTitle) },
                 text = { Text(S.loggingConsentBody) },

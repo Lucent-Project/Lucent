@@ -193,9 +193,13 @@ fun QuickModelSwitcher(
                 properties = PopupProperties(focusable = true)
             ) {
                 Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    tonalElevation = 6.dp,
-                    shadowElevation = 10.dp
+                    modifier = Modifier
+                        .glassJellySurface(MenuShape)
+                        .jellyPopInAnimation(),
+                    shape = MenuShape,
+                    color = Color.Transparent,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
                 ) {
                     Column(modifier = Modifier.width(MENU_WIDTH)) {
                         when (menu) {
@@ -556,7 +560,7 @@ private fun MenuRow(
     icon: (@Composable () -> Unit)? = null,
     onClick: () -> Unit
 ) {
-    androidx.compose.material3.DropdownMenuItem(
+    LucentGlassDropdownMenuItem(
         text = {
             Column {
                 Text(

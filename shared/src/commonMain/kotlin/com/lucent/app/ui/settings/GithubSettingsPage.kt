@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -133,7 +133,7 @@ fun GithubSettingsPage(onRoute: (SettingsRoute) -> Unit) {
 
     val target = renaming
     if (target != null) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { renaming = null },
             title = { Text(S.agentGithubRenameTitle) },
             text = {

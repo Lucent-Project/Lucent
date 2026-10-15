@@ -12,7 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -460,7 +460,7 @@ private fun PluginFailureDialog(
     onDismiss: () -> Unit
 ) {
     val steps = repairSteps(report.outcome.failure, android)
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (report.outcome.failure == PluginFailure.REMOVE) S.pluginRemoveFailed else S.pluginInstallFailed) },
         text = {
@@ -507,7 +507,7 @@ private fun PluginPreflightDialog(
     onInstallAnyway: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(S.pluginPreflightTitle) },
         text = {

@@ -68,10 +68,10 @@ import androidx.compose.material.icons.filled.OpenInFull
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import com.lucent.app.ui.LucentGlassAlertDialog
+import com.lucent.app.ui.LucentGlassDropdownMenu
+import com.lucent.app.ui.LucentGlassDropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -388,7 +388,7 @@ fun AssistantChatBody(
     }
 
     if (showClearConfirm) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showClearConfirm = false },
             title = { Text(com.lucent.app.i18n.S.deleteConversationTitle) },
             text = { Text(com.lucent.app.i18n.S.deleteConversationBodyAll) },
@@ -404,7 +404,7 @@ fun AssistantChatBody(
     }
 
     convoActions?.let { convo ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { convoActions = null },
             title = { Text(convDisplayTitle(convo.title).ifBlank { com.lucent.app.i18n.S.conversationFallback }, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             text = {
@@ -445,7 +445,7 @@ fun AssistantChatBody(
     }
 
     convoToDelete?.let { convo ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { convoToDelete = null },
             title = { Text(com.lucent.app.i18n.S.deleteConversationTitle) },
             text = {
@@ -465,7 +465,7 @@ fun AssistantChatBody(
     }
 
     renameTarget?.let { target ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { renameTarget = null },
             title = { Text(com.lucent.app.i18n.S.renameConversationTitle) },
             text = {
@@ -517,7 +517,7 @@ fun AssistantChatBody(
 
 
     networkError?.let { message ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { AssistantController.clearNetworkError() },
             title = { Text(com.lucent.app.i18n.S.connectionProblem) },
             text = { Text(message) },
@@ -532,7 +532,7 @@ fun AssistantChatBody(
 
 
     messageToDelete?.let { target ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { messageToDelete = null },
             title = { Text(com.lucent.app.i18n.S.batchDeleteTitle) },
             text = { Text(com.lucent.app.i18n.S.batchDeleteBody(1)) },
@@ -579,7 +579,7 @@ fun AssistantChatBody(
                         modifier = Modifier.size(24.dp)
                     )
                 }
-                DropdownMenu(expanded = conversationMenuOpen, onDismissRequest = { conversationMenuOpen = false }) {
+                LucentGlassDropdownMenu(expanded = conversationMenuOpen, onDismissRequest = { conversationMenuOpen = false }) {
                     val convos = AssistantController.conversations
                     Column(modifier = Modifier.width(210.dp)) {
                         OutlinedTextField(
@@ -600,7 +600,7 @@ fun AssistantChatBody(
                         val searching = conversationSearch.isNotBlank()
                         if (searching) {
                             if (deepMatches.isEmpty()) {
-                                DropdownMenuItem(text = { Text(com.lucent.app.i18n.S.noMatches) }, onClick = { }, enabled = false)
+                                LucentGlassDropdownMenuItem(text = { Text(com.lucent.app.i18n.S.noMatches) }, onClick = { }, enabled = false)
                             } else {
                                 Column(
                                     modifier = Modifier
@@ -660,7 +660,7 @@ fun AssistantChatBody(
                                 }
                             }
                         } else if (convos.isEmpty()) {
-                            DropdownMenuItem(text = { Text(com.lucent.app.i18n.S.noSavedConversations) }, onClick = { conversationMenuOpen = false }, enabled = false)
+                            LucentGlassDropdownMenuItem(text = { Text(com.lucent.app.i18n.S.noSavedConversations) }, onClick = { conversationMenuOpen = false }, enabled = false)
                         } else {
                             Column(
                                 modifier = Modifier
@@ -1006,7 +1006,7 @@ fun AssistantChatBody(
                                     )
                                 }
                             }
-                        DropdownMenu(
+                        LucentGlassDropdownMenu(
                             expanded = contextMenuMessage?.id == msg.id,
                             onDismissRequest = { contextMenuMessage = null },
                             offset = with(androidx.compose.ui.platform.LocalDensity.current) {
@@ -1016,21 +1016,21 @@ fun AssistantChatBody(
                                 )
                             }
                         ) {
-                            DropdownMenuItem(
+                            LucentGlassDropdownMenuItem(
                                 text = { Text(com.lucent.app.i18n.S.actionReply) },
                                 onClick = {
                                     contextMenuMessage = null
                                     draft.quoteTarget = msg
                                 }
                             )
-                            DropdownMenuItem(
+                            LucentGlassDropdownMenuItem(
                                 text = { Text(com.lucent.app.i18n.S.msgCopyWhole) },
                                 onClick = {
                                     contextMenuMessage = null
                                     copyToClipboard(context, msg.content)
                                 }
                             )
-                            DropdownMenuItem(
+                            LucentGlassDropdownMenuItem(
                                 text = { Text(com.lucent.app.i18n.S.a11yExportChat) },
                                 onClick = {
                                     contextMenuMessage = null
@@ -1040,8 +1040,9 @@ fun AssistantChatBody(
                                     )
                                 }
                             )
-                            DropdownMenuItem(
+                            LucentGlassDropdownMenuItem(
                                 text = { Text(com.lucent.app.i18n.S.actionDelete) },
+                                isDestructive = true,
                                 onClick = {
                                     contextMenuMessage = null
                                     messageToDelete = msg
@@ -1306,7 +1307,7 @@ fun AssistantChatBody(
                     onClick = { attachMenuOpen = true },
                     tint = onGradient
                 )
-                DropdownMenu(expanded = attachMenuOpen, onDismissRequest = { attachMenuOpen = false }) {
+                LucentGlassDropdownMenu(expanded = attachMenuOpen, onDismissRequest = { attachMenuOpen = false }) {
                     attachMenuContent { attachMenuOpen = false }
                 }
             }
@@ -1535,7 +1536,7 @@ private fun DownloadFilesDialog(
     var working by remember(message.id) { mutableStateOf(false) }
     var failure by remember(message.id) { mutableStateOf("") }
 
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(com.lucent.app.i18n.S.downloadFilesTitle) },
         text = {

@@ -20,9 +20,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import com.lucent.app.ui.LucentGlassAlertDialog
+import com.lucent.app.ui.LucentGlassDropdownMenu
+import com.lucent.app.ui.LucentGlassDropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
@@ -111,9 +111,9 @@ fun SubAgentStrip(
             if (children.isNotEmpty()) {
                 Box {
                     Text("⌄", color = tint, modifier = Modifier.clickable { expandedTreeId = agent.id }.padding(horizontal = 5.dp, vertical = 4.dp))
-                    DropdownMenu(expanded = expandedTreeId == agent.id, onDismissRequest = { expandedTreeId = null }) {
+                    LucentGlassDropdownMenu(expanded = expandedTreeId == agent.id, onDismissRequest = { expandedTreeId = null }) {
                         children.forEach { child ->
-                            DropdownMenuItem(
+                            LucentGlassDropdownMenuItem(
                                 text = { Text(child.id + " · " + child.task, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                                 onClick = { expandedTreeId = null; com.lucent.app.AppNavigation.openSubAgent(child.id) }
                             )
@@ -241,7 +241,7 @@ private fun EmptyAgentDialog(
     mutedTint: Color,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(S.agentSubAgents, color = tint, fontSize = 15.sp) },
         text = { Text(S.subAgentEmpty, color = mutedTint, fontSize = 12.sp) },
@@ -268,7 +268,7 @@ fun SubAgentDialog(
         }
     }
 
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Column {

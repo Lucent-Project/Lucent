@@ -1,7 +1,7 @@
 package com.lucent.app.ui
 import com.lucent.app.platform.applicationContext
 
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,7 +53,7 @@ fun WidgetTaskConfirmDialog() {
     val t = task ?: return
 
     val displayTitle = t.title.ifBlank { com.lucent.app.i18n.S.untitledTask }
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = { WidgetTaskConfirm.clear() },
         title = {
             Text(

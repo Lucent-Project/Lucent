@@ -21,7 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -89,7 +89,7 @@ fun TaskHistoryScreen(
     }
 
     confirmRestore?.let { version ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { confirmRestore = null },
             title = { Text(com.lucent.app.i18n.S.restoreVersionTitle) },
             text = { Text(com.lucent.app.i18n.S.restoreVersionBody(formatTimestamp(version.savedAt))) },
@@ -99,7 +99,7 @@ fun TaskHistoryScreen(
     }
 
     confirmDelete?.let { version ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { confirmDelete = null },
             title = { Text(com.lucent.app.i18n.S.deleteVersionTitle) },
             text = { Text(com.lucent.app.i18n.S.deleteVersionBody(formatTimestamp(version.savedAt))) },

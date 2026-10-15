@@ -35,7 +35,9 @@ import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
+import com.lucent.app.ui.LucentGlassDropdownMenu
+import com.lucent.app.ui.LucentGlassDropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -198,7 +200,7 @@ fun NotebooksScreen(
     }
 
     deleting?.let { notebook ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { deleting = null },
             title = { Text(com.lucent.app.i18n.S.notebookDeleteTitle) },
             text = { Text(com.lucent.app.i18n.S.notebookTrashBody(notebook.title.ifBlank { com.lucent.app.i18n.S.notebookEmptyTitle })) },
@@ -221,7 +223,7 @@ fun NotebooksScreen(
 
     if (batchDeleting) {
         val count = selectedIds.size
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { batchDeleting = false },
             title = { Text(com.lucent.app.i18n.S.notebookDeleteTitle) },
             text = { Text(com.lucent.app.i18n.S.notebookBatchTrashBody(count)) },
@@ -618,16 +620,16 @@ private fun NotebookShelfItem(
                             modifier = Modifier.size(16.dp)
                         )
                     }
-                    androidx.compose.material3.DropdownMenu(
+                    LucentGlassDropdownMenu(
                         expanded = menuOpen,
                         onDismissRequest = { menuOpen = false }
                     ) {
-                        androidx.compose.material3.DropdownMenuItem(
+                        LucentGlassDropdownMenuItem(
                             text = { Text(com.lucent.app.i18n.S.actionRename) },
                             leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
                             onClick = { menuOpen = false; onRename() }
                         )
-                        androidx.compose.material3.DropdownMenuItem(
+                        LucentGlassDropdownMenuItem(
                             text = { Text(com.lucent.app.i18n.S.actionDelete) },
                             leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
                             onClick = { menuOpen = false; onDelete() }
@@ -669,7 +671,7 @@ internal fun NotebookEditorDialog(
     val context = LocalPlatformContext.current
     var name by remember { mutableStateOf(initialName) }
     var colorKey by remember { mutableStateOf(initialColorKey) }
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
@@ -725,7 +727,7 @@ fun NotebookTrashScreen(onBack: () -> Unit) {
     var confirmEmpty by remember { mutableStateOf(false) }
 
     if (confirmEmpty) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { confirmEmpty = false },
             title = { Text(com.lucent.app.i18n.S.emptyTrashTitle) },
             text = { Text(com.lucent.app.i18n.S.notebookEmptyTrashBody) },
@@ -860,7 +862,7 @@ fun AddToNotebookDialog(
         }
     }
 
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(com.lucent.app.i18n.S.notebookPickTitle) },
         text = {

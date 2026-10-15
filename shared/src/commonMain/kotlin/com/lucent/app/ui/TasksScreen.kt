@@ -67,7 +67,7 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TravelExplore
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -583,7 +583,7 @@ fun TasksScreen(active: Boolean = true) {
 
 
     if (showUnsavedDialog) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showUnsavedDialog = false },
             title = { Text(com.lucent.app.i18n.S.unsavedChangesTitle) },
             text = { Text(if (editingTask != null) com.lucent.app.i18n.S.unsavedTaskExistingBody else com.lucent.app.i18n.S.unsavedTaskNewBody) },
@@ -700,7 +700,7 @@ fun TasksScreen(active: Boolean = true) {
     }
 
     taskToDelete?.let { task ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { taskToDelete = null },
             title = { Text(com.lucent.app.i18n.S.moveToTrashTitle) },
             text = {
@@ -720,7 +720,7 @@ fun TasksScreen(active: Boolean = true) {
 
     taskToComplete?.let { task ->
         val repeats = RepeatRule.fromKey(task.repeatRule) != RepeatRule.NONE
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { taskToComplete = null },
             title = { Text(com.lucent.app.i18n.S.completeTaskTitle) },
             text = {
@@ -739,7 +739,7 @@ fun TasksScreen(active: Boolean = true) {
 
     taskToRestore?.let { task ->
         val hasFutureDue = task.dueAt != null
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { taskToRestore = null },
             title = { Text(com.lucent.app.i18n.S.markNotDoneTitle) },
             text = {
@@ -758,7 +758,7 @@ fun TasksScreen(active: Boolean = true) {
 
     taskToTogglePin?.let { task ->
         val willPin = !task.pinned
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { taskToTogglePin = null },
             title = { Text(if (willPin) com.lucent.app.i18n.S.pinTaskTitle else com.lucent.app.i18n.S.unpinTaskTitle) },
             text = {
@@ -783,7 +783,7 @@ fun TasksScreen(active: Boolean = true) {
 
     if (showBatchDeleteConfirm) {
         val count = selectedTaskIds.size
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showBatchDeleteConfirm = false },
             title = { Text(com.lucent.app.i18n.S.moveToTrashTitle) },
             text = {

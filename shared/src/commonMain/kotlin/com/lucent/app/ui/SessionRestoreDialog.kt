@@ -1,6 +1,6 @@
 package com.lucent.app.ui
 
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,7 +29,7 @@ fun SessionRestoreDialog() {
     }
 
     val title = snapshot.title.ifBlank { com.lucent.app.i18n.S.untitled }
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = {
             decline()
         },

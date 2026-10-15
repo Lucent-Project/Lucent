@@ -19,7 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,7 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import com.lucent.app.ui.LucentGlassDialog
 import com.lucent.app.harness.HarnessRuntime
 import com.lucent.app.i18n.S
 import kotlinx.coroutines.Dispatchers
@@ -158,7 +158,7 @@ fun DirectoryPickerDialog(
         editing = false
     }
 
-    Dialog(onDismissRequest = onDismiss) {
+    LucentGlassDialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(28.dp),
             color = MaterialTheme.colorScheme.surface,
@@ -244,7 +244,7 @@ private fun PickerActions(
 @Composable
 private fun NewFolderDialog(parent: String, onDismiss: () -> Unit, onCreate: (String) -> Unit) {
     var name by remember { mutableStateOf("") }
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(S.agentWorkspaceNewFolderTitle) },
         text = {

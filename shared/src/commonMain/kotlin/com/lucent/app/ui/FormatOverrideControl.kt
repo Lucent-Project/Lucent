@@ -5,8 +5,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.TextFormat
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import com.lucent.app.ui.LucentGlassDropdownMenu
+import com.lucent.app.ui.LucentGlassDropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -34,7 +34,7 @@ fun FormatOverrideButton(
                 tint = if (current == null) onGradientMuted else onGradient
             )
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        LucentGlassDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             FormatOverrideItem(
                 label = com.lucent.app.i18n.S.formatAutoDetect,
                 selected = current == null,
@@ -69,7 +69,7 @@ private fun FormatOverrideItem(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    DropdownMenuItem(
+    LucentGlassDropdownMenuItem(
         text = { Text(label) },
         leadingIcon = {
             Icon(

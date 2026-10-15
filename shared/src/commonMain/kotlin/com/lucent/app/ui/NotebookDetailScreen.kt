@@ -23,9 +23,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import com.lucent.app.ui.LucentGlassAlertDialog
+import com.lucent.app.ui.LucentGlassDropdownMenu
+import com.lucent.app.ui.LucentGlassDropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -105,7 +105,7 @@ fun NotebookDetailScreen(
     val title = notebook?.title?.ifBlank { com.lucent.app.i18n.S.notebookEmptyTitle } ?: ""
 
     if (deleting) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { deleting = false },
             title = { Text(com.lucent.app.i18n.S.notebookDeleteTitle) },
             text = { Text(com.lucent.app.i18n.S.notebookTrashBody(title)) },
@@ -144,7 +144,7 @@ fun NotebookDetailScreen(
     }
 
     noteToTrash?.let { note ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { noteToTrash = null },
             title = { Text(com.lucent.app.i18n.S.moveToTrashTitle) },
             text = {
@@ -172,7 +172,7 @@ fun NotebookDetailScreen(
     }
 
     taskToTrash?.let { task ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { taskToTrash = null },
             title = { Text(com.lucent.app.i18n.S.moveToTrashTitle) },
             text = {
@@ -284,13 +284,13 @@ fun NotebookDetailScreen(
                     contentDescription = com.lucent.app.i18n.S.notebookAdd,
                     onClick = { addMenuOpen = true }
                 )
-                DropdownMenu(expanded = addMenuOpen, onDismissRequest = { addMenuOpen = false }) {
-                    DropdownMenuItem(
+                LucentGlassDropdownMenu(expanded = addMenuOpen, onDismissRequest = { addMenuOpen = false }) {
+                    LucentGlassDropdownMenuItem(
                         text = { Text(com.lucent.app.i18n.S.newNote) },
                         leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) },
                         onClick = { addMenuOpen = false; composingNote = true }
                     )
-                    DropdownMenuItem(
+                    LucentGlassDropdownMenuItem(
                         text = { Text(com.lucent.app.i18n.S.newTask) },
                         leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) },
                         onClick = { addMenuOpen = false; composingTask = true }
@@ -456,8 +456,8 @@ private fun NotebookMemberRow(
             IconButton(onClick = { menuOpen = true }) {
                 Icon(Icons.Default.MoreVert, contentDescription = com.lucent.app.i18n.S.a11yMoreOptions, tint = onGradientMuted)
             }
-            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                DropdownMenuItem(
+            LucentGlassDropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                LucentGlassDropdownMenuItem(
                     text = {
                         Text(
                             when (row) {
@@ -468,11 +468,11 @@ private fun NotebookMemberRow(
                     },
                     onClick = { menuOpen = false; onEdit() }
                 )
-                DropdownMenuItem(
+                LucentGlassDropdownMenuItem(
                     text = { Text(com.lucent.app.i18n.S.notebookRemoveItem) },
                     onClick = { menuOpen = false; onRemove() }
                 )
-                DropdownMenuItem(
+                LucentGlassDropdownMenuItem(
                     text = { Text(com.lucent.app.i18n.S.actionDelete) },
                     onClick = { menuOpen = false; onDelete() }
                 )
@@ -488,7 +488,7 @@ private fun NotebookNewNoteDialog(notebookId: Long, onDismiss: () -> Unit, onCre
     var title by remember { mutableStateOf("") }
     var body by remember { mutableStateOf("") }
 
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(com.lucent.app.i18n.S.newNote) },
         text = {
@@ -536,7 +536,7 @@ private fun NotebookNewTaskDialog(notebookId: Long, onDismiss: () -> Unit, onCre
     val db = remember { createAppDatabase(context) }
     var title by remember { mutableStateOf("") }
 
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(com.lucent.app.i18n.S.newTask) },
         text = {

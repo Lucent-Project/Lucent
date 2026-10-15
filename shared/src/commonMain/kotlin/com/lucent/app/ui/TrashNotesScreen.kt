@@ -19,7 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -60,7 +60,7 @@ fun TrashNotesScreen(onBack: () -> Unit) {
     var noteToRestore by remember { mutableStateOf<Note?>(null) }
 
     noteToRestore?.let { note ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { noteToRestore = null },
             title = { Text(com.lucent.app.i18n.S.restoreNoteTitle) },
             text = { Text(com.lucent.app.i18n.S.restoreNoteBody(note.title.ifBlank { com.lucent.app.i18n.S.untitledNote })) },
@@ -81,7 +81,7 @@ fun TrashNotesScreen(onBack: () -> Unit) {
     }
 
     noteToPurge?.let { note ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { noteToPurge = null },
             title = { Text(com.lucent.app.i18n.S.deleteForeverTitle) },
             text = { Text(com.lucent.app.i18n.S.deleteNoteForeverBody(note.title.ifBlank { com.lucent.app.i18n.S.untitledNote })) },
@@ -93,7 +93,7 @@ fun TrashNotesScreen(onBack: () -> Unit) {
     }
 
     if (confirmEmptyTrash) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { confirmEmptyTrash = false },
             title = { Text(com.lucent.app.i18n.S.emptyTrashTitle) },
             text = { Text(if (trashed.size == 1) com.lucent.app.i18n.S.emptyTrashNotesBodyOne else com.lucent.app.i18n.S.emptyTrashNotesBody(trashed.size)) },

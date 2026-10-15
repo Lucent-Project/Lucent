@@ -3,7 +3,7 @@ import com.lucent.app.platform.applicationContext
 
 import android.content.Context
 import android.provider.OpenableColumns
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -91,7 +91,7 @@ fun ShareIntakeDialog() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = { ShareIntake.clear() },
         title = { Text(com.lucent.app.i18n.S.shareDialogTitle) },
         text = {

@@ -2,7 +2,7 @@ package com.lucent.app.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -36,7 +36,7 @@ fun HarnessAskDialog() {
     val request by HarnessAsk.pending.collectAsState(initial = null)
     val pending = request ?: return
     var typed by remember(pending.id) { mutableStateOf("") }
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = { HarnessAsk.respond("") },
         title = { Text(pending.question) },
         text = {

@@ -19,7 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -63,7 +63,7 @@ fun TrashTasksScreen(onBack: () -> Unit) {
     var taskToRestore by remember { mutableStateOf<Task?>(null) }
 
     taskToRestore?.let { task ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { taskToRestore = null },
             title = { Text(com.lucent.app.i18n.S.restoreTaskTitle) },
             text = {
@@ -81,7 +81,7 @@ fun TrashTasksScreen(onBack: () -> Unit) {
     }
 
     taskToPurge?.let { task ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { taskToPurge = null },
             title = { Text(com.lucent.app.i18n.S.deleteForeverTitle) },
             text = { Text(com.lucent.app.i18n.S.deleteTaskForeverBody(task.title.ifBlank { com.lucent.app.i18n.S.untitledTask })) },
@@ -97,7 +97,7 @@ fun TrashTasksScreen(onBack: () -> Unit) {
     }
 
     if (confirmEmptyTrash) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { confirmEmptyTrash = false },
             title = { Text(com.lucent.app.i18n.S.emptyTrashTitle) },
             text = { Text(if (trashed.size == 1) com.lucent.app.i18n.S.emptyTrashTasksBodyOne else com.lucent.app.i18n.S.emptyTrashTasksBody(trashed.size)) },

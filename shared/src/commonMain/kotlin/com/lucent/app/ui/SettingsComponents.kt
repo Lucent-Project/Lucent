@@ -24,7 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -327,7 +327,7 @@ fun ExportItemPickerDialog(
     onDismiss: () -> Unit
 ) {
     var draft by remember(items) { mutableStateOf(selected) }
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
@@ -380,7 +380,7 @@ fun ApiImportLimitDialog(
     var draft by remember(incoming, canAdd) {
         mutableStateOf(incoming.take(canAdd.coerceAtLeast(0)).toSet())
     }
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(S.backupPickApiTitle) },
         text = {
@@ -436,7 +436,7 @@ internal fun ApiModelPickerDialog(
     onDismiss: () -> Unit
 ) {
     var draft by remember(names) { mutableStateOf(selected) }
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(S.apiModelsTitle) },
         text = {

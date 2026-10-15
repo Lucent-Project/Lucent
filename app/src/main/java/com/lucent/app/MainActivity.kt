@@ -47,7 +47,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
@@ -348,7 +348,7 @@ class MainActivity : FragmentActivity() {
             )
             val harnessQuestion by com.lucent.app.harness.HarnessAsk.pending.collectAsState(initial = null)
             harnessQuestion?.let { request ->
-                androidx.compose.material3.AlertDialog(
+                LucentGlassAlertDialog(
                     onDismissRequest = { com.lucent.app.harness.HarnessAsk.respond("") },
                     title = { androidx.compose.material3.Text(request.question) },
                     text = {
@@ -707,7 +707,7 @@ fun LucentApp(paletteColors: List<Color>, backdropColor: Color, backgroundAnimat
     var confirmExitWhileReplying by remember { mutableStateOf(false) }
 
     pendingNavigation?.let { action ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { pendingNavigation = null },
             title = { Text(com.lucent.app.i18n.S.unsavedChangesTitle) },
             text = { Text(com.lucent.app.i18n.S.unsavedChangesBody) },
@@ -757,7 +757,7 @@ fun LucentApp(paletteColors: List<Color>, backdropColor: Color, backgroundAnimat
     }
 
     if (confirmExitWhileReplying) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { confirmExitWhileReplying = false },
             title = { Text(com.lucent.app.i18n.S.lmExitWhileReplyingTitle) },
             text = { Text(com.lucent.app.i18n.S.lmExitWhileReplyingBody) },

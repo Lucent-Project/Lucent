@@ -20,7 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -325,7 +325,7 @@ fun CloudSettingsPage(
     }
 
     cloudList?.let { files ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { cloudList = null },
             title = { Text(S.cloudRestorePick) },
             text = {
@@ -346,7 +346,7 @@ fun CloudSettingsPage(
     }
 
     pickedBackup?.let { name ->
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { pickedBackup = null },
             title = { Text(S.cloudRestore) },
             text = { Text(S.cloudRestoreConfirm(name)) },

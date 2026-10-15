@@ -30,7 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
@@ -277,7 +277,7 @@ fun SearchScreen(
     }
 
     if (showSaveDialog) {
-        AlertDialog(
+        LucentGlassAlertDialog(
             onDismissRequest = { showSaveDialog = false },
             title = { Text(com.lucent.app.i18n.S.saveSearchAction) },
             text = {

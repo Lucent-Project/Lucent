@@ -53,7 +53,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import com.lucent.app.ui.LucentGlassDialog
 import androidx.compose.ui.window.DialogProperties
 import com.lucent.app.data.ChecklistItem
 
@@ -219,7 +219,7 @@ private fun ChecklistItemEditorDialog(
     val onGradient = LocalOnGradient.current
     val onGradientMuted = LocalOnGradientMuted.current
     val noRipple = remember { MutableInteractionSource() }
-    Dialog(
+    LucentGlassDialog(
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {

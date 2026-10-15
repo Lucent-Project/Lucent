@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.ui.window.Dialog
+import com.lucent.app.ui.LucentGlassDialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.clickable
@@ -350,7 +350,7 @@ fun ExpandableDoodleEditor(
     }
 
     if (expanded) {
-        Dialog(
+        LucentGlassDialog(
             onDismissRequest = { expanded = false },
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
@@ -364,7 +364,7 @@ fun ExpandableDoodleEditor(
 
     previewIndex?.let { i ->
         if (i in pages.indices) {
-            Dialog(
+            LucentGlassDialog(
                 onDismissRequest = { previewIndex = null },
                 properties = DialogProperties(usePlatformDefaultWidth = false)
             ) {

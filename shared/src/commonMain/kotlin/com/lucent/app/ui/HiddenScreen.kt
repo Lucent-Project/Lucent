@@ -22,7 +22,7 @@ import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -132,7 +132,7 @@ fun HiddenTasksScreen(onBack: () -> Unit, onOpen: (com.lucent.app.data.Task) -> 
 @Composable
 private fun RevealConfirmDialog(pending: (() -> Unit)?, onDismiss: () -> Unit) {
     if (pending == null) return
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(com.lucent.app.i18n.S.hiddenRemoveConfirmTitle) },
         text = { Text(com.lucent.app.i18n.S.hiddenRemoveConfirmBody) },

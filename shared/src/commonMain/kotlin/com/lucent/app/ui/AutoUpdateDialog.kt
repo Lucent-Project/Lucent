@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -43,7 +43,7 @@ fun AutoUpdateDialog(repo: SettingsRepository, onOpenUrl: ((String) -> Unit)? = 
         }
     }
 
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = { if (downloading) AutoUpdate.hide() else if (!busy) AutoUpdate.later() },
         title = { Text(S.updateAvailableTitle) },
         text = {

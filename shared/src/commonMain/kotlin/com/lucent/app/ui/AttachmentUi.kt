@@ -23,7 +23,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PictureAsPdf
-import androidx.compose.material3.AlertDialog
+import com.lucent.app.ui.LucentGlassAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -333,7 +333,7 @@ private fun AttachmentRenameDialog(
     val clash = proposed.isNotEmpty() && takenNames.any { it.equals(proposed, ignoreCase = true) }
     val valid = proposed.isNotEmpty() && !clash
 
-    AlertDialog(
+    LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(com.lucent.app.i18n.S.attachmentRenameTitle) },
         text = {
