@@ -48,8 +48,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.drawOutline
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
@@ -207,11 +207,23 @@ fun Modifier.glassJellySurface(
         onDrawWithContent {
             drawRect(brush = highlightBrush)
             drawRect(brush = bottomReflectionBrush)
-            drawOutline(
-                outline = outline,
-                color = tokens.innerGlowColor,
-                style = Stroke(width = innerGlowWidthPx * 2f)
-            )
+            // drawOutline is unavailable in this Compose Multiplatform version — draw per outline type
+            when (outline) {
+                is Outline.Rounded -> drawRoundRect(
+                    color = tokens.innerGlowColor,
+                    style = Stroke(width = innerGlowWidthPx * 2f),
+                    cornerRadius = outline.roundRect.topLeftCornerRadius
+                )
+                is Outline.Rectangle -> drawRect(
+                    color = tokens.innerGlowColor,
+                    style = Stroke(width = innerGlowWidthPx * 2f)
+                )
+                is Outline.Generic -> drawPath(
+                    path = outline.path,
+                    color = tokens.innerGlowColor,
+                    style = Stroke(width = innerGlowWidthPx * 2f)
+                )
+            }
             drawContent()
         }
     }
