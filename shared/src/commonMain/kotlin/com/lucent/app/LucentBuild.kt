@@ -2,9 +2,9 @@ package com.lucent.app
 
 object LucentBuild {
 
-    const val VERSION = "3.1.0"
+    const val VERSION = "3.1.1"
 
-    const val BUILD_NUMBER = "310"
+    const val BUILD_NUMBER = "311"
     
     val BUILD_ID: String = GeneratedBuildId.BUILD_ID
     

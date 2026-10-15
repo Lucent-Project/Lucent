@@ -20,6 +20,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.DragInteraction
@@ -195,6 +208,8 @@ fun AssistantChatBody(
     val agentModeOn by repo.agentMode.collectAsState(initial = SettingsCache.agentMode)
     val reasoningKey by repo.reasoning.collectAsState(initial = SettingsCache.reasoning)
     val memoryTierLocalKey by repo.memoryTierLocal.collectAsState(initial = SettingsCache.memoryTierLocal)
+    val effectiveTier = MemoryTier.fromKey(if (localModelEnabled) memoryTierLocalKey else memoryTierKey)
+    val canReply = effectiveTier != MemoryTier.LOW
     val modelRecents by repo.modelRecents.collectAsState(initial = emptyList())
     val smallModelMode by repo.smallModelModeEnabled.collectAsState(initial = SettingsCache.smallModelModeEnabled)
     val savedProfilesJson by repo.apiProfilesJson.collectAsState(initial = SettingsCache.apiProfilesJson)
@@ -202,6 +217,12 @@ fun AssistantChatBody(
     val activeApiProfile = remember(savedProfilesJson, savedSelectedIdx) {
         val parsed = com.lucent.app.data.ApiProfiles.parse(savedProfilesJson)
         parsed.getOrNull(savedSelectedIdx.coerceIn(0, (parsed.size - 1).coerceAtLeast(0)))
+    }
+
+    LaunchedEffect(canReply) {
+        if (!canReply && draft.quoteTarget != null) {
+            draft.quoteTarget = null
+        }
     }
 
     fun persistSelectedModels(picked: List<String>) {
@@ -821,7 +842,9 @@ fun AssistantChatBody(
                     }
                     var messageSize by remember(msg.id) { mutableStateOf(IntSize.Zero) }
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .swipeToReply(enabled = canReply) { draft.quoteTarget = msg },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(modifier = Modifier.weight(1f)) {
@@ -1016,13 +1039,15 @@ fun AssistantChatBody(
                                 )
                             }
                         ) {
-                            LucentGlassDropdownMenuItem(
-                                text = { Text(com.lucent.app.i18n.S.actionReply) },
-                                onClick = {
-                                    contextMenuMessage = null
-                                    draft.quoteTarget = msg
-                                }
-                            )
+                            if (canReply) {
+                                LucentGlassDropdownMenuItem(
+                                    text = { Text(com.lucent.app.i18n.S.actionReply) },
+                                    onClick = {
+                                        contextMenuMessage = null
+                                        draft.quoteTarget = msg
+                                    }
+                                )
+                            }
                             LucentGlassDropdownMenuItem(
                                 text = { Text(com.lucent.app.i18n.S.msgCopyWhole) },
                                 onClick = {
@@ -1068,7 +1093,7 @@ fun AssistantChatBody(
                                         },
                                         key = savedKey, model = savedModel,
                                         name = assistantName.ifBlank { "Lucent" }, style = assistantStyle,
-                                        memoryTier = MemoryTier.fromKey(if (useLocal) memoryTierLocalKey else memoryTierKey),
+                                        memoryTier = effectiveTier,
                                         webSearchEnabled = webSearchEnabled,
                                         typingHapticsEnabled = typingHapticsEnabled,
                                         useLocalModel = useLocal,
@@ -1180,7 +1205,7 @@ fun AssistantChatBody(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             )
         }
-        if (draft.quoteTarget != null) {
+        if (canReply && draft.quoteTarget != null) {
             val q = draft.quoteTarget!!
             val author = if (q.role == "user") com.lucent.app.i18n.S.exportYou else assistantName.ifBlank { "Lucent" }
             Row(
@@ -1279,7 +1304,7 @@ fun AssistantChatBody(
                 attachments = attachments,
                 url = savedUrl, spec = spec, key = savedKey, model = savedModel,
                 name = assistantName.ifBlank { "Lucent" }, style = assistantStyle,
-                memoryTier = MemoryTier.fromKey(if (useLocal) memoryTierLocalKey else memoryTierKey),
+                memoryTier = effectiveTier,
                 webSearchEnabled = webSearchEnabled,
                 typingHapticsEnabled = typingHapticsEnabled,
                 useLocalModel = useLocal,
@@ -1768,3 +1793,123 @@ private fun String.withLineStartPunctuationAllowed(): String {
     }
     return sb.toString()
 }
+
+private fun Modifier.swipeToReply(
+    enabled: Boolean,
+    onQuote: () -> Unit
+): Modifier {
+    if (!enabled) return this
+    return composed {
+        val context = LocalPlatformContext.current
+        val density = LocalDensity.current
+        val viewConfig = LocalViewConfiguration.current
+        val scope = rememberCoroutineScope()
+        val currentOnQuote by rememberUpdatedState(onQuote)
+        val onGradient = LocalOnGradient.current
+        val offsetX = remember { Animatable(0f) }
+        var isArmed by remember { mutableStateOf(false) }
+        val triggerPx = with(density) { 56.dp.toPx() }
+        val maxOffsetPx = with(density) { 72.dp.toPx() }
+        val touchSlop = viewConfig.touchSlop
+
+        this
+            .drawWithContent {
+                drawContent()
+                val currentOffset = -offsetX.value
+                if (currentOffset > 4.dp.toPx()) {
+                    val alpha = (currentOffset / triggerPx).coerceIn(0f, 1f)
+                    val centerX = size.width - (currentOffset / 2f)
+                    val centerY = size.height / 2f
+                    val arrowPath = Path().apply {
+                        moveTo(centerX - 7.dp.toPx(), centerY)
+                        lineTo(centerX - 1.dp.toPx(), centerY - 6.dp.toPx())
+                        moveTo(centerX - 7.dp.toPx(), centerY)
+                        lineTo(centerX - 1.dp.toPx(), centerY + 6.dp.toPx())
+                        moveTo(centerX - 7.dp.toPx(), centerY)
+                        cubicTo(
+                            centerX + 2.dp.toPx(), centerY,
+                            centerX + 7.dp.toPx(), centerY + 2.dp.toPx(),
+                            centerX + 7.dp.toPx(), centerY + 7.dp.toPx()
+                        )
+                    }
+                    drawPath(
+                        path = arrowPath,
+                        color = onGradient.copy(alpha = alpha * (if (isArmed) 1f else 0.6f)),
+                        style = Stroke(
+                            width = 2.dp.toPx(),
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round
+                        )
+                    )
+                }
+            }
+            .graphicsLayer {
+                translationX = offsetX.value
+            }
+            .pointerInput(enabled) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    var totalDx = 0f
+                    var totalDy = 0f
+                    var locked = false
+                    val pointerId = down.id
+
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == pointerId } ?: break
+                        if (!change.pressed) {
+                            break
+                        }
+                        val dx = change.position.x - change.previousPosition.x
+                        val dy = change.position.y - change.previousPosition.y
+                        totalDx += dx
+                        totalDy += dy
+
+                        if (!locked) {
+                            val distance = kotlin.math.hypot(totalDx, totalDy)
+                            if (distance > touchSlop) {
+                                if (totalDx < 0f && kotlin.math.abs(totalDx) > kotlin.math.abs(totalDy) * 1.5f) {
+                                    locked = true
+                                    change.consume()
+                                } else {
+                                    return@awaitEachGesture
+                                }
+                            }
+                        } else {
+                            change.consume()
+                            val rawDistance = (-totalDx).coerceAtLeast(0f)
+                            val dampedDistance = if (rawDistance <= triggerPx) {
+                                rawDistance
+                            } else {
+                                triggerPx + (rawDistance - triggerPx) * 0.25f
+                            }
+                            val targetOffset = -dampedDistance.coerceAtMost(maxOffsetPx)
+                            scope.launch { offsetX.snapTo(targetOffset) }
+
+                            if (!isArmed && rawDistance >= triggerPx) {
+                                isArmed = true
+                                Haptics.tick(context)
+                            } else if (isArmed && rawDistance < triggerPx) {
+                                isArmed = false
+                            }
+                        }
+                    }
+
+                    if (isArmed) {
+                        currentOnQuote()
+                        isArmed = false
+                    }
+                    scope.launch {
+                        offsetX.animateTo(
+                            0f,
+                            spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessMedium
+                            )
+                        )
+                    }
+                }
+            }
+    }
+}
+

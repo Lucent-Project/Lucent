@@ -672,6 +672,7 @@ class AssistantControllerImpl(
             goalRoundPrompt = null
             return
         }
+        val effectiveQuote = if (memoryTier == MemoryTier.LOW) null else quoteTarget
         appContextRef = appContext.applicationContext
         typingHapticsOn = typingHapticsEnabled
         val turn = Turn(initialConversationId = targetKey, isLocal = useLocalModel)
@@ -682,7 +683,7 @@ class AssistantControllerImpl(
             url, spec, key, model,
             name, style, memoryTier, webSearchEnabled, typingHapticsEnabled, useLocalModel,
             useLocalTools, useLocalGpu, confirmTools, smallModelMode, agentMode, localWebSearch,
-            reasoning, answersMessageId, quoteTarget?.role, quoteTarget?.content?.take(200)
+            reasoning, answersMessageId, effectiveQuote?.role, effectiveQuote?.content?.take(200)
         )
         turn.thinking = true
         if (errorConversationId == targetKey) {
@@ -721,8 +722,8 @@ class AssistantControllerImpl(
                                 if (attachments.size > 1) com.lucent.app.data.Attachments.serialize(attachments)
                                 else attachmentListJson,
                             conversationId = conversationId,
-                            quotedRole = quoteTarget?.role,
-                            quotedText = quoteTarget?.content?.take(200)
+                            quotedRole = effectiveQuote?.role,
+                            quotedText = effectiveQuote?.content?.take(200)
                         )
                     )
                     db.chatConversationDao.getById(conversationId)?.let { conv ->
@@ -738,26 +739,36 @@ class AssistantControllerImpl(
                 if (useLocalModel) {
                     runLocalTurn(
                         turn, db, conversationId, useLocalTools, useLocalGpu, confirmTools,
-                        memoryTier, smallModelMode, answeredId, agentMode, localWebSearch
+                        memoryTier, smallModelMode, answeredId, agentMode, localWebSearch,
+                        name
                     )
                     return@launch
                 }
 
                 var history = buildHistory(db, conversationId, memoryTier)
-                if (answeredId > 0) {
-                    val sentMessage = db.chatDao.getForConversationOnce(conversationId)
-                        .firstOrNull { it.id == answeredId }
+                if (memoryTier != MemoryTier.LOW && answeredId > 0) {
+                    val allMessages = db.chatDao.getForConversationOnce(conversationId)
+                    val sentMessage = allMessages.firstOrNull { it.id == answeredId }
                     val quotedText = sentMessage?.quotedText
-                    if (!quotedText.isNullOrBlank()) {
-                        val author = if (sentMessage.quotedRole == "user") "You" else name.ifBlank { "Assistant" }
+                    if (sentMessage != null && !quotedText.isNullOrBlank()) {
                         val lastUserIndex = history.indexOfLast { it.role == "user" }
                         if (lastUserIndex >= 0) {
-                            val quotedHistory = history.toMutableList()
-                            val message = quotedHistory[lastUserIndex]
-                            quotedHistory[lastUserIndex] = message.copy(
-                                content = "[Quoting $author: \"$quotedText\"]\n\n${message.content}"
+                            val contextBlock = buildQuotedContextBlock(
+                                priorMessages = allMessages,
+                                userMsg = sentMessage,
+                                quotedRole = sentMessage.quotedRole,
+                                quotedText = quotedText,
+                                assistantName = name.ifBlank { "Lucent" },
+                                useLocal = false
                             )
-                            history = quotedHistory
+                            if (!contextBlock.isNullOrBlank()) {
+                                val quotedHistory = history.toMutableList()
+                                val message = quotedHistory[lastUserIndex]
+                                quotedHistory[lastUserIndex] = message.copy(
+                                    content = "$contextBlock\n\n${message.content}"
+                                )
+                                history = quotedHistory
+                            }
                         }
                     }
                 }
@@ -1106,7 +1117,8 @@ class AssistantControllerImpl(
         smallModelMode: Boolean,
         answeredId: Long,
         agentMode: Boolean,
-        webSearchEnabled: Boolean
+        webSearchEnabled: Boolean,
+        name: String = "Assistant"
     ) {
         val ctx = appContextRef ?: return
 
@@ -1137,7 +1149,7 @@ class AssistantControllerImpl(
         if (!useTools || !agentMode) {
             runLocalChatOnly(
                 turn, db, conversationId, memoryTier, smallModelMode, answeredId,
-                toolsAllowed = useTools, agentMode = agentMode
+                toolsAllowed = useTools, agentMode = agentMode, name = name
             )
             return
         }
@@ -1146,7 +1158,35 @@ class AssistantControllerImpl(
             .filterNot { com.lucent.app.harness.HarnessGate.isHarnessTool(it.name) }
         val validToolNames = tools.map { it.name }.toHashSet()
 
-        val turns = buildHistory(db, conversationId, localTier(memoryTier))
+        var history = buildHistory(db, conversationId, localTier(memoryTier))
+        if (memoryTier != MemoryTier.LOW && answeredId > 0) {
+            val allMessages = db.chatDao.getForConversationOnce(conversationId)
+            val sentMessage = allMessages.firstOrNull { it.id == answeredId }
+            val quotedText = sentMessage?.quotedText
+            if (sentMessage != null && !quotedText.isNullOrBlank()) {
+                val lastUserIndex = history.indexOfLast { it.role == "user" }
+                if (lastUserIndex >= 0) {
+                    val contextBlock = buildQuotedContextBlock(
+                        priorMessages = allMessages,
+                        userMsg = sentMessage,
+                        quotedRole = sentMessage.quotedRole,
+                        quotedText = quotedText,
+                        assistantName = name.ifBlank { "Assistant" },
+                        useLocal = true
+                    )
+                    if (!contextBlock.isNullOrBlank()) {
+                        val quotedHistory = history.toMutableList()
+                        val message = quotedHistory[lastUserIndex]
+                        quotedHistory[lastUserIndex] = message.copy(
+                            content = "$contextBlock\n\n${message.content}"
+                        )
+                        history = quotedHistory
+                    }
+                }
+            }
+        }
+
+        val turns = history
             .filter { it.role == "user" || it.role == "assistant" }
             .map { it.role to it.content }
             .filter { it.second.isNotBlank() }
@@ -1327,12 +1367,40 @@ class AssistantControllerImpl(
         smallModelMode: Boolean,
         answeredId: Long,
         toolsAllowed: Boolean,
-        agentMode: Boolean
+        agentMode: Boolean,
+        name: String = "Assistant"
     ) {
         val historyTurns =
             if (smallModelMode) com.lucent.app.local.LocalLlm.HISTORY_TURNS
             else com.lucent.app.local.LocalLlm.HISTORY_TURNS * 2
-        val turns = buildHistory(db, conversationId, localTier(memoryTier))
+        var history = buildHistory(db, conversationId, localTier(memoryTier))
+        if (memoryTier != MemoryTier.LOW && answeredId > 0) {
+            val allMessages = db.chatDao.getForConversationOnce(conversationId)
+            val sentMessage = allMessages.firstOrNull { it.id == answeredId }
+            val quotedText = sentMessage?.quotedText
+            if (sentMessage != null && !quotedText.isNullOrBlank()) {
+                val lastUserIndex = history.indexOfLast { it.role == "user" }
+                if (lastUserIndex >= 0) {
+                    val contextBlock = buildQuotedContextBlock(
+                        priorMessages = allMessages,
+                        userMsg = sentMessage,
+                        quotedRole = sentMessage.quotedRole,
+                        quotedText = quotedText,
+                        assistantName = name.ifBlank { "Assistant" },
+                        useLocal = true
+                    )
+                    if (!contextBlock.isNullOrBlank()) {
+                        val quotedHistory = history.toMutableList()
+                        val message = quotedHistory[lastUserIndex]
+                        quotedHistory[lastUserIndex] = message.copy(
+                            content = "$contextBlock\n\n${message.content}"
+                        )
+                        history = quotedHistory
+                    }
+                }
+            }
+        }
+        val turns = history
             .filter { it.role == "user" || it.role == "assistant" }
             .map { it.role to it.content }
             .filter { it.second.isNotBlank() }
@@ -1524,6 +1592,77 @@ class AssistantControllerImpl(
             MemoryTier.LOW -> current.takeLast(1)
             MemoryTier.MEDIUM, MemoryTier.HIGH -> current
         }
+    }
+
+    private fun buildQuotedContextBlock(
+        priorMessages: List<ChatMessage>,
+        userMsg: ChatMessage,
+        quotedRole: String?,
+        quotedText: String?,
+        assistantName: String,
+        useLocal: Boolean
+    ): String? {
+        if (quotedText.isNullOrBlank()) return null
+        val eligible = priorMessages.filter {
+            (userMsg.id <= 0 || it.id < userMsg.id) && it.content.isNotBlank()
+        }
+        val targetIndex = eligible.indexOfLast {
+            it.role == quotedRole && it.content.take(200) == quotedText
+        }
+        val radius = if (useLocal) 1 else 2
+        val targetLimit = if (useLocal) 400 else 800
+        val neighborLimit = if (useLocal) 180 else 300
+
+        val resolvedAssistantName = assistantName.ifBlank { "Lucent" }
+        fun authorName(role: String?): String =
+            if (role == "user") "User" else "Assistant ($resolvedAssistantName)"
+
+        fun formatNeighbor(content: String): String {
+            val singleLine = content.trim().replace('\r', ' ').replace('\n', ' ')
+            return if (singleLine.length > neighborLimit) singleLine.take(neighborLimit) + "…" else singleLine
+        }
+
+        val targetContent: String
+        val targetAuthor: String
+        val beforeList: List<ChatMessage>
+        val afterList: List<ChatMessage>
+
+        if (targetIndex >= 0) {
+            val rawTarget = eligible[targetIndex].content.trim()
+            targetContent = if (rawTarget.length > targetLimit) rawTarget.take(targetLimit) + "…" else rawTarget
+            targetAuthor = authorName(eligible[targetIndex].role)
+            val startIdx = (targetIndex - radius).coerceAtLeast(0)
+            val endIdx = (targetIndex + radius).coerceAtMost(eligible.lastIndex)
+            beforeList = eligible.subList(startIdx, targetIndex)
+            afterList = eligible.subList(targetIndex + 1, endIdx + 1)
+        } else {
+            val rawTarget = quotedText.trim()
+            targetContent = if (rawTarget.length > targetLimit) rawTarget.take(targetLimit) + "…" else rawTarget
+            targetAuthor = authorName(quotedRole)
+            beforeList = emptyList()
+            afterList = emptyList()
+        }
+
+        val sb = StringBuilder()
+        sb.append("<quoted_context>\n")
+        if (beforeList.isNotEmpty()) {
+            sb.append("[Context before quoted message]\n")
+            for (m in beforeList) {
+                sb.append("- ").append(authorName(m.role)).append(": ").append(formatNeighbor(m.content)).append("\n")
+            }
+            sb.append("\n")
+        }
+        sb.append("[Quoted target message — PRIMARY FOCUS]\n")
+        sb.append(">>> ").append(targetAuthor).append(": \"").append(targetContent).append("\" <<<\n")
+        if (afterList.isNotEmpty()) {
+            sb.append("\n[Context after quoted message]\n")
+            for (m in afterList) {
+                sb.append("- ").append(authorName(m.role)).append(": ").append(formatNeighbor(m.content)).append("\n")
+            }
+        }
+        sb.append("</quoted_context>\n")
+        sb.append("[Instruction: The user is explicitly replying to the >>> Quoted target message <<< above. Focus your response on the topic, details, and intent of that quoted message together with its surrounding context in <quoted_context>, and directly answer the user's new message below based on it.]")
+        return sb.toString()
     }
 
     private suspend fun resolveUpload(
