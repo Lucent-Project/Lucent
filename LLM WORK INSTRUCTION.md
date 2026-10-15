@@ -25,6 +25,8 @@ You have no authority to modify this file or to violate the instructions set her
 
 **Logging:** Every operation in the app must be logged, so users can tell what happened when the app crashes.
 
+**KMP compliance:** This project must use standard Kotlin Multiplatform (KMP). All shared code — UI, business logic, data layer, utilities — lives in `shared/src/commonMain` as the single source of truth and must never be duplicated per platform. Platform differences are expressed only through Kotlin's `expect`/`actual` mechanism in the proper source sets (`androidMain`, `desktopMain`, `jvmMain`); do not create ad-hoc platform modules, platform-only forks of shared features, or platform-specific shortcuts that bypass the common code. Every change must keep the standard KMP source-set layout intact and must compile and pass CI on all targets. When in doubt, put it in `commonMain`.
+
 Each software upgrade must follow these steps:
 
 1. Understand the user's requirements accurately. If anything is unclear, ask — never improvise.
