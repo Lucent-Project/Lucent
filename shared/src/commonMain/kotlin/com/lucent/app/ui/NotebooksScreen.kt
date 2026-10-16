@@ -730,6 +730,7 @@ fun NotebookTrashScreen(onBack: () -> Unit) {
     val onGradient = LocalOnGradient.current
     val onGradientMuted = LocalOnGradientMuted.current
     var confirmEmpty by remember { mutableStateOf(false) }
+    var notebookToPurge by remember { mutableStateOf<Notebook?>(null) }
 
     if (confirmEmpty) {
         LucentGlassAlertDialog(
@@ -749,6 +750,25 @@ fun NotebookTrashScreen(onBack: () -> Unit) {
                 }) { Text(com.lucent.app.i18n.S.emptyTrash) }
             },
             dismissButton = { TextButton(onClick = { confirmEmpty = false }) { Text(com.lucent.app.i18n.S.actionCancel) } }
+        )
+    }
+
+    notebookToPurge?.let { notebook ->
+        LucentGlassAlertDialog(
+            onDismissRequest = { notebookToPurge = null },
+            title = { Text(com.lucent.app.i18n.S.deleteForeverTitle) },
+            text = { Text(com.lucent.app.i18n.S.deleteNotebookForeverBody(notebook.title.ifBlank { com.lucent.app.i18n.S.notebookEmptyTitle })) },
+            confirmButton = {
+                TextButton(onClick = {
+                    val target = notebook
+                    notebookToPurge = null
+                    AppScope.io.launch {
+                        db.notebookDao.deleteItemsForNotebook(target.id)
+                        db.notebookDao.deleteById(target.id)
+                    }
+                }) { Text(com.lucent.app.i18n.S.deleteForever) }
+            },
+            dismissButton = { TextButton(onClick = { notebookToPurge = null }) { Text(com.lucent.app.i18n.S.actionCancel) } }
         )
     }
 
@@ -812,12 +832,7 @@ fun NotebookTrashScreen(onBack: () -> Unit) {
                             )
                         }
                     }) { Text(com.lucent.app.i18n.S.actionRestore) }
-                    IconButton(onClick = {
-                        AppScope.io.launch {
-                            db.notebookDao.deleteItemsForNotebook(notebook.id)
-                            db.notebookDao.deleteById(notebook.id)
-                        }
-                    }) {
+                    IconButton(onClick = { notebookToPurge = notebook }) {
                         Icon(Icons.Default.Delete, contentDescription = com.lucent.app.i18n.S.deleteForever, tint = onGradientMuted)
                     }
                 }
