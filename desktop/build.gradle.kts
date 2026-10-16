@@ -194,6 +194,7 @@ val stripNonWindowsNatives = tasks.register("stripNonWindowsNatives") {
 }
 tasks.configureEach {
     if (name == "packageReleaseDistributionForCurrentOS") dependsOn(stripNonWindowsNatives)
+    if (name == "packageReleaseExe") mustRunAfter(stripNonWindowsNatives)
 }
 stripNonWindowsNatives.configure {
     dependsOn(tasks.matching { it.name == "createReleaseDistributable" })

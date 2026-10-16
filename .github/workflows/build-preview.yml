@@ -473,7 +473,7 @@ jobs:
           $pfx = Join-Path $env:RUNNER_TEMP "lucent-sign.pfx"
           [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:LUCENT_SIGN_PFX_BASE64))
           try {
-            $exes = Get-ChildItem "desktop/build/compose/binaries/main/exe/*.exe"
+            $exes = Get-ChildItem "desktop/build/compose/binaries/main-release/exe/*.exe"
             foreach ($exe in $exes) {
               & $signtool.FullName sign /f $pfx /p $env:LUCENT_SIGN_PFX_PASSWORD /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com $exe.FullName
               if ($LASTEXITCODE -ne 0) { & $signtool.FullName sign /f $pfx /p $env:LUCENT_SIGN_PFX_PASSWORD /fd SHA256 $exe.FullName }
@@ -485,7 +485,7 @@ jobs:
         run: |
           $ver = "${{ steps.resolve-version.outputs.version }}"
           $bid = "${{ needs.prepare.outputs.build_id }}"
-          $exe = Get-ChildItem desktop/build/compose/binaries/main/exe/*.exe | Select-Object -First 1
+          $exe = Get-ChildItem desktop/build/compose/binaries/main-release/exe/*.exe | Select-Object -First 1
           $target = "Lucent.for.Windows-$ver-$bid.exe"
           if ($exe.Name -ne $target) { Move-Item -Force $exe.FullName (Join-Path $exe.DirectoryName $target) }
 
@@ -493,7 +493,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: lucent-windows-exe
-          path: desktop/build/compose/binaries/main/exe/*.exe
+          path: desktop/build/compose/binaries/main-release/exe/*.exe
           if-no-files-found: error
 
   create-release:
