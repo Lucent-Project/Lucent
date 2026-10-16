@@ -1897,6 +1897,9 @@ ENTRIES = [
     ("trackSwitchBodyOfficial", "Every build carries an ID like P202610061243 (P = preview, R = official) plus a UTC timestamp. The app compares these to decide on updates.\n\nOfficial builds are stable releases.\n\nThe app stays on this track and will only move to the other track if that track has a strictly newer build ID.", "每个构建都有一个 ID，如 P202610061243（P = 预览版，R = 正式版）以及 UTC 时间戳，应用比较这些 ID 来决定是否更新。\n\n正式版是稳定版本。\n\n应用会保持在此通道，且只有在另一个通道出现更新的 ID 时才会切换过去。", "各ビルドにはP202610061243（P = プレビュー、R = 公式）のようなIDとUTCタイムスタンプが付与され、アプリはこれらを比較して更新を決定します。\n\n公式版は安定したリリースです。\n\nアプリはこのチャネルに留まり、別のチャネルに厳密に新しいIDがある場合にのみ切り替わります。", "모든 빌드에는 P202610061243(P = 미리보기, R = 공식)과 같은 ID와 UTC 타임스탬프가 포함되며, 앱은 이를 비교하여 업데이트를 결정합니다.\n\n공식 빌드는 안정적인 릴리스입니다.\n\n앱은 선택한 채널을 유지하며 다른 채널에 더 새로운 ID의 빌드가 있을 때만 해당 채널로 이동합니다."),
     ("trackSwitchConfirm", "Confirm", "确认", "確認", "확인"),
     ("trackSwitchCancel", "Cancel", "取消", "キャンセル", "취소"),
+    ("autoBackupRemovePasswordTitle", "Remove backup password?", "移除备份密码？", "バックアップパスワードを削除しますか？", "백업 비밀번호를 삭제할까요?"),
+    ("autoBackupRemovePasswordBody(slot: String)", "\"{slot}\" will be permanently deleted. This can't be undone.", "“{slot}”将被永久删除。此操作无法撤销。", "「{slot}」は完全に削除されます。元に戻せません。", "\"{slot}\"이(가) 영구 삭제됩니다. 되돌릴 수 없습니다."),
+    ("deleteNotebookForeverBody(title: String)", "\"{title}\" will be permanently deleted. The notes and tasks inside it are kept. This can't be undone.", "“{title}”将被永久删除，里面的笔记和任务会保留。此操作无法撤销。", "「{title}」は完全に削除されます。中のノートとタスクは残ります。元に戻せません。", "\"{title}\"이(가) 영구 삭제됩니다. 안의 노트와 작업은 유지됩니다. 되돌릴 수 없습니다."),
 ]
 
 CONDITIONAL_ENTRIES = {
