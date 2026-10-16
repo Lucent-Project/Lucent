@@ -51,6 +51,41 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
+private data class PendingMessage(
+    val id: String,
+    val text: String,
+    val attachments: List<com.lucent.app.data.Attachment>,
+    val quoteTarget: ChatMessage?,
+    val timestamp: Long,
+    var dbMessageId: Long = 0L,
+    val attachmentMime: String? = null,
+    val attachmentData: String? = null,
+    val attachmentName: String? = null,
+    val attachmentListJson: String? = null
+)
+
+private data class SendParams(
+    val appContext: PlatformContext,
+    val url: String,
+    val spec: ApiSpec,
+    val key: String,
+    val model: String,
+    val name: String,
+    val style: String,
+    val memoryTier: MemoryTier,
+    val webSearchEnabled: Boolean,
+    val typingHapticsEnabled: Boolean = true,
+    val useLocalModel: Boolean = false,
+    val useLocalTools: Boolean = false,
+    val useLocalGpu: Boolean = false,
+    val confirmTools: Boolean = true,
+    val smallModelMode: Boolean = false,
+    val agentMode: Boolean = true,
+    val localWebSearch: Boolean = false,
+    val reasoning: String = com.lucent.app.data.ReasoningEffort.DEFAULT.key,
+    val targetConversationId: Long? = null
+)
+
 data class PendingConfirmation(
     val actionTitle: String,
     val details: String,
@@ -132,7 +167,14 @@ class AssistantControllerImpl(
     private val LOCAL_TOOL_RESULT = Regex("Result of ([^:]+): (.*)", RegexOption.DOT_MATCHES_ALL)
 
 
-    val sending: Boolean get() = turns.isNotEmpty()
+    private val pendingQueue = mutableListOf<PendingMessage>()
+    private val pendingLock = Any()
+    private var debounceJob: Job? = null
+    private val debounceMs = 1200L
+    private var pendingParams: SendParams? = null
+    private var currentBurstBatchId: String? = null
+
+    val sending: Boolean get() = turns.isNotEmpty() || (debounceJob?.isActive == true && synchronized(pendingLock) { pendingQueue.isNotEmpty() })
 
     fun isGenerating(conversationId: Long?): Boolean = turnFor(conversationId) != null
 
@@ -353,11 +395,27 @@ class AssistantControllerImpl(
     }
 
     fun stopGeneration(reason: String? = null, silent: Boolean = false) {
+        synchronized(pendingLock) {
+            debounceJob?.cancel()
+            debounceJob = null
+            pendingQueue.clear()
+            pendingParams = null
+            currentBurstBatchId = null
+        }
         turnFor(currentConversationId)?.let { stopTurn(it, reason, silent) }
+        publishState()
     }
 
     fun stopAllGeneration(reason: String? = null, silent: Boolean = false) {
+        synchronized(pendingLock) {
+            debounceJob?.cancel()
+            debounceJob = null
+            pendingQueue.clear()
+            pendingParams = null
+            currentBurstBatchId = null
+        }
         turns.toList().forEach { stopTurn(it, reason, silent) }
+        publishState()
     }
 
     private fun stopHarnessWork() {
@@ -637,166 +695,240 @@ class AssistantControllerImpl(
         publishState()
     }
 
-    fun send(
-        appContext: PlatformContext,
-        text: String,
-        attachmentMime: String?,
-        attachmentData: String?,
-        attachmentName: String?,
-        url: String,
-        spec: ApiSpec,
-        key: String,
-        model: String,
-        name: String,
-        style: String,
-        memoryTier: MemoryTier,
-        webSearchEnabled: Boolean,
-        typingHapticsEnabled: Boolean = true,
-        insertUserMessage: Boolean = true,
-        useLocalModel: Boolean = false,
-        useLocalTools: Boolean = false,
-        useLocalGpu: Boolean = false,
-        confirmTools: Boolean = true,
-        smallModelMode: Boolean = false,
-        agentMode: Boolean = true,
-        localWebSearch: Boolean = false,
-        reasoning: String = com.lucent.app.data.ReasoningEffort.DEFAULT.key,
-        answersMessageId: Long = 0,
-        targetConversationId: Long? = null,
-        attachmentListJson: String? = null,
-        attachments: List<com.lucent.app.data.Attachment> = emptyList(),
-        quoteTarget: ChatMessage? = null
-    ) {
-        val targetKey = targetConversationId ?: currentConversationId
-        if (turnFor(targetKey) != null) {
-            goalRoundPrompt = null
-            return
+    fun notifyUserTyping() {
+        synchronized(pendingLock) {
+            if (pendingQueue.isNotEmpty() && debounceJob?.isActive == true) {
+                resetDebounce()
+            }
         }
-        val effectiveQuote = if (memoryTier == MemoryTier.LOW) null else quoteTarget
-        appContextRef = appContext.applicationContext
-        typingHapticsOn = typingHapticsEnabled
-        val turn = Turn(initialConversationId = targetKey, isLocal = useLocalModel)
-        turn.params = LastSend(
-            text, attachmentMime, attachmentData, attachmentName,
-            if (attachments.size > 1) com.lucent.app.data.Attachments.serialize(attachments)
-            else attachmentListJson,
-            url, spec, key, model,
-            name, style, memoryTier, webSearchEnabled, typingHapticsEnabled, useLocalModel,
-            useLocalTools, useLocalGpu, confirmTools, smallModelMode, agentMode, localWebSearch,
-            reasoning, answersMessageId, effectiveQuote?.role, effectiveQuote?.content?.take(200)
+    }
+
+    private fun resetDebounce() {
+        debounceJob?.cancel()
+        debounceJob = genScope.launch {
+            delay(debounceMs)
+            flushQueue()
+        }
+    }
+
+    private fun flushQueue() {
+        val batch: List<PendingMessage>
+        val params: SendParams
+        val batchId: String?
+        synchronized(pendingLock) {
+            if (pendingQueue.isEmpty()) return
+            batch = pendingQueue.toList()
+            pendingQueue.clear()
+            params = pendingParams ?: return
+            pendingParams = null
+            batchId = currentBurstBatchId
+            currentBurstBatchId = null
+            debounceJob = null
+        }
+        genScope.launch {
+            var tries = 0
+            while (batch.any { it.dbMessageId == 0L } && tries < 50) {
+                delay(25)
+                tries++
+            }
+            val convId = params.targetConversationId ?: currentConversationId ?: return@launch
+            val allMessages = db.chatDao.getForConversationOnce(convId)
+            val burstMessages = allMessages.filter { m -> batch.any { it.dbMessageId == m.id } }
+                .ifEmpty {
+                    batch.map { p ->
+                        ChatMessage(
+                            id = p.dbMessageId,
+                            role = "user",
+                            content = p.text,
+                            attachmentMime = p.attachmentMime,
+                            attachmentData = p.attachmentData,
+                            attachmentName = p.attachmentName,
+                            attachmentList = p.attachmentListJson,
+                            conversationId = convId,
+                            replyToId = p.quoteTarget?.id ?: 0L,
+                            quotedRole = p.quoteTarget?.role,
+                            quotedText = p.quoteTarget?.content?.take(200),
+                            batchId = batchId
+                        )
+                    }
+                }
+            launchGeneration(
+                convId = convId,
+                burstMessages = burstMessages,
+                params = params,
+                batchId = batchId
+            )
+        }
+    }
+
+    private fun buildBurstContent(
+        messages: List<ChatMessage>,
+        allDbMessages: List<ChatMessage>,
+        assistantName: String
+    ): String {
+        val quotedBlocks = mutableListOf<String>()
+        val burstLines = mutableListOf<String>()
+        val seenQuoteKeys = mutableSetOf<String>()
+
+        messages.forEachIndexed { idx, msg ->
+            if (!msg.quotedText.isNullOrBlank()) {
+                val quoteKey = if (msg.replyToId > 0) msg.replyToId.toString() else "${msg.quotedRole}:${msg.quotedText}"
+                if (seenQuoteKeys.add(quoteKey)) {
+                    val target = (if (msg.replyToId > 0) allDbMessages.firstOrNull { it.id == msg.replyToId } else null)
+                        ?: allDbMessages.firstOrNull {
+                            it.role == msg.quotedRole && it.content.take(200) == msg.quotedText
+                        }
+                    if (target != null) {
+                        buildQuotedContextBlock(
+                            allDbMessages, msg, msg.quotedRole, msg.quotedText,
+                            assistantName, useLocal = false
+                        )?.let { block ->
+                            if (block.isNotBlank()) quotedBlocks += block
+                        }
+                    }
+                }
+            }
+            burstLines += if (messages.size == 1) msg.content
+                          else "[Message ${idx + 1}] ${msg.content}"
+        }
+
+        return buildString {
+            if (quotedBlocks.isNotEmpty()) {
+                append(quotedBlocks.filter { it.isNotBlank() }.joinToString("\n\n"))
+                append("\n\n")
+            }
+            if (messages.size > 1) {
+                append("<user_burst_messages count=\"${messages.size}\">\n")
+                append(burstLines.joinToString("\n"))
+                append("\n</user_burst_messages>")
+            } else {
+                append(burstLines.first())
+            }
+        }
+    }
+
+    private fun launchGeneration(
+        convId: Long,
+        burstMessages: List<ChatMessage>,
+        params: SendParams,
+        batchId: String?
+    ) {
+        val burst = if (batchId != null) burstMessages.map {
+            if (it.batchId == null) it.copy(batchId = batchId) else it
+        } else burstMessages
+
+        val firstMsg = burst.firstOrNull()
+        val lastMsg = burst.lastOrNull()
+        val quotedMsg = burst.firstOrNull { !it.quotedText.isNullOrBlank() }
+        val effectiveQuoteRole = if (params.memoryTier == MemoryTier.LOW) null else quotedMsg?.quotedRole
+        val effectiveQuoteText = if (params.memoryTier == MemoryTier.LOW) null else quotedMsg?.quotedText?.take(200)
+
+        val mergedText = if (burst.size == 1) (firstMsg?.content ?: "") else burst.joinToString("\n") { it.content }
+
+        val lastSendObj = LastSend(
+            text = mergedText,
+            attachmentMime = burst.firstOrNull { it.attachmentMime != null }?.attachmentMime,
+            attachmentData = burst.firstOrNull { it.attachmentData != null }?.attachmentData,
+            attachmentName = burst.firstOrNull { it.attachmentName != null }?.attachmentName,
+            attachmentListJson = burst.firstOrNull { it.attachmentList != null }?.attachmentList,
+            url = params.url,
+            spec = params.spec,
+            key = params.key,
+            model = params.model,
+            name = params.name,
+            style = params.style,
+            memoryTier = params.memoryTier,
+            webSearchEnabled = params.webSearchEnabled,
+            typingHaptics = params.typingHapticsEnabled,
+            useLocalModel = params.useLocalModel,
+            useLocalTools = params.useLocalTools,
+            useLocalGpu = params.useLocalGpu,
+            confirmTools = params.confirmTools,
+            smallModelMode = params.smallModelMode,
+            agentMode = params.agentMode,
+            localWebSearch = params.localWebSearch,
+            reasoning = params.reasoning,
+            answersMessageId = lastMsg?.id ?: 0L,
+            quoteRole = effectiveQuoteRole,
+            quoteText = effectiveQuoteText
         )
+
+        lastSend = lastSendObj
+        lastSendConversationId = convId
+
+        appContextRef = params.appContext.applicationContext
+        typingHapticsOn = params.typingHapticsEnabled
+
+        val turn = Turn(initialConversationId = convId, isLocal = params.useLocalModel)
+        turn.params = lastSendObj
+        turn.conversationId = convId
         turn.thinking = true
-        if (errorConversationId == targetKey) {
+        if (errorConversationId == convId) {
             errorText = ""
             errorConversationId = null
             errorTrace = null
             errorTraceConversationId = null
         }
         networkErrorMessage = null
-        registerTurn(turn, name)
+        registerTurn(turn, params.name)
 
         turn.job = genScope.launch {
             try {
-                var convId = targetConversationId ?: currentConversationId
-                if (convId == null) {
-                    convId = db.chatConversationDao.insert(ChatConversation())
-                    setActiveConversation(convId)
-                    turn.conversationId = convId
-                    observeCurrentConversation(db)
-                }
-                val conversationId = convId
-                turn.conversationId = conversationId
-                com.lucent.app.harness.HarnessRuntime.conversationId = conversationId
-                com.lucent.app.harness.GoalStore.load(appContext.applicationContext, conversationId)
+                com.lucent.app.harness.HarnessRuntime.conversationId = convId
+                com.lucent.app.harness.GoalStore.load(params.appContext.applicationContext, convId)
                 com.lucent.app.harness.GoalStore.takeRoundNote()?.let { note -> turn.recorder.addPlanning(note) }
 
-                var answeredId = answersMessageId
-                if (insertUserMessage) {
-                    answeredId = db.chatDao.insert(
-                        ChatMessage(
-                            role = "user", content = text,
-                            attachmentMime = attachmentMime,
-                            attachmentData = attachmentData,
-                            attachmentName = attachmentName,
-                            attachmentList =
-                                if (attachments.size > 1) com.lucent.app.data.Attachments.serialize(attachments)
-                                else attachmentListJson,
-                            conversationId = conversationId,
-                            quotedRole = effectiveQuote?.role,
-                            quotedText = effectiveQuote?.content?.take(200)
-                        )
-                    )
-                    db.chatConversationDao.getById(conversationId)?.let { conv ->
-                        val newTitle = if (conv.title.isBlank() || conv.title == "New conversation") {
-                            text.trim().take(40).ifBlank { conv.title }
-                        } else conv.title
-                        db.chatConversationDao.update(
-                            conv.copy(title = newTitle, updatedAt = Clock.System.now().toEpochMilliseconds())
-                        )
-                    }
-                }
+                val answeredId = lastMsg?.id ?: 0L
 
-                if (useLocalModel) {
+                if (params.useLocalModel) {
                     runLocalTurn(
-                        turn, db, conversationId, useLocalTools, useLocalGpu, confirmTools,
-                        memoryTier, smallModelMode, answeredId, agentMode, localWebSearch,
-                        name
+                        turn, db, convId, params.useLocalTools, params.useLocalGpu, params.confirmTools,
+                        params.memoryTier, params.smallModelMode, answeredId, params.agentMode, params.localWebSearch,
+                        params.name
                     )
                     return@launch
                 }
 
-                var history = buildHistory(db, conversationId, memoryTier)
-                if (memoryTier != MemoryTier.LOW && answeredId > 0) {
-                    val allMessages = db.chatDao.getForConversationOnce(conversationId)
-                    val sentMessage = allMessages.firstOrNull { it.id == answeredId }
-                    val quotedText = sentMessage?.quotedText
-                    if (sentMessage != null && !quotedText.isNullOrBlank()) {
-                        val lastUserIndex = history.indexOfLast { it.role == "user" }
-                        if (lastUserIndex >= 0) {
-                            val contextBlock = buildQuotedContextBlock(
-                                priorMessages = allMessages,
-                                userMsg = sentMessage,
-                                quotedRole = sentMessage.quotedRole,
-                                quotedText = quotedText,
-                                assistantName = name.ifBlank { "Lucent" },
-                                useLocal = false
-                            )
-                            if (!contextBlock.isNullOrBlank()) {
-                                val quotedHistory = history.toMutableList()
-                                val message = quotedHistory[lastUserIndex]
-                                quotedHistory[lastUserIndex] = message.copy(
-                                    content = "$contextBlock\n\n${message.content}"
-                                )
-                                history = quotedHistory
-                            }
-                        }
-                    }
+                val allDbMessages = db.chatDao.getForConversationOnce(convId)
+                val burstIds = burst.map { it.id }.filter { it > 0 }.toSet()
+                val priorHistory = buildHistory(db, convId, params.memoryTier, excludeIds = burstIds)
+                val burstContent = buildBurstContent(burst, allDbMessages, params.name)
+                val uploadAttachment = burst.firstOrNull { it.attachmentData != null || it.attachmentName != null }
+                val mergedTurn = ChatTurn(
+                    role = "user",
+                    content = burstContent,
+                    attachmentMime = uploadAttachment?.attachmentMime,
+                    attachmentData = uploadAttachment?.attachmentData
+                )
+                var history = normalizeRoles(priorHistory + mergedTurn).let {
+                    if (params.memoryTier == MemoryTier.LOW) it.takeLast(1) else it
                 }
-                val crossMemory = crossConversationMemory(db, conversationId, memoryTier)
+
+                val crossMemory = crossConversationMemory(db, convId, params.memoryTier)
                 val compactCrossMemory =
-                    if (smallModelMode) crossConversationMemory(db, conversationId, memoryTier, cap = SMALL_MODEL_CROSS_BUDGET)
+                    if (params.smallModelMode) crossConversationMemory(db, convId, params.memoryTier, cap = SMALL_MODEL_CROSS_BUDGET)
                     else ""
                 val parkedRefine = refinementContext
                 refinementContext = null
                 val parkedGoal = goalRoundPrompt
                 goalRoundPrompt = null
-                val recentItems = recentItemsContext(db, conversationId)
-                val fastMode = !agentMode
-                val useReasoning = if (fastMode) com.lucent.app.data.ReasoningEffort.DEFAULT.key else reasoning
-                val compactMemory = if (smallModelMode || fastMode) {
-                    crossConversationMemory(db, conversationId, memoryTier, cap = SMALL_MODEL_CROSS_BUDGET)
+                val recentItems = recentItemsContext(db, convId)
+                val fastMode = !params.agentMode
+                val useReasoning = if (fastMode) com.lucent.app.data.ReasoningEffort.DEFAULT.key else params.reasoning
+                val compactMemory = if (params.smallModelMode || fastMode) {
+                    crossConversationMemory(db, convId, params.memoryTier, cap = SMALL_MODEL_CROSS_BUDGET)
                 } else {
                     compactCrossMemory
                 }
                 val basePrompt =
-                    if (smallModelMode || fastMode) SystemPrompts.compact(name, style, tier = memoryTier, webSearchEnabled = webSearchEnabled, userText = text)
-                    else SystemPrompts.full(name, style, memoryTier, webSearchEnabled)
+                    if (params.smallModelMode || fastMode) SystemPrompts.compact(params.name, params.style, tier = params.memoryTier, webSearchEnabled = params.webSearchEnabled, userText = burstContent)
+                    else SystemPrompts.full(params.name, params.style, params.memoryTier, params.webSearchEnabled)
                 val promptContext = SystemPrompts.context(
-                    userText = text,
-                    crossMemory = if (smallModelMode || fastMode) compactMemory else crossMemory,
+                    userText = burstContent,
+                    crossMemory = if (params.smallModelMode || fastMode) compactMemory else crossMemory,
                     recentItems = recentItems
                 )
-                val conversationCacheKey = "lucent-$conversationId"
+                val conversationCacheKey = "lucent-$convId"
                 val directPrompt = if (fastMode) {
                     basePrompt +
                         "\n\nAGENT MODE IS OFF in this conversation. Call no tools at all — no JSON, no " +
@@ -814,18 +946,18 @@ class AssistantControllerImpl(
                     parkedGoal != null -> directPrompt + "\n\n" + parkedGoal
                     else -> directPrompt
                 }
-                com.lucent.app.harness.HarnessRuntime.conversationId = conversationId
+                com.lucent.app.harness.HarnessRuntime.conversationId = convId
                 com.lucent.app.harness.HarnessRuntime.noteSink = { line -> turn.recorder.addPlanning(line) }
-                com.lucent.app.harness.HarnessRuntime.llm = SubAgentBridge(url, spec, key, model)
+                com.lucent.app.harness.HarnessRuntime.llm = SubAgentBridge(params.url, params.spec, params.key, params.model)
                 if (com.lucent.app.harness.HarnessRuntime.config().enabled) {
                     runCatching {
                         com.lucent.app.harness.HarnessGate.dynamicTools = com.lucent.app.harness.McpTools.dynamicTools()
                     }
                 }
-                val tools = if (fastMode) emptyList() else AppTools.definitions(includeWebSearch = webSearchEnabled)
+                val tools = if (fastMode) emptyList() else AppTools.definitions(includeWebSearch = params.webSearchEnabled)
 
                 val (uploadMime, uploadData, uploadName) =
-                    resolveUpload(db, conversationId, attachmentMime, attachmentData, attachmentName)
+                    resolveUpload(db, convId, uploadAttachment?.attachmentMime, uploadAttachment?.attachmentData, uploadAttachment?.attachmentName)
 
                 var finalReply: RawModelReply? = null
                 var lastToolResults: List<ToolExecResult> = emptyList()
@@ -840,7 +972,7 @@ class AssistantControllerImpl(
                     turn.resetStream(reveal = false)
                     val roundEpoch = turn.streamEpoch
                     val result = llmClient.streamChat(
-                        url, spec, key, model,
+                        params.url, params.spec, params.key, params.model,
                         budgetRemoteHistory(turn, history, systemPrompt + promptContext),
                         systemPrompt, tools,
                         { delta -> turn.onDelta(roundEpoch, delta) },
@@ -880,7 +1012,7 @@ class AssistantControllerImpl(
                         }
 
                         val stepIndex = turn.recorder.startTool(call.name, call.argumentsJson)
-                        val confirmed = if (confirmTools && AppTools.isMutating(call.name)) {
+                        val confirmed = if (params.confirmTools && AppTools.isMutating(call.name)) {
                             confirmToolCall(turn, call.name, call.argumentsJson)
                         } else ConfirmedCall(approved = true, argumentsJson = call.argumentsJson)
 
@@ -902,7 +1034,7 @@ class AssistantControllerImpl(
                         turn.thinking = true
                         val r = try {
                             AppTools.execute(
-                                appContext, db, call.name, confirmed.argumentsJson,
+                                params.appContext, db, call.name, confirmed.argumentsJson,
                                 uploadMime, uploadData, uploadName
                             )
                         } catch (t: Throwable) {
@@ -912,7 +1044,7 @@ class AssistantControllerImpl(
                         }
                         turn.recorder.finishTool(stepIndex, r)
                         if (!r.success) logToolFailure(call.name, null)
-                        rememberTouched(db, conversationId, call.name, confirmed.argumentsJson, r)
+                        rememberTouched(db, convId, call.name, confirmed.argumentsJson, r)
                         executed[sig] = r
                         results.add(r)
                     }
@@ -964,7 +1096,7 @@ class AssistantControllerImpl(
                     turn.finishTyping(content)
                     turn.recorder.finish(AgentStepStatus.CANCELLED)
                     insertAssistant(
-                        db, conversationId, content, null, null,
+                        db, convId, content, null, null,
                         TokenEstimator.estimate(content), answeredId,
                         traceJson = AgentTraceCodec.encode(turn.recorder.snapshot())
                     )
@@ -976,7 +1108,7 @@ class AssistantControllerImpl(
                         turn.resetStream(reveal = false)
                         val forcedEpoch = turn.streamEpoch
                         val forced = llmClient.streamChat(
-                            url, spec, key, model,
+                            params.url, params.spec, params.key, params.model,
                             budgetRemoteHistory(turn, history, systemPrompt + promptContext),
                             systemPrompt, emptyList(),
                             { delta -> turn.onDelta(forcedEpoch, delta) },
@@ -997,7 +1129,7 @@ class AssistantControllerImpl(
                     }
                     if (!errored) finalReply?.let { reply ->
                         val img = reply.imageData?.takeIf { it.isNotBlank() }
-                        val content = ReplyPolish.replyContent(reply.text, img != null, lastToolResults, userText = text)
+                        val content = ReplyPolish.replyContent(reply.text, img != null, lastToolResults, userText = burstContent)
                         turn.thinking = false
                         turn.resetStream(reveal = true)
                         turn.finishTyping(content)
@@ -1006,7 +1138,7 @@ class AssistantControllerImpl(
                             TokenEstimator.estimate(content)
                         turn.recorder.finish(AgentStepStatus.DONE)
                         insertAssistant(
-                            db, conversationId, content, reply.imageMime, img, tokens, answeredId,
+                            db, convId, content, reply.imageMime, img, tokens, answeredId,
                             traceJson = AgentTraceCodec.encode(turn.recorder.snapshot()),
                             thinkingBlocks = reply.thinkingBlocksJson,
                             reasoningText = reply.reasoningContent
@@ -1032,6 +1164,182 @@ class AssistantControllerImpl(
                 continueGoalRound(turn)
             }
         }
+    }
+
+    fun send(
+        appContext: PlatformContext,
+        text: String,
+        attachmentMime: String?,
+        attachmentData: String?,
+        attachmentName: String?,
+        url: String,
+        spec: ApiSpec,
+        key: String,
+        model: String,
+        name: String,
+        style: String,
+        memoryTier: MemoryTier,
+        webSearchEnabled: Boolean,
+        typingHapticsEnabled: Boolean = true,
+        insertUserMessage: Boolean = true,
+        skipDebounce: Boolean = false,
+        useLocalModel: Boolean = false,
+        useLocalTools: Boolean = false,
+        useLocalGpu: Boolean = false,
+        confirmTools: Boolean = true,
+        smallModelMode: Boolean = false,
+        agentMode: Boolean = true,
+        localWebSearch: Boolean = false,
+        reasoning: String = com.lucent.app.data.ReasoningEffort.DEFAULT.key,
+        answersMessageId: Long = 0,
+        targetConversationId: Long? = null,
+        attachmentListJson: String? = null,
+        attachments: List<com.lucent.app.data.Attachment> = emptyList(),
+        quoteTarget: ChatMessage? = null
+    ) {
+        if (!skipDebounce) {
+            goalRoundPrompt = null
+        }
+        val targetKey = targetConversationId ?: currentConversationId
+        val effectiveQuote = if (memoryTier == MemoryTier.LOW) null else quoteTarget
+        appContextRef = appContext.applicationContext
+        typingHapticsOn = typingHapticsEnabled
+
+        if (skipDebounce) {
+            val convId = targetKey ?: return
+            val burstMessage = ChatMessage(
+                id = answersMessageId,
+                role = "user",
+                content = text,
+                attachmentMime = attachmentMime,
+                attachmentData = attachmentData,
+                attachmentName = attachmentName,
+                attachmentList = if (attachments.size > 1) com.lucent.app.data.Attachments.serialize(attachments) else attachmentListJson,
+                conversationId = convId,
+                replyToId = effectiveQuote?.id ?: 0L,
+                quotedRole = effectiveQuote?.role,
+                quotedText = effectiveQuote?.content?.take(200)
+            )
+            val params = SendParams(
+                appContext = appContext,
+                url = url,
+                spec = spec,
+                key = key,
+                model = model,
+                name = name,
+                style = style,
+                memoryTier = memoryTier,
+                webSearchEnabled = webSearchEnabled,
+                typingHapticsEnabled = typingHapticsEnabled,
+                useLocalModel = useLocalModel,
+                useLocalTools = useLocalTools,
+                useLocalGpu = useLocalGpu,
+                confirmTools = confirmTools,
+                smallModelMode = smallModelMode,
+                agentMode = agentMode,
+                localWebSearch = localWebSearch,
+                reasoning = reasoning,
+                targetConversationId = convId
+            )
+            launchGeneration(
+                convId = convId,
+                burstMessages = listOf(burstMessage),
+                params = params,
+                batchId = null
+            )
+            return
+        }
+
+        if (turnFor(targetKey) != null) {
+            stopTurn(turnFor(targetKey)!!, reason = com.lucent.app.i18n.S.replyInterrupted)
+        }
+
+        val pendingMsg = PendingMessage(
+            id = "msg_${Clock.System.now().toEpochMilliseconds()}_${(0..99999).random()}",
+            text = text,
+            attachments = attachments,
+            quoteTarget = effectiveQuote,
+            timestamp = Clock.System.now().toEpochMilliseconds(),
+            dbMessageId = if (!insertUserMessage && answersMessageId > 0) answersMessageId else 0L,
+            attachmentMime = attachmentMime,
+            attachmentData = attachmentData,
+            attachmentName = attachmentName,
+            attachmentListJson = if (attachments.size > 1) com.lucent.app.data.Attachments.serialize(attachments) else attachmentListJson
+        )
+
+        val burstBatchId = synchronized(pendingLock) {
+            if (currentBurstBatchId == null) {
+                currentBurstBatchId = "batch_${Clock.System.now().toEpochMilliseconds()}"
+            }
+            if (pendingParams == null) {
+                pendingParams = SendParams(
+                    appContext = appContext,
+                    url = url,
+                    spec = spec,
+                    key = key,
+                    model = model,
+                    name = name,
+                    style = style,
+                    memoryTier = memoryTier,
+                    webSearchEnabled = webSearchEnabled,
+                    typingHapticsEnabled = typingHapticsEnabled,
+                    useLocalModel = useLocalModel,
+                    useLocalTools = useLocalTools,
+                    useLocalGpu = useLocalGpu,
+                    confirmTools = confirmTools,
+                    smallModelMode = smallModelMode,
+                    agentMode = agentMode,
+                    localWebSearch = localWebSearch,
+                    reasoning = reasoning,
+                    targetConversationId = targetKey
+                )
+            }
+            pendingQueue.add(pendingMsg)
+            currentBurstBatchId
+        }
+
+        if (insertUserMessage) {
+            genScope.launch {
+                var convId = targetConversationId ?: currentConversationId
+                if (convId == null) {
+                    convId = db.chatConversationDao.insert(ChatConversation())
+                    setActiveConversation(convId)
+                    observeCurrentConversation(db)
+                }
+                val conversationId = convId
+                val rowId = db.chatDao.insert(
+                    ChatMessage(
+                        role = "user",
+                        content = text,
+                        attachmentMime = attachmentMime,
+                        attachmentData = attachmentData,
+                        attachmentName = attachmentName,
+                        attachmentList = if (attachments.size > 1) com.lucent.app.data.Attachments.serialize(attachments) else attachmentListJson,
+                        conversationId = conversationId,
+                        quotedRole = effectiveQuote?.role,
+                        quotedText = effectiveQuote?.content?.take(200),
+                        batchId = burstBatchId
+                    )
+                )
+                pendingMsg.dbMessageId = rowId
+                synchronized(pendingLock) {
+                    if (pendingParams?.targetConversationId == null) {
+                        pendingParams = pendingParams?.copy(targetConversationId = conversationId)
+                    }
+                }
+                db.chatConversationDao.getById(conversationId)?.let { conv ->
+                    val newTitle = if (conv.title.isBlank() || conv.title == "New conversation") {
+                        text.trim().take(40).ifBlank { conv.title }
+                    } else conv.title
+                    db.chatConversationDao.update(
+                        conv.copy(title = newTitle, updatedAt = Clock.System.now().toEpochMilliseconds())
+                    )
+                }
+            }
+        }
+
+        resetDebounce()
+        publishState()
     }
 
     private fun continueGoalRound(turn: Turn) {
@@ -1072,6 +1380,7 @@ class AssistantControllerImpl(
             webSearchEnabled = params.webSearchEnabled,
             typingHapticsEnabled = params.typingHaptics,
             insertUserMessage = false,
+            skipDebounce = true,
             useLocalModel = params.useLocalModel,
             useLocalTools = params.useLocalTools,
             useLocalGpu = params.useLocalGpu,
@@ -1579,8 +1888,31 @@ class AssistantControllerImpl(
         return head + dropped + trimmed
     }
 
-    private suspend fun buildHistory(db: AppDatabase, conversationId: Long, tier: MemoryTier): List<ChatTurn> {
+    private fun normalizeRoles(turns: List<ChatTurn>): List<ChatTurn> {
+        if (turns.isEmpty()) return turns
+        val result = mutableListOf(turns.first())
+        for (i in 1 until turns.size) {
+            val current = turns[i]
+            val last = result.last()
+            if (current.role == last.role && current.role in setOf("user", "assistant")) {
+                result[result.lastIndex] = last.copy(
+                    content = "${last.content}\n\n${current.content}"
+                )
+            } else {
+                result.add(current)
+            }
+        }
+        return result
+    }
+
+    private suspend fun buildHistory(
+        db: AppDatabase,
+        conversationId: Long,
+        tier: MemoryTier,
+        excludeIds: Set<Long> = emptySet()
+    ): List<ChatTurn> {
         val current = db.chatDao.getForConversationOnce(conversationId)
+            .filter { it.id !in excludeIds }
             .map {
                 ChatTurn(
                     it.role, it.content, it.attachmentMime, it.attachmentData,
@@ -1588,10 +1920,11 @@ class AssistantControllerImpl(
                     reasoningContent = it.reasoningText.orEmpty()
                 )
             }
-        return when (tier) {
+        val budgeted = when (tier) {
             MemoryTier.LOW -> current.takeLast(1)
             MemoryTier.MEDIUM, MemoryTier.HIGH -> current
         }
+        return normalizeRoles(budgeted)
     }
 
     private fun buildQuotedContextBlock(
@@ -2128,6 +2461,7 @@ object AssistantController {
         webSearchEnabled: Boolean,
         typingHapticsEnabled: Boolean = true,
         insertUserMessage: Boolean = true,
+        skipDebounce: Boolean = false,
         useLocalModel: Boolean = false,
         useLocalTools: Boolean = false,
         useLocalGpu: Boolean = false,
@@ -2146,7 +2480,7 @@ object AssistantController {
         attachmentData = attachmentData, attachmentName = attachmentName, url = url, spec = spec,
         key = key, model = model, name = name, style = style, memoryTier = memoryTier,
         webSearchEnabled = webSearchEnabled, typingHapticsEnabled = typingHapticsEnabled,
-        insertUserMessage = insertUserMessage, useLocalModel = useLocalModel,
+        insertUserMessage = insertUserMessage, skipDebounce = skipDebounce, useLocalModel = useLocalModel,
         useLocalTools = useLocalTools, useLocalGpu = useLocalGpu, confirmTools = confirmTools,
         smallModelMode = smallModelMode, agentMode = agentMode, localWebSearch = localWebSearch,
         reasoning = reasoning, answersMessageId = answersMessageId,
@@ -2154,6 +2488,7 @@ object AssistantController {
         attachments = attachments, quoteTarget = quoteTarget
     )
 
+    fun notifyUserTyping() { backing?.notifyUserTyping() }
 
     fun clearError() { backing?.clearError() }
     fun clearNetworkError() { backing?.clearNetworkError() }

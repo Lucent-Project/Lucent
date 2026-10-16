@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
-import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -26,7 +25,6 @@ import com.lucent.app.platform.LocalPlatformContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.io.encoding.Base64
-import com.lucent.desktop.platform.DesktopCloudFolders
 import com.lucent.desktop.platform.DesktopFiles
 import com.lucent.desktop.platform.FileFilter
 import kotlinx.coroutines.Dispatchers
@@ -153,24 +151,6 @@ fun AssistantScreen(active: Boolean = true) {
                 },
                 onClick = { close(); pickAttachment(imagesOnly = true) }
             )
-            val cloudDir = remember { DesktopCloudFolders.firstAvailable() }
-            DropdownMenuItem(
-                text = { Text(com.lucent.app.i18n.S.attachFromCloud) },
-                leadingIcon = {
-                    Icon(Icons.Default.CloudQueue, contentDescription = null, modifier = Modifier.size(18.dp))
-                },
-                enabled = cloudDir != null,
-                onClick = { close(); pickAttachment(startIn = cloudDir) }
-            )
-            if (cloudDir == null) {
-                Text(
-                    com.lucent.app.i18n.S.attachNoCloudFolder,
-                    color = onGradientMuted,
-                    fontSize = 11.sp,
-                    lineHeight = 14.sp,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
-                )
-            }
         },
         inputModifier = { submit, sending ->
             Modifier

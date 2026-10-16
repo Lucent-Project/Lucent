@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
-import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PhotoCamera
 import com.lucent.app.ui.LucentGlassDropdownMenuItem
@@ -29,15 +28,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-
-private val CLOUD_STORAGE_PACKAGES = listOf(
-    "com.google.android.apps.docs",
-    "com.microsoft.skydrive",
-    "com.dropbox.android",
-    "com.box.android",
-    "com.yandex.disk",
-    "mega.privacy.android.app"
-)
 
 private fun newCameraCaptureUri(context: Context): Uri? = try {
     val dir = java.io.File(context.cacheDir, "camera-capture").apply { mkdirs() }
@@ -133,19 +123,6 @@ fun AssistantScreen(active: Boolean = true) {
         uris.forEach { uri -> scope.launch { ingestAttachment(uri) } }
     }
 
-    val cloudStorageAvailable = remember(context) {
-        CLOUD_STORAGE_PACKAGES.any { pkg ->
-            try {
-                context.packageManager.getApplicationInfo(pkg, 0)
-                true
-            } catch (_: android.content.pm.PackageManager.NameNotFoundException) {
-                false
-            }
-        }
-    }
-    val cloudPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris: List<Uri> ->
-        uris.forEach { uri -> scope.launch { ingestAttachment(uri) } }
-    }
 
     var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok: Boolean ->
@@ -241,14 +218,6 @@ fun AssistantScreen(active: Boolean = true) {
                         galleryLauncher.launch("image/*")
                     }
                 }
-            )
-            LucentGlassDropdownMenuItem(
-                text = { Text(com.lucent.app.i18n.S.attachFromCloud) },
-                leadingIcon = {
-                    Icon(Icons.Default.CloudQueue, contentDescription = null, modifier = Modifier.size(18.dp))
-                },
-                enabled = cloudStorageAvailable,
-                onClick = { close(); cloudPickerLauncher.launch(arrayOf("*/*")) }
             )
         },
         inputModifier = { _, _ -> Modifier.heightIn(min = 56.dp) },

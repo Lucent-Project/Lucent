@@ -70,7 +70,6 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -79,10 +78,8 @@ import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.OpenInFull
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material3.Checkbox
 import com.lucent.app.ui.LucentGlassAlertDialog
 import com.lucent.app.ui.LucentGlassDropdownMenu
 import com.lucent.app.ui.LucentGlassDropdownMenuItem
@@ -129,7 +126,6 @@ import com.lucent.app.data.AppDatabase
 import com.lucent.app.data.ChatMessage
 import com.lucent.app.data.ChatSearch
 import com.lucent.app.data.MemoryTier
-import com.lucent.app.data.ReplyFiles
 import com.lucent.app.data.SettingsCache
 import com.lucent.app.data.SettingsRepository
 import com.lucent.app.data.TokenEstimator
@@ -266,7 +262,6 @@ fun AssistantChatBody(
     var renameText by remember { mutableStateOf("") }
     var convoActions by remember { mutableStateOf<com.lucent.app.data.ChatConversation?>(null) }
     var convoToDelete by remember { mutableStateOf<com.lucent.app.data.ChatConversation?>(null) }
-    var downloadDialogMsg by remember { mutableStateOf<ChatMessage?>(null) }
 
     var deepMatches by remember { mutableStateOf<List<ChatSearch.MessageMatch>>(emptyList()) }
     var pendingJump by remember { mutableStateOf<ChatSearch.MessageMatch?>(null) }
@@ -517,26 +512,6 @@ fun AssistantChatBody(
         )
     }
 
-    downloadDialogMsg?.let { msg ->
-        DownloadFilesDialog(
-            message = msg,
-            assistantName = assistantName,
-            onDismiss = { downloadDialogMsg = null },
-            onSaveText = { fileName, text ->
-                onSaveText(fileName, text)
-                downloadDialogMsg = null
-            },
-            onSaveFile = { fileName, bytes ->
-                onSaveFile(fileName, bytes)
-                downloadDialogMsg = null
-            },
-            onSaveZip = { entries ->
-                onSaveZip("lucent-reply.zip", entries)
-                downloadDialogMsg = null
-            }
-        )
-    }
-
 
     networkError?.let { message ->
         LucentGlassAlertDialog(
@@ -601,7 +576,11 @@ fun AssistantChatBody(
                         modifier = Modifier.size(24.dp)
                     )
                 }
-                LucentGlassDropdownMenu(expanded = conversationMenuOpen, onDismissRequest = { conversationMenuOpen = false }) {
+                LucentGlassDropdownMenu(
+                    expanded = conversationMenuOpen,
+                    onDismissRequest = { conversationMenuOpen = false },
+                    backgroundAlpha = 0.95f
+                ) {
                     val convos = AssistantController.conversations
                     Column(modifier = Modifier.width(210.dp)) {
                         OutlinedTextField(
@@ -1015,12 +994,6 @@ fun AssistantChatBody(
                                         }
                                     }
                                 }
-                                IconButton(
-                                    onClick = { downloadDialogMsg = msg },
-                                    modifier = Modifier.height(28.dp)
-                                ) {
-                                    Icon(Icons.Default.Download, contentDescription = com.lucent.app.i18n.S.a11yDownloadReplyFiles, tint = onGradientMuted)
-                                }
                                 if (msg.tokens > 0) {
                                     Text(
                                         TokenEstimator.label(msg.tokens),
@@ -1066,6 +1039,39 @@ fun AssistantChatBody(
                                     )
                                 }
                             )
+                            if (isUser) {
+                                LucentGlassDropdownMenuItem(
+                                    text = { Text(com.lucent.app.i18n.S.actionResend) },
+                                    enabled = !sending,
+                                    onClick = {
+                                        contextMenuMessage = null
+                                        val useLocal = localModelEnabled
+                                        AssistantController.resend(
+                                            appContext = context.applicationContext,
+                                            message = msg,
+                                            url = savedUrl,
+                                            spec = when (savedSpecStr) {
+                                                "anthropic" -> ApiSpec.ANTHROPIC
+                                                "google" -> ApiSpec.GOOGLE
+                                                else -> ApiSpec.OPENAI
+                                            },
+                                            key = savedKey, model = savedModel,
+                                            name = assistantName.ifBlank { "Lucent" }, style = assistantStyle,
+                                            memoryTier = effectiveTier,
+                                            webSearchEnabled = webSearchEnabled,
+                                            typingHapticsEnabled = typingHapticsEnabled,
+                                            useLocalModel = useLocal,
+                                            useLocalTools = localToolsEnabled,
+                                            useLocalGpu = localGpuEnabled,
+                                            confirmTools = confirmToolsEnabled,
+                                            smallModelMode = smallModelMode,
+                                            agentMode = agentModeOn,
+                                            localWebSearch = webSearchEnabled,
+                                            reasoning = reasoningKey
+                                        )
+                                    }
+                                )
+                            }
                             LucentGlassDropdownMenuItem(
                                 text = { Text(com.lucent.app.i18n.S.actionDelete) },
                                 isDestructive = true,
@@ -1076,42 +1082,6 @@ fun AssistantChatBody(
                             )
                         }
                         }
-                        }
-                    }
-                    if (isUser) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            IconButton(
-                                onClick = {
-                                    val useLocal = localModelEnabled
-                                    AssistantController.resend(
-                                        appContext = context.applicationContext,
-                                        message = msg,
-                                        url = savedUrl,
-                                        spec = when (savedSpecStr) {
-                                            "anthropic" -> ApiSpec.ANTHROPIC
-                                            "google" -> ApiSpec.GOOGLE
-                                            else -> ApiSpec.OPENAI
-                                        },
-                                        key = savedKey, model = savedModel,
-                                        name = assistantName.ifBlank { "Lucent" }, style = assistantStyle,
-                                        memoryTier = effectiveTier,
-                                        webSearchEnabled = webSearchEnabled,
-                                        typingHapticsEnabled = typingHapticsEnabled,
-                                        useLocalModel = useLocal,
-                                        useLocalTools = localToolsEnabled,
-                                        useLocalGpu = localGpuEnabled,
-                                        confirmTools = confirmToolsEnabled,
-                                        smallModelMode = smallModelMode,
-                                        agentMode = agentModeOn,
-                                        localWebSearch = webSearchEnabled,
-                                        reasoning = reasoningKey
-                                    )
-                                },
-                                enabled = !sending,
-                                modifier = Modifier.size(26.dp)
-                            ) {
-                                Icon(Icons.Default.Refresh, contentDescription = com.lucent.app.i18n.S.resendMessage, tint = onGradientMuted, modifier = Modifier.size(18.dp))
-                            }
                         }
                     }
                 }
@@ -1132,7 +1102,7 @@ fun AssistantChatBody(
                                         trace = liveTrace,
                                         tint = onGradient,
                                         mutedTint = onGradientMuted,
-                                        initiallyExpanded = true
+                                        initiallyExpanded = false
                                     )
                                     Spacer(modifier = Modifier.height(6.dp))
                                 }
@@ -1150,7 +1120,7 @@ fun AssistantChatBody(
                                         trace = liveTrace,
                                         tint = onGradient,
                                         mutedTint = onGradientMuted,
-                                        initiallyExpanded = true
+                                        initiallyExpanded = false
                                     )
                                     Spacer(modifier = Modifier.height(6.dp))
                                 }
@@ -1172,7 +1142,7 @@ fun AssistantChatBody(
                                     trace = controllerErrorTrace,
                                     tint = onGradient,
                                     mutedTint = onGradientMuted,
-                                    initiallyExpanded = true
+                                    initiallyExpanded = false
                                 )
                                 Spacer(modifier = Modifier.height(6.dp))
                             }
@@ -1340,7 +1310,10 @@ fun AssistantChatBody(
                 }
                 OutlinedTextField(
                     value = draft.input,
-                    onValueChange = { draft.input  = com.lucent.app.collapseExcessBlankLines(it) },
+                    onValueChange = {
+                        draft.input = com.lucent.app.collapseExcessBlankLines(it)
+                        AssistantController.notifyUserTyping()
+                    },
                     trailingIcon = {
                         var inputExpanded by androidx.compose.runtime.remember {
                             androidx.compose.runtime.mutableStateOf(false)
@@ -1396,7 +1369,10 @@ fun AssistantChatBody(
                         if (inputExpanded) {
                             LucentExpandedInput(
                                 value = draft.input,
-                                onValueChange = { draft.input  = com.lucent.app.collapseExcessBlankLines(it) },
+                                onValueChange = {
+                                    draft.input = com.lucent.app.collapseExcessBlankLines(it)
+                                    AssistantController.notifyUserTyping()
+                                },
                                 placeholder = com.lucent.app.i18n.S.messagePlaceholder,
                                 title = com.lucent.app.i18n.S.messagePlaceholder,
                                 onCollapse = { inputExpanded = false }
@@ -1407,7 +1383,7 @@ fun AssistantChatBody(
                     singleLine = inputSingleLine,
                     maxLines = inputMaxLines,
                     textStyle = LocalTextStyle.current.copy(fontSize = 13.sp),
-                    modifier = Modifier.weight(1f).then(inputModifier(submitMessage, sending))
+                    modifier = Modifier.weight(1f).then(inputModifier(submitMessage, false))
                 )
                 if (sending) {
                     ComposerGlassButton(
@@ -1417,15 +1393,14 @@ fun AssistantChatBody(
                         tint = onGradient,
                         modifier = Modifier.align(Alignment.CenterVertically)
                     )
-                } else {
-                    ComposerGlassButton(
-                        icon = Icons.AutoMirrored.Filled.Send,
-                        contentDescription = com.lucent.app.i18n.S.a11ySend,
-                        onClick = submitMessage,
-                        tint = onGradient,
-                        modifier = Modifier.align(Alignment.CenterVertically)
-                    )
                 }
+                ComposerGlassButton(
+                    icon = Icons.AutoMirrored.Filled.Send,
+                    contentDescription = com.lucent.app.i18n.S.a11ySend,
+                    onClick = submitMessage,
+                    tint = onGradient,
+                    modifier = Modifier.align(Alignment.CenterVertically)
+                )
             }
         }
     }
@@ -1533,208 +1508,7 @@ private fun ThinkingBubble(name: String, tint: Color, mutedTint: Color, loadingM
     }
 }
 
-@Composable
-private fun DownloadFilesDialog(
-    message: ChatMessage,
-    assistantName: String,
-    onDismiss: () -> Unit,
-    onSaveText: (fileName: String, text: String) -> Unit,
-    onSaveFile: (fileName: String, bytes: ByteArray) -> Unit,
-    onSaveZip: (entries: List<Pair<String, ByteArray>>) -> Unit
-) {
-    val context = LocalPlatformContext.current
-    val scope = rememberCoroutineScope()
-    val hasText = message.content.isNotBlank()
-    val messageAtts = remember(message.id, message.attachmentData, message.attachmentList) {
-        com.lucent.app.data.ChatAttachments.all(
-            message.attachmentMime, message.attachmentData, message.attachmentName, message.attachmentList)
-    }
-    val hasAttachment = messageAtts.isNotEmpty()
-    val selAtts = remember(message.id) {
-        mutableStateMapOf<Int, Boolean>().apply { messageAtts.indices.forEach { put(it, true) } }
-    }
-    val textFileName = "lucent-reply.txt"
 
-    val replyFiles = remember(message.id, message.content) { ReplyFiles.extract(message.content) }
-
-    var selText by remember(message.id) { mutableStateOf(hasText) }
-    val selRemote = remember(message.id) {
-        mutableStateMapOf<String, Boolean>().apply { replyFiles.forEach { put(it.url, true) } }
-    }
-    var working by remember(message.id) { mutableStateOf(false) }
-    var failure by remember(message.id) { mutableStateOf("") }
-
-    LucentGlassAlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(com.lucent.app.i18n.S.downloadFilesTitle) },
-        text = {
-            Column {
-                Text(com.lucent.app.i18n.S.downloadChoose, fontSize = 13.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                if (hasText) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth().clickable { selText = !selText }
-                    ) {
-                        Checkbox(checked = selText, onCheckedChange = { selText = it })
-                        Text(com.lucent.app.i18n.S.downloadReplyTxt)
-                    }
-                }
-                if (hasAttachment) {
-                    messageAtts.forEachIndexed { idx, att ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth().clickable { selAtts[idx] = !(selAtts[idx] ?: false) }
-                        ) {
-                            Checkbox(
-                                checked = selAtts[idx] ?: false,
-                                onCheckedChange = { selAtts[idx] = it }
-                            )
-                            Text(att.name.ifBlank { com.lucent.app.i18n.S.a11yAttachment }, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-                    }
-                }
-                replyFiles.forEach { file ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth().clickable {
-                            selRemote[file.url] = !(selRemote[file.url] ?: false)
-                        }
-                    ) {
-                        Checkbox(
-                            checked = selRemote[file.url] ?: false,
-                            onCheckedChange = { selRemote[file.url] = it }
-                        )
-                        Text(file.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                }
-                if (!hasText && !hasAttachment && replyFiles.isEmpty()) {
-                    Text(com.lucent.app.i18n.S.downloadNone, fontSize = 13.sp)
-                }
-                if (working) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(com.lucent.app.i18n.S.downloadFetching, fontSize = 12.sp)
-                }
-                if (failure.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(failure, fontSize = 12.sp, color = OverdueColor)
-                }
-                if (replyFiles.isNotEmpty() || hasAttachment) {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(com.lucent.app.i18n.S.downloadSaveInto, fontSize = 12.sp)
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        TextButton(
-                            enabled = !working,
-                            onClick = {
-                                working = true; failure = ""
-                                scope.launch {
-                                    val ok = saveReplyIntoItem(context, message, replyFiles, selRemote,
-                                        localAtts = messageAtts.filterIndexed { i, _ -> selAtts[i] == true }, asTask = false)
-                                    working = false
-                                    if (ok) onDismiss() else failure = com.lucent.app.i18n.S.downloadFetchFailed
-                                }
-                            }
-                        ) { Text(com.lucent.app.i18n.S.saveAsNote) }
-                        TextButton(
-                            enabled = !working,
-                            onClick = {
-                                working = true; failure = ""
-                                scope.launch {
-                                    val ok = saveReplyIntoItem(context, message, replyFiles, selRemote,
-                                        localAtts = messageAtts.filterIndexed { i, _ -> selAtts[i] == true }, asTask = true)
-                                    working = false
-                                    if (ok) onDismiss() else failure = com.lucent.app.i18n.S.downloadFetchFailed
-                                }
-                            }
-                        ) { Text(com.lucent.app.i18n.S.saveAsTask) }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            val anyRemote = replyFiles.any { selRemote[it.url] == true }
-            TextButton(
-                enabled = (selText || selAtts.values.any { it } || anyRemote) && !working,
-                onClick = {
-                    working = true; failure = ""
-                    scope.launch {
-                        val entries = mutableListOf<Pair<String, ByteArray>>()
-                        if (selText && hasText) entries.add(textFileName to message.content.toByteArray())
-                        messageAtts.forEachIndexed { idx, att ->
-                            if (selAtts[idx] != true) return@forEachIndexed
-                            val bytes = try { Base64.Mime.decode(att.data) } catch (t: Throwable) { ByteArray(0) }
-                            entries.add((att.name.ifBlank { "attachment" }) to bytes)
-                        }
-                        var missed = 0
-                        for (file in replyFiles) {
-                            if (selRemote[file.url] != true) continue
-                            val bytes = withContext(Dispatchers.IO) { ReplyFiles.fetch(file) }
-                            if (bytes == null) missed++ else entries.add(file.name to bytes)
-                        }
-                        working = false
-                        if (entries.isEmpty()) {
-                            failure = com.lucent.app.i18n.S.downloadFetchFailed
-                            return@launch
-                        }
-                        if (missed > 0) failure = com.lucent.app.i18n.S.downloadFetchPartial(missed)
-                        if (entries.size == 1) {
-                            val (n, b) = entries.first()
-                            if (n == textFileName) onSaveText(n, message.content) else onSaveFile(n, b)
-                        } else {
-                            onSaveZip(entries)
-                        }
-                    }
-                }
-            ) { Text(com.lucent.app.i18n.S.actionDownload) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(com.lucent.app.i18n.S.actionCancel) } }
-    )
-}
-
-private suspend fun saveReplyIntoItem(
-    context: PlatformContext,
-    message: ChatMessage,
-    replyFiles: List<ReplyFiles.ReplyFile>,
-    selected: Map<String, Boolean>,
-    localAtts: List<com.lucent.app.data.Attachment> = emptyList(),
-    asTask: Boolean
-): Boolean = withContext(Dispatchers.IO) {
-    val db = createAppDatabase(context.applicationContext)
-    val title = message.content.lineSequence()
-        .firstOrNull { it.isNotBlank() }
-        ?.trim()
-        ?.take(60)
-        ?.ifBlank { null }
-        ?: com.lucent.app.i18n.S.conversationFallback
-    val wanted = replyFiles.filter { selected[it.url] == true }
-    if (wanted.isEmpty() && localAtts.isEmpty()) {
-        return@withContext ReplyFiles.saveToNewItem(
-            context.applicationContext, db, asTask, title, message.content,
-            fileName = "", mime = "", bytes = ByteArray(0)
-        )
-    }
-    var saved = 0
-    for (att in localAtts) {
-        val bytes = try { Base64.Mime.decode(att.data) } catch (t: Throwable) { ByteArray(0) }
-        val ok = ReplyFiles.saveToNewItem(
-            context.applicationContext, db, asTask, title, message.content,
-            att.name, att.mime, bytes
-        )
-        if (ok) saved++
-    }
-    for (file in wanted) {
-        val bytes = ReplyFiles.fetch(file) ?: continue
-        val mime = if (file.isImage) "image/*" else "application/octet-stream"
-        val ok = ReplyFiles.saveToNewItem(
-            context.applicationContext, db, asTask, title, message.content,
-            file.name, mime, bytes
-        )
-        if (ok) saved++
-    }
-    saved > 0
-}
 
 private fun buildChatExportEntries(
     messages: List<ChatMessage>,

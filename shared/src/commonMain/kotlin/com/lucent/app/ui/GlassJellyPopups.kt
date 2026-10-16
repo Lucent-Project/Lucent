@@ -412,9 +412,34 @@ fun LucentGlassDropdownMenu(
     offset: DpOffset = DpOffset(0.dp, 0.dp),
     scrollState: ScrollState = rememberScrollState(),
     properties: PopupProperties = PopupProperties(focusable = true),
+    backgroundAlpha: Float = 1f,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val tokens = GlassJellyDefaults.tokens()
+    val defaultTokens = GlassJellyDefaults.tokens()
+    val tokens = if (backgroundAlpha != 1f) {
+        val bgColors = if (defaultTokens.isDark) {
+            listOf(
+                Color(0xFF2B283C).copy(alpha = backgroundAlpha),
+                Color(0xFF1D1B29).copy(alpha = backgroundAlpha),
+                Color(0xFF252136).copy(alpha = backgroundAlpha)
+            )
+        } else {
+            listOf(
+                Color(0xFFFFFFFF).copy(alpha = backgroundAlpha),
+                Color(0xFFF6F3FC).copy(alpha = backgroundAlpha),
+                Color(0xFFEDE6FA).copy(alpha = backgroundAlpha)
+            )
+        }
+        defaultTokens.copy(
+            backgroundBrush = Brush.verticalGradient(
+                0.00f to bgColors[0],
+                0.52f to bgColors[1],
+                1.00f to bgColors[2]
+            )
+        )
+    } else {
+        defaultTokens
+    }
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,

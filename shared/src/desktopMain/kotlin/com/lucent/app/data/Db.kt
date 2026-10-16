@@ -52,7 +52,7 @@ class Db private constructor(private val connection: Connection) {
 
     companion object {
 
-        const val SCHEMA_VERSION = 25
+        const val SCHEMA_VERSION = 26
 
         fun open(context: PlatformContext): Db {
             val file = File(context.filesDir.toString(), "lucent.db")
@@ -306,6 +306,7 @@ class Db private constructor(private val connection: Connection) {
                             addColumnIfMissing(conn, "chat_messages", "reasoningText", "TEXT")
                         25 -> addColumnIfMissing(conn, "chat_messages", "quotedRole", "TEXT") &&
                             addColumnIfMissing(conn, "chat_messages", "quotedText", "TEXT")
+                        26 -> addColumnIfMissing(conn, "chat_messages", "batchId", "TEXT")
                         else -> true
                     }
                 } catch (t: Throwable) {
@@ -458,7 +459,8 @@ class Db private constructor(private val connection: Connection) {
                         "reasoningBlocks TEXT, " +
                         "reasoningText TEXT, " +
                         "quotedRole TEXT, " +
-                        "quotedText TEXT)"
+                        "quotedText TEXT, " +
+                        "batchId TEXT)"
                 )
                 st.executeUpdate(
                     "CREATE TABLE IF NOT EXISTS chat_conversations (" +

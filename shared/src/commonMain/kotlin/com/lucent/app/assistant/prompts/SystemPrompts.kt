@@ -164,6 +164,7 @@ object SystemPrompts {
             if (tier == MemoryTier.HIGH) {
                 append("Background from other chats with this user arrives in the Lucent context block.\n")
             }
+            append("When the user's message contains <user_burst_messages>, it means the user sent multiple messages in rapid succession. Treat them as a single coherent request and respond once comprehensively.\n")
             append("\n")
             append(com.lucent.app.harness.HarnessPrompt.compactBlock())
             append(context(userText))
@@ -501,6 +502,7 @@ object SystemPrompts {
                 append("relevant, but stay focused on what they are asking now.\n\n")
             }
 
+            append("When the user's message contains <user_burst_messages>, it means the user sent multiple messages in rapid succession. Treat them as a single coherent request and respond once comprehensively. ")
             append("Above all: be genuinely warm, actually helpful, and completely human. Confirm what you ")
             append("did the way a friend would mention it in passing, never in a scripted way.")
             append(com.lucent.app.harness.HarnessPrompt.block())

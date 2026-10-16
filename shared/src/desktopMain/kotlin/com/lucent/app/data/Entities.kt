@@ -194,7 +194,8 @@ actual class ChatMessage actual constructor(
     actual val reasoningBlocks: String?,
     actual val reasoningText: String?,
     actual val quotedRole: String?,
-    actual val quotedText: String?
+    actual val quotedText: String?,
+    actual val batchId: String?
 ){
 
     actual fun copy(
@@ -213,8 +214,9 @@ actual class ChatMessage actual constructor(
         reasoningBlocks: String?,
         reasoningText: String?,
         quotedRole: String?,
-        quotedText: String?
-    ): ChatMessage = ChatMessage(id = id, role = role, content = content, timestamp = timestamp, attachmentMime = attachmentMime, attachmentData = attachmentData, attachmentName = attachmentName, attachmentList = attachmentList, conversationId = conversationId, tokens = tokens, replyToId = replyToId, agentTrace = agentTrace, reasoningBlocks = reasoningBlocks, reasoningText = reasoningText, quotedRole = quotedRole, quotedText = quotedText)
+        quotedText: String?,
+        batchId: String?
+    ): ChatMessage = ChatMessage(id = id, role = role, content = content, timestamp = timestamp, attachmentMime = attachmentMime, attachmentData = attachmentData, attachmentName = attachmentName, attachmentList = attachmentList, conversationId = conversationId, tokens = tokens, replyToId = replyToId, agentTrace = agentTrace, reasoningBlocks = reasoningBlocks, reasoningText = reasoningText, quotedRole = quotedRole, quotedText = quotedText, batchId = batchId)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -234,12 +236,13 @@ actual class ChatMessage actual constructor(
         reasoningBlocks == other.reasoningBlocks &&
         reasoningText == other.reasoningText &&
         quotedRole == other.quotedRole &&
-        quotedText == other.quotedText
+        quotedText == other.quotedText &&
+        batchId == other.batchId
     }
 
-    override fun hashCode(): Int = listOf(id, role, content, timestamp, attachmentMime, attachmentData, attachmentName, attachmentList, conversationId, tokens, replyToId, agentTrace, reasoningBlocks, reasoningText, quotedRole, quotedText).hashCode()
+    override fun hashCode(): Int = listOf(id, role, content, timestamp, attachmentMime, attachmentData, attachmentName, attachmentList, conversationId, tokens, replyToId, agentTrace, reasoningBlocks, reasoningText, quotedRole, quotedText, batchId).hashCode()
 
-    override fun toString(): String = "ChatMessage(id=$id, role=$role, content=$content, timestamp=$timestamp, attachmentMime=$attachmentMime, attachmentData=$attachmentData, attachmentName=$attachmentName, attachmentList=$attachmentList, conversationId=$conversationId, tokens=$tokens, replyToId=$replyToId, agentTrace=$agentTrace, reasoningBlocks=$reasoningBlocks, reasoningText=$reasoningText, quotedRole=$quotedRole, quotedText=$quotedText)"
+    override fun toString(): String = "ChatMessage(id=$id, role=$role, content=$content, timestamp=$timestamp, attachmentMime=$attachmentMime, attachmentData=$attachmentData, attachmentName=$attachmentName, attachmentList=$attachmentList, conversationId=$conversationId, tokens=$tokens, replyToId=$replyToId, agentTrace=$agentTrace, reasoningBlocks=$reasoningBlocks, reasoningText=$reasoningText, quotedRole=$quotedRole, quotedText=$quotedText, batchId=$batchId)"
 }
 
 actual class ChatConversation actual constructor(

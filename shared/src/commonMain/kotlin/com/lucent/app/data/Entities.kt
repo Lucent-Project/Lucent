@@ -256,7 +256,8 @@ expect class ChatMessage(
     reasoningBlocks: String? = null,
     reasoningText: String? = null,
     quotedRole: String? = null,
-    quotedText: String? = null
+    quotedText: String? = null,
+    batchId: String? = null
 ) {
     val id: Long
     val role: String
@@ -274,6 +275,7 @@ expect class ChatMessage(
     val reasoningText: String?
     val quotedRole: String?
     val quotedText: String?
+    val batchId: String?
 
     fun copy(
         id: Long = this.id,
@@ -291,7 +293,8 @@ expect class ChatMessage(
         reasoningBlocks: String? = this.reasoningBlocks,
         reasoningText: String? = this.reasoningText,
         quotedRole: String? = this.quotedRole,
-        quotedText: String? = this.quotedText
+        quotedText: String? = this.quotedText,
+        batchId: String? = this.batchId
     ): ChatMessage
 }
 
