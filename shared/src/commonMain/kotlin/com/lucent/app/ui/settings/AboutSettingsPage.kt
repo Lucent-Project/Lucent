@@ -51,6 +51,7 @@ fun AboutSettingsPage(
     val autoUpdateOn by repo.autoUpdateEnabled.collectAsState(initial = SettingsCache.autoUpdateEnabled)
     val updateChannel by repo.updateChannel.collectAsState(initial = SettingsCache.updateChannel)
     val pendingChannel = remember { mutableStateOf<String?>(null) }
+    val showAutoUpdateNotice = remember { mutableStateOf(false) }
 
     LaunchedEffect(AutoUpdate.message, AutoUpdate.offered) {
         if (AutoUpdate.message != null && AutoUpdate.offered == null) {
@@ -71,6 +72,9 @@ fun AboutSettingsPage(
         onToggle = { checked ->
             SettingsCache.autoUpdateEnabled = checked
             scope.launch { repo.setAutoUpdateEnabled(checked) }
+            if (checked) {
+                showAutoUpdateNotice.value = true
+            }
         },
         onCheck = { scope.launch { AutoUpdate.check(versionName, notifyWhenCurrent = true) } },
         onChannelToggle = {
@@ -106,6 +110,23 @@ fun AboutSettingsPage(
             },
             dismissButton = {
                 TextButton(onClick = { pendingChannel.value = null }) { Text(S.trackSwitchCancel) }
+            }
+        )
+    }
+
+    if (showAutoUpdateNotice.value) {
+        LucentGlassAlertDialog(
+            onDismissRequest = { showAutoUpdateNotice.value = false },
+            title = {
+                Text(S.autoUpdateNoticeTitle)
+            },
+            text = {
+                Text(S.autoUpdateNoticeBody)
+            },
+            confirmButton = {
+                TextButton(onClick = { showAutoUpdateNotice.value = false }) {
+                    Text(S.gotIt)
+                }
             }
         )
     }

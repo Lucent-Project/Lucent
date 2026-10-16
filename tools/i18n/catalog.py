@@ -1916,3 +1916,5 @@ CONDITIONAL_ENTRIES = {
     "notebooksTotal(count: Int)": ["if (count == 1) \"1 notebook\" else \"$count notebooks\"", "\"$count 个笔记本\"", "\"ノートブック ${count} 冊\"", "\"노트북 ${count}개\""],
     "notebookItemsCount(tasks: Int, notes: Int)": ["run { val t = tasks + notes; \"$t item\" + (if (t == 1) \"\" else \"s\") + \", $tasks task\" + (if (tasks == 1) \"\" else \"s\") + \", $notes note\" + (if (notes == 1) \"\" else \"s\") }", "\"${tasks + notes}项目，${tasks}任务，${notes}笔记\"", "\"${tasks + notes} 項目, $tasks タスク, $notes ノート\"", "\"항목 ${tasks + notes}개, 작업 ${tasks}개, 노트 ${notes}개\""],
 }
+    ("autoUpdateNoticeTitle", "Auto-update enabled", "已开启自动更新", "自動更新をオンにしました", "자동 업데이트를 켰습니다"),
+    ("autoUpdateNoticeBody", "Update downloads may be unstable due to network fluctuations. If a download fails, please try again later.", "更新下载可能因网络波动而不稳定。若下载失败，请稍后再试。", "ネットワークの状況によっては、更新のダウンロードが不安定になる場合があります。失敗した場合は、しばらくしてからもう一度お試しください。", "네트워크 상황에 따라 업데이트 다운로드가 불안정할 수 있습니다. 다운로드에 실패하면 잠시 후 다시 시도해 주세요."),

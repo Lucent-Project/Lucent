@@ -7321,3 +7321,11 @@ object Ko : Tr() {
     override val trayExit: String = "종료"
     override val trayOpen: String = "Lucent 열기"
 }
+    open val autoUpdateNoticeTitle: String = "Auto-update enabled"
+    open val autoUpdateNoticeBody: String = "Update downloads may be unstable due to network fluctuations. If a download fails, please try again later."
+    override val autoUpdateNoticeTitle: String = "已开启自动更新"
+    override val autoUpdateNoticeBody: String = "更新下载可能因网络波动而不稳定。若下载失败，请稍后再试。"
+    override val autoUpdateNoticeTitle: String = "自動更新をオンにしました"
+    override val autoUpdateNoticeBody: String = "ネットワークの状況によっては、更新のダウンロードが不安定になる場合があります。失敗した場合は、しばらくしてからもう一度お試しください。"
+    override val autoUpdateNoticeTitle: String = "자동 업데이트를 켰습니다"
+    override val autoUpdateNoticeBody: String = "네트워크 상황에 따라 업데이트 다운로드가 불안정할 수 있습니다. 다운로드에 실패하면 잠시 후 다시 시도해 주세요."
