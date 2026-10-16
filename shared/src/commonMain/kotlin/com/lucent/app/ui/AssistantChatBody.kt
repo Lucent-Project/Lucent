@@ -931,7 +931,7 @@ fun AssistantChatBody(
                             }
 
                             if (!isUser && processVisible) {
-                                if (savedTrace != null) {
+                                if (agentModeOn && savedTrace != null) {
                                     AgentTracePanel(
                                         trace = savedTrace,
                                         tint = onGradient,
@@ -1097,7 +1097,7 @@ fun AssistantChatBody(
                                         modifier = Modifier.padding(bottom = 3.dp)
                                     )
                                 }
-                                if (liveTrace != null && liveTrace.steps.isNotEmpty()) {
+                                if (agentModeOn && liveTrace != null && liveTrace.steps.isNotEmpty()) {
                                     AgentTracePanel(
                                         trace = liveTrace,
                                         tint = onGradient,
@@ -1115,7 +1115,7 @@ fun AssistantChatBody(
                     item(key = "thinking") {
                         Box(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.align(Alignment.CenterStart).frostedGlass().padding(12.dp)) {
-                                if (liveTrace != null && liveTrace.steps.isNotEmpty()) {
+                                if (agentModeOn && liveTrace != null && liveTrace.steps.isNotEmpty()) {
                                     AgentTracePanel(
                                         trace = liveTrace,
                                         tint = onGradient,
@@ -1137,7 +1137,7 @@ fun AssistantChatBody(
                 if (shownError.isNotBlank()) {
                     item(key = "error") {
                         Column(modifier = Modifier.fillMaxWidth()) {
-                            if (controllerErrorTrace != null) {
+                            if (agentModeOn && controllerErrorTrace != null) {
                                 AgentTracePanel(
                                     trace = controllerErrorTrace,
                                     tint = onGradient,
