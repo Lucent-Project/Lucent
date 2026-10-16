@@ -55,6 +55,7 @@ interface SettingsRepository {
         val localGpuEnabled: Boolean = false,
         val localBackgroundReplyEnabled: Boolean = false,
         val agentMode: Boolean = true,
+        val backupPasswordEnabled: Boolean = false,
         val reasoning: String = ReasoningEffort.DEFAULT.key,
         val webSearchEngine: String = WebSearchEngine.DEFAULT.key,
         val smallModelModeEnabled: Boolean = false,
@@ -138,6 +139,9 @@ interface SettingsRepository {
 
     val agentMode: Flow<Boolean>
     suspend fun setAgentMode(value: Boolean)
+
+    val backupPasswordEnabled: Flow<Boolean>
+    suspend fun setBackupPasswordEnabled(value: Boolean)
 
     val reasoning: Flow<String>
     suspend fun setReasoning(value: String)

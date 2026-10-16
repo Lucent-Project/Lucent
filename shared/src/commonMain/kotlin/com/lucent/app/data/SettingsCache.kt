@@ -144,6 +144,9 @@ object SettingsCache {
     var agentMode: Boolean = true
 
     @Volatile
+    var backupPasswordEnabled: Boolean = false
+
+    @Volatile
     var reasoning: String = com.lucent.app.data.ReasoningEffort.DEFAULT.key
 
     @Volatile
@@ -264,6 +267,7 @@ object SettingsCache {
         localGpuEnabled = prefs.localGpuEnabled
         localBackgroundReplyEnabled = prefs.localBackgroundReplyEnabled
         agentMode = prefs.agentMode
+        backupPasswordEnabled = prefs.backupPasswordEnabled
         reasoning = prefs.reasoning
         webSearchEngine = prefs.webSearchEngine
         smallModelModeEnabled = prefs.smallModelModeEnabled

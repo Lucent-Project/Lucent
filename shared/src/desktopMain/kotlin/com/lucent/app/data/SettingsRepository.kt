@@ -95,6 +95,7 @@ class DesktopSettingsRepository(private val context: PlatformContext) : Settings
         const val LOCAL_BACKGROUND_REPLY = "local_background_reply"
         const val MEMORY_TIER_LOCAL = "memory_tier_local"
         const val AGENT_MODE = "cloud_agent_mode"
+        const val BACKUP_PASSWORD_ENABLED = "auto_backup_password_enabled"
         const val REASONING_EFFORT = "reasoning_effort"
         const val WEB_SEARCH_ENGINE = "web_search_engine"
         const val MEMORY_TIER_PRELOCAL = "memory_tier_prelocal"
@@ -265,6 +266,7 @@ class DesktopSettingsRepository(private val context: PlatformContext) : Settings
             localGpuEnabled = bool(prefs, K.LOCAL_GPU_ENABLED) ?: false,
             localBackgroundReplyEnabled = bool(prefs, K.LOCAL_BACKGROUND_REPLY) ?: false,
             agentMode = bool(prefs, K.AGENT_MODE) ?: true,
+            backupPasswordEnabled = bool(prefs, K.BACKUP_PASSWORD_ENABLED) ?: false,
             reasoning = str(prefs, K.REASONING_EFFORT) ?: ReasoningEffort.DEFAULT.key,
             webSearchEngine = str(prefs, K.WEB_SEARCH_ENGINE) ?: WebSearchEngine.DEFAULT.key,
             smallModelModeEnabled = bool(prefs, K.SMALL_MODEL_MODE) ?: false,
@@ -319,6 +321,12 @@ class DesktopSettingsRepository(private val context: PlatformContext) : Settings
     override suspend fun setAgentMode(value: Boolean) {
         edit { it[K.AGENT_MODE] = value }
         SettingsCache.agentMode = value
+    }
+
+    override val backupPasswordEnabled: Flow<Boolean> = state.map { bool(it, K.BACKUP_PASSWORD_ENABLED) ?: false }
+    override suspend fun setBackupPasswordEnabled(value: Boolean) {
+        edit { it[K.BACKUP_PASSWORD_ENABLED] = value }
+        SettingsCache.backupPasswordEnabled = value
     }
 
     override val reasoning: Flow<String> = state.map {

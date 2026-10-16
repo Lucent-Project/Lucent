@@ -111,6 +111,8 @@ private object SettingsKeys {
 
     val AGENT_MODE = booleanPreferencesKey("cloud_agent_mode")
 
+    val BACKUP_PASSWORD_ENABLED = booleanPreferencesKey("auto_backup_password_enabled")
+
     val REASONING_EFFORT = stringPreferencesKey("reasoning_effort")
 
     val WEB_SEARCH_ENGINE = stringPreferencesKey("web_search_engine")
@@ -261,6 +263,7 @@ class AndroidSettingsRepository(private val context: Context) : SettingsReposito
             localGpuEnabled = prefs[SettingsKeys.LOCAL_GPU_ENABLED] ?: false,
             localBackgroundReplyEnabled = prefs[SettingsKeys.LOCAL_BACKGROUND_REPLY] ?: false,
             agentMode = prefs[SettingsKeys.AGENT_MODE] ?: true,
+            backupPasswordEnabled = prefs[SettingsKeys.BACKUP_PASSWORD_ENABLED] ?: false,
             reasoning = prefs[SettingsKeys.REASONING_EFFORT] ?: ReasoningEffort.DEFAULT.key,
             webSearchEngine = prefs[SettingsKeys.WEB_SEARCH_ENGINE] ?: WebSearchEngine.DEFAULT.key,
             smallModelModeEnabled = prefs[SettingsKeys.SMALL_MODEL_MODE] ?: false,
@@ -412,6 +415,12 @@ class AndroidSettingsRepository(private val context: Context) : SettingsReposito
     override suspend fun setAgentMode(value: Boolean) {
         context.settingsDataStore.edit { it[SettingsKeys.AGENT_MODE] = value }
         SettingsCache.agentMode = value
+    }
+
+    override val backupPasswordEnabled: Flow<Boolean> = context.settingsDataStore.data.map { it[SettingsKeys.BACKUP_PASSWORD_ENABLED] ?: false }
+    override suspend fun setBackupPasswordEnabled(value: Boolean) {
+        context.settingsDataStore.edit { it[SettingsKeys.BACKUP_PASSWORD_ENABLED] = value }
+        SettingsCache.backupPasswordEnabled = value
     }
 
     override val reasoning: Flow<String> = context.settingsDataStore.data.map {

@@ -209,7 +209,8 @@ fun DataSettingsPage(
     Spacer(modifier = Modifier.height(12.dp))
 
     Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
-        var backupPasswordEnabled by remember { mutableStateOf(false) }
+        var backupPasswordEnabled by remember { mutableStateOf(SettingsCache.backupPasswordEnabled) }
+        LaunchedEffect(Unit) { repo.backupPasswordEnabled.collect { backupPasswordEnabled = it } }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(S.autoBackupPasswordsTitle, color = onGradient)
@@ -217,7 +218,7 @@ fun DataSettingsPage(
             Spacer(modifier = Modifier.width(12.dp))
             Switch(
                 checked = backupPasswordEnabled,
-                onCheckedChange = { backupPasswordEnabled = it }
+                onCheckedChange = { scope.launch { repo.setBackupPasswordEnabled(it) } }
             )
         }
         Spacer(modifier = Modifier.height(4.dp))
