@@ -465,9 +465,15 @@ class AssistantControllerImpl(
         val marker = reason ?: com.lucent.app.i18n.S.replyStopped
         if (!turn.turnPersisted && convId != null && ctx != null) {
             turn.turnPersisted = true
-            val body = if (cleaned.isBlank()) marker else "$cleaned\n\n$marker"
-            val tokens = TokenEstimator.estimate(body)
-            AppScope.io.launch { insertAssistant(db, convId, body, null, null, tokens, traceJson = traceJson) }
+            val body = when {
+                marker.isBlank() -> cleaned
+                cleaned.isBlank() -> marker
+                else -> "$cleaned\n\n$marker"
+            }
+            if (body.isNotBlank() || traceJson != null) {
+                val tokens = TokenEstimator.estimate(body)
+                AppScope.io.launch { insertAssistant(db, convId, body, null, null, tokens, traceJson = traceJson) }
+            }
         }
     }
 
@@ -1256,7 +1262,7 @@ class AssistantControllerImpl(
         }
 
         if (turnFor(targetKey) != null) {
-            stopTurn(turnFor(targetKey)!!, reason = com.lucent.app.i18n.S.replyInterrupted)
+            stopTurn(turnFor(targetKey)!!, reason = "")
         }
 
         val pendingMsg = PendingMessage(

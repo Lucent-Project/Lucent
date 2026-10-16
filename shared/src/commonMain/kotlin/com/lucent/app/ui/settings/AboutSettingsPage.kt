@@ -6,13 +6,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import com.lucent.app.ui.LucentGlassAlertDialog
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -23,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lucent.app.LucentBuild
@@ -162,13 +166,15 @@ private fun AboutUpdateCard(
     val onGradient = LocalOnGradient.current
     val onGradientMuted = LocalOnGradientMuted.current
     Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().heightIn(min = 32.dp).padding(vertical = 4.dp)) {
             Text(S.aboutAutoUpdate, color = onGradient, fontSize = 15.sp, modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.width(12.dp))
-            Switch(checked = autoUpdateOn, onCheckedChange = onToggle)
+            CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+                Switch(checked = autoUpdateOn, onCheckedChange = onToggle)
+            }
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { onChannelToggle() }.padding(vertical = 4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().heightIn(min = 32.dp).clickable { onChannelToggle() }.padding(vertical = 4.dp)) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(S.updateChannelTitle, color = onGradient, fontSize = 15.sp)
             }
@@ -176,7 +182,7 @@ private fun AboutUpdateCard(
             Text(if (updateChannel == "preview") S.updateChannelPreview else S.updateChannelStable, color = onGradientMuted, fontSize = 14.sp)
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable(enabled = !busy) { onCheck() }.padding(vertical = 4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().heightIn(min = 32.dp).clickable(enabled = !busy) { onCheck() }.padding(vertical = 4.dp)) {
             Text(S.aboutCheckUpdate, color = onGradient, fontSize = 15.sp, modifier = Modifier.weight(1f))
         }
         status?.let { line ->
