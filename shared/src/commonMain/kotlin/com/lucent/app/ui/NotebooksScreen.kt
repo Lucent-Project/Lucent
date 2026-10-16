@@ -403,16 +403,6 @@ fun NotebooksScreen(
                         tint = onGradient
                     )
                 }
-                TextButton(onClick = {
-                    val allIds = visible.map { it.id }.toSet()
-                    selectedIds = if (selectedIds.containsAll(allIds)) emptySet() else allIds
-                }) {
-                    Text(
-                        if (selectedIds.containsAll(visible.map { it.id }.toSet()) && visible.isNotEmpty())
-                            com.lucent.app.i18n.S.clearAllSelection
-                        else com.lucent.app.i18n.S.selectAll
-                    )
-                }
                 IconButton(
                     onClick = { if (selectedIds.isNotEmpty()) batchDeleting = true },
                     enabled = selectedIds.isNotEmpty()
@@ -421,6 +411,16 @@ fun NotebooksScreen(
                         Icons.Default.Delete,
                         contentDescription = com.lucent.app.i18n.S.a11yDeleteSelected,
                         tint = onGradient
+                    )
+                }
+                TextButton(onClick = {
+                    val allIds = visible.map { it.id }.toSet()
+                    selectedIds = if (selectedIds.containsAll(allIds)) emptySet() else allIds
+                }) {
+                    Text(
+                        if (selectedIds.containsAll(visible.map { it.id }.toSet()) && visible.isNotEmpty())
+                            com.lucent.app.i18n.S.clearAllSelection
+                        else com.lucent.app.i18n.S.selectAll
                     )
                 }
             }

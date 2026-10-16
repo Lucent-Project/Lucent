@@ -4,7 +4,7 @@ object LucentBuild {
 
     const val VERSION = "3.1.2"
 
-    const val BUILD_NUMBER = "311"
+    const val BUILD_NUMBER = "312"
     
     val BUILD_ID: String = GeneratedBuildId.BUILD_ID
     
