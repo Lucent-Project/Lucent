@@ -1,5 +1,11 @@
 import org.jetbrains.compose.ComposeBuildConfig
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
+import kotlin.io.path.createTempFile
 
 
 plugins {
@@ -117,9 +123,13 @@ compose.desktop {
 }
 
 tasks.withType<org.jetbrains.compose.desktop.application.tasks.AbstractJLinkTask>().configureEach {
-    stripDebug.set(true)
-    noHeaderFiles.set(true)
-    noManPages.set(true)
+    for (propName in listOf("stripDebug", "noHeaderFiles", "noManPages")) {
+        val getterName = "get" + propName.replaceFirstChar(Char::uppercaseChar)
+        val getter = javaClass.methods.first { it.name == getterName || it.name.startsWith(getterName + "$") }
+        @Suppress("UNCHECKED_CAST")
+        val flag = getter.invoke(this) as org.gradle.api.provider.Property<Boolean>
+        flag.set(true)
+    }
 }
 
 val stripNonWindowsNatives = tasks.register("stripNonWindowsNatives") {
@@ -131,7 +141,7 @@ val stripNonWindowsNatives = tasks.register("stripNonWindowsNatives") {
             "windows-x86/", "windows-aarch64/"
         )
         val dropOsTokens = listOf("linux", "mac", "darwin", "musl", "freebsd", "openbsd")
-        val binariesDir = layout.buildDirectory.dir("compose/binaries").get().asFile
+        val binariesDir = project.layout.buildDirectory.dir("compose/binaries").get().asFile
         if (!binariesDir.isDirectory) return@doLast
         var jarsTouched = 0
         var entriesDropped = 0
@@ -141,10 +151,10 @@ val stripNonWindowsNatives = tasks.register("stripNonWindowsNatives") {
                 appDir.walkTopDown()
                     .filter { it.isFile && it.extension.equals("jar", ignoreCase = true) }
                     .forEach { jar ->
-                        val tmp = kotlin.io.path.createTempFile("strip", ".jar").toFile()
+                        val tmp = createTempFile("strip", ".jar").toFile()
                         var dropped = 0
-                        java.util.zip.ZipFile(jar).use { zin ->
-                            java.util.zip.ZipOutputStream(tmp.outputStream().buffered()).use { zout ->
+                        ZipFile(jar).use { zin ->
+                            ZipOutputStream(tmp.outputStream().buffered()).use { zout ->
                                 val entries = zin.entries().asSequence().toList()
                                 for (e in entries) {
                                     val lower = e.name.lowercase()
@@ -160,7 +170,7 @@ val stripNonWindowsNatives = tasks.register("stripNonWindowsNatives") {
                                     if (drop) {
                                         dropped++
                                     } else {
-                                        zout.putNextEntry(java.util.zip.ZipEntry(e))
+                                        zout.putNextEntry(ZipEntry(e))
                                         zin.getInputStream(e).use { it.copyTo(zout) }
                                         zout.closeEntry()
                                     }
@@ -168,9 +178,9 @@ val stripNonWindowsNatives = tasks.register("stripNonWindowsNatives") {
                             }
                         }
                         if (dropped > 0) {
-                            java.nio.file.Files.move(
+                            Files.move(
                                 tmp.toPath(), jar.toPath(),
-                                java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                                StandardCopyOption.REPLACE_EXISTING
                             )
                             jarsTouched++
                             entriesDropped += dropped
