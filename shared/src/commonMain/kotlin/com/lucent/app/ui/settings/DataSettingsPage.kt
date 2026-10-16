@@ -209,7 +209,17 @@ fun DataSettingsPage(
     Spacer(modifier = Modifier.height(12.dp))
 
     Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
-        Text(S.autoBackupPasswordsTitle, color = onGradient)
+        var backupPasswordEnabled by remember { mutableStateOf(false) }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(S.autoBackupPasswordsTitle, color = onGradient)
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Switch(
+                checked = backupPasswordEnabled,
+                onCheckedChange = { backupPasswordEnabled = it }
+            )
+        }
         Spacer(modifier = Modifier.height(4.dp))
         Text(S.autoBackupPasswordsDesc, color = onGradientMuted, fontSize = 12.sp)
 
@@ -219,108 +229,6 @@ fun DataSettingsPage(
         var newPasswordDraft by remember { mutableStateOf("") }
         var newPasswordVisible by remember { mutableStateOf(false) }
         var passwordPendingRemove by remember { mutableStateOf<Int?>(null) }
-
-        Spacer(modifier = Modifier.height(8.dp))
-        autoPasswords.forEachIndexed { index, currentPw ->
-            var slotDraft by remember(currentPw) { mutableStateOf(currentPw) }
-            var slotVisible by remember { mutableStateOf(false) }
-            OutlinedTextField(
-                value = slotDraft,
-                onValueChange = { slotDraft = com.lucent.app.collapseExcessBlankLines(it) },
-                label = { Text(S.autoBackupPasswordSlot(index + 1)) },
-                singleLine = true,
-                visualTransformation = if (slotVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { slotVisible = !slotVisible }) {
-                        Icon(
-                            if (slotVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (slotVisible) S.hidePassword else S.showPassword
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                GlassButton(
-                    text = S.autoBackupChangePassword,
-                    compact = true,
-                    enabled = slotDraft.isNotBlank() && slotDraft != currentPw,
-                    onClick = {
-                        scope.launch { repo.setAutoBackupPassword(index, slotDraft) }
-                    }
-                )
-                GlassButton(
-                    text = S.autoBackupRemovePassword,
-                    compact = true,
-                    danger = true,
-                    onClick = {
-                        passwordPendingRemove = index
-                    }
-                )
-            }
-        }
-
-        passwordPendingRemove?.let { index ->
-            if (index in autoPasswords.indices) {
-                LucentGlassAlertDialog(
-                    onDismissRequest = { passwordPendingRemove = null },
-                    title = { Text(S.autoBackupRemovePasswordTitle) },
-                    text = { Text(S.autoBackupRemovePasswordBody(S.autoBackupPasswordSlot(index + 1))) },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            val targetIndex = index
-                            passwordPendingRemove = null
-                            scope.launch { repo.setAutoBackupPassword(targetIndex, "") }
-                        }) { Text(S.autoBackupRemovePassword) }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { passwordPendingRemove = null }) {
-                            Text(S.actionCancel)
-                        }
-                    }
-                )
-            } else {
-                passwordPendingRemove = null
-            }
-        }
-
-        if (autoPasswords.size < 3) {
-            OutlinedTextField(
-                value = newPasswordDraft,
-                onValueChange = { newPasswordDraft = com.lucent.app.collapseExcessBlankLines(it) },
-                label = { Text(S.autoBackupAddPassword) },
-                singleLine = true,
-                visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
-                        Icon(
-                            if (newPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (newPasswordVisible) S.hidePassword else S.showPassword
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            GlassButton(
-                text = S.autoBackupAddPassword,
-                compact = true,
-                enabled = newPasswordDraft.isNotBlank(),
-                onClick = {
-                    val pw = newPasswordDraft
-                    newPasswordDraft = ""
-                    scope.launch { repo.setAutoBackupPassword(autoPasswords.size, pw) }
-                }
-            )
-        } else {
-            Text(S.autoBackupMaxPasswords, color = onGradientMuted, fontSize = 12.sp)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
 
         var recoveryQuestion by remember { mutableStateOf("") }
         var recoveryAnswer by remember { mutableStateOf("") }
@@ -350,61 +258,165 @@ fun DataSettingsPage(
             }
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(S.backupRecoveryTitle, color = onGradient)
+        if (backupPasswordEnabled) {
+            Spacer(modifier = Modifier.height(8.dp))
+            autoPasswords.forEachIndexed { index, currentPw ->
+                var slotDraft by remember(currentPw) { mutableStateOf(currentPw) }
+                var slotVisible by remember { mutableStateOf(false) }
+                OutlinedTextField(
+                    value = slotDraft,
+                    onValueChange = { slotDraft = com.lucent.app.collapseExcessBlankLines(it) },
+                    label = { Text(S.autoBackupPasswordSlot(index + 1)) },
+                    singleLine = true,
+                    visualTransformation = if (slotVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { slotVisible = !slotVisible }) {
+                            Icon(
+                                if (slotVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (slotVisible) S.hidePassword else S.showPassword
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    GlassButton(
+                        text = S.autoBackupChangePassword,
+                        compact = true,
+                        enabled = slotDraft.isNotBlank() && slotDraft != currentPw,
+                        onClick = {
+                            scope.launch { repo.setAutoBackupPassword(index, slotDraft) }
+                        }
+                    )
+                    GlassButton(
+                        text = S.autoBackupRemovePassword,
+                        compact = true,
+                        danger = true,
+                        onClick = {
+                            passwordPendingRemove = index
+                        }
+                    )
+                }
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Switch(
-                checked = recoveryEnabled,
-                onCheckedChange = { on ->
-                    recoveryEnabled = on
-                    if (!on) {
-                        questionDraft = ""
-                        answerDraft = ""
-                        scope.launch { repo.setAutoBackupRecovery("", "") }
-                    }
-                }
-            )
-        }
 
-        if (recoveryEnabled) {
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = questionDraft,
-                onValueChange = { questionDraft = com.lucent.app.collapseExcessBlankLines(it) },
-                label = { Text(S.lockSecurityQuestionFallback) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = answerDraft,
-                onValueChange = { answerDraft = com.lucent.app.collapseExcessBlankLines(it) },
-                label = { Text(S.lockAnswer) },
-                singleLine = true,
-                visualTransformation = if (answerVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { answerVisible = !answerVisible }) {
-                        Icon(
-                            if (answerVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = if (answerVisible) S.hidePassword else S.showPassword
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            GlassButton(
-                text = S.actionSave,
-                compact = true,
-                enabled = questionDraft.isNotBlank() && answerDraft.isNotBlank() && (questionDraft != recoveryQuestion || answerDraft != recoveryAnswer),
-                onClick = {
-                    recoveryQuestion = questionDraft
-                    recoveryAnswer = answerDraft
-                    scope.launch { repo.setAutoBackupRecovery(questionDraft, answerDraft) }
+            passwordPendingRemove?.let { index ->
+                if (index in autoPasswords.indices) {
+                    LucentGlassAlertDialog(
+                        onDismissRequest = { passwordPendingRemove = null },
+                        title = { Text(S.autoBackupRemovePasswordTitle) },
+                        text = { Text(S.autoBackupRemovePasswordBody(S.autoBackupPasswordSlot(index + 1))) },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                val targetIndex = index
+                                passwordPendingRemove = null
+                                scope.launch { repo.setAutoBackupPassword(targetIndex, "") }
+                            }) { Text(S.autoBackupRemovePassword) }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { passwordPendingRemove = null }) {
+                                Text(S.actionCancel)
+                            }
+                        }
+                    )
+                } else {
+                    passwordPendingRemove = null
                 }
-            )
+            }
+
+            if (autoPasswords.size < 3) {
+                OutlinedTextField(
+                    value = newPasswordDraft,
+                    onValueChange = { newPasswordDraft = com.lucent.app.collapseExcessBlankLines(it) },
+                    label = { Text(S.autoBackupAddPassword) },
+                    singleLine = true,
+                    visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
+                            Icon(
+                                if (newPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (newPasswordVisible) S.hidePassword else S.showPassword
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                GlassButton(
+                    text = S.autoBackupAddPassword,
+                    compact = true,
+                    enabled = newPasswordDraft.isNotBlank(),
+                    onClick = {
+                        val pw = newPasswordDraft
+                        newPasswordDraft = ""
+                        scope.launch { repo.setAutoBackupPassword(autoPasswords.size, pw) }
+                    }
+                )
+            } else {
+                Text(S.autoBackupMaxPasswords, color = onGradientMuted, fontSize = 12.sp)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(S.backupRecoveryTitle, color = onGradient)
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Switch(
+                    checked = recoveryEnabled,
+                    onCheckedChange = { on ->
+                        recoveryEnabled = on
+                        if (!on) {
+                            questionDraft = ""
+                            answerDraft = ""
+                            scope.launch { repo.setAutoBackupRecovery("", "") }
+                        }
+                    }
+                )
+            }
+
+            if (recoveryEnabled) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = questionDraft,
+                    onValueChange = { questionDraft = com.lucent.app.collapseExcessBlankLines(it) },
+                    label = { Text(S.lockSecurityQuestionFallback) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = answerDraft,
+                    onValueChange = { answerDraft = com.lucent.app.collapseExcessBlankLines(it) },
+                    label = { Text(S.lockAnswer) },
+                    singleLine = true,
+                    visualTransformation = if (answerVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { answerVisible = !answerVisible }) {
+                            Icon(
+                                if (answerVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (answerVisible) S.hidePassword else S.showPassword
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                GlassButton(
+                    text = S.actionSave,
+                    compact = true,
+                    enabled = questionDraft.isNotBlank() && answerDraft.isNotBlank() && (questionDraft != recoveryQuestion || answerDraft != recoveryAnswer),
+                    onClick = {
+                        recoveryQuestion = questionDraft
+                        recoveryAnswer = answerDraft
+                        scope.launch { repo.setAutoBackupRecovery(questionDraft, answerDraft) }
+                    }
+                )
+            }
         }
     }
 

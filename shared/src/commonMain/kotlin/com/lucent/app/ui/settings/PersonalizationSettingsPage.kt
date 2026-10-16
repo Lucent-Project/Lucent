@@ -1,5 +1,6 @@
 package com.lucent.app.ui.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,7 +15,6 @@ import androidx.compose.material.icons.filled.ExpandMore
 import com.lucent.app.ui.LucentGlassDropdownMenu
 import com.lucent.app.ui.LucentGlassDropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -100,15 +100,16 @@ fun PersonalizationSettingsPage(
                     Text(S.webSearchEngineSub, color = onGradientMuted, fontSize = 12.sp)
                 }
                 Box {
-                    IconButton(onClick = { engineMenuOpen = true }) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(engine.label, color = onGradient, fontSize = 13.sp)
-                            Icon(
-                                Icons.Default.ExpandMore,
-                                contentDescription = S.webSearchEngineTitle,
-                                tint = onGradient
-                            )
-                        }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { engineMenuOpen = true }.padding(8.dp)
+                    ) {
+                        Text(engine.label, color = onGradient, fontSize = 13.sp)
+                        Icon(
+                            Icons.Default.ExpandMore,
+                            contentDescription = S.webSearchEngineTitle,
+                            tint = onGradient
+                        )
                     }
                     LucentGlassDropdownMenu(expanded = engineMenuOpen, onDismissRequest = { engineMenuOpen = false }) {
                         WebSearchEngine.PICKER.forEach { option ->
