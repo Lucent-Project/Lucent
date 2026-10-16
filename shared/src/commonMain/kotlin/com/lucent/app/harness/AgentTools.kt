@@ -13,7 +13,8 @@ class SubAgent internal constructor(
     val task: String,
     val tools: Set<String>,
     val startedAt: Long,
-    val parentId: String? = null
+    val parentId: String? = null,
+    val conversationId: Long? = null
 ) {
     @Volatile var status: String = "running"
     @Volatile var result: String = ""
@@ -59,23 +60,68 @@ object SubAgents {
     private val counter = AtomicInt(1)
     private val agents = mutableMapOf<String, SubAgent>()
 
-    fun list(): List<SubAgent> = agents.values.sortedByDescending { it.startedAt }
+    fun list(): List<SubAgent> = withHarnessLock(agents) { agents.values.sortedByDescending { it.startedAt } }
 
-    fun get(id: String): SubAgent? = agents[id]
+    fun list(conversationId: Long?): List<SubAgent> = withHarnessLock(agents) {
+        agents.values.filter { it.conversationId == conversationId }.sortedByDescending { it.startedAt }
+    }
 
-    fun running(): Int = agents.values.count { it.status == "running" }
+    fun get(id: String): SubAgent? = withHarnessLock(agents) { agents[id] }
+
+    fun running(): Int = withHarnessLock(agents) { agents.values.count { it.status == "running" } }
+
+    fun running(conversationId: Long?): Int = withHarnessLock(agents) {
+        agents.values.count { it.status == "running" && it.conversationId == conversationId }
+    }
 
     fun prune() {
-        val finished = agents.values.filter { it.status != "running" }.sortedByDescending { it.startedAt }
-        finished.drop(6).forEach { agents.remove(it.id) }
+        withHarnessLock(agents) {
+            val finished = agents.values.filter { it.status != "running" }.sortedByDescending { it.startedAt }
+            finished.drop(6).forEach { agents.remove(it.id) }
+        }
+    }
+
+    fun prune(conversationId: Long?) {
+        withHarnessLock(agents) {
+            val finished = agents.values.filter { it.status != "running" && it.conversationId == conversationId }.sortedByDescending { it.startedAt }
+            finished.drop(6).forEach { agents.remove(it.id) }
+        }
+    }
+
+    fun remove(id: String): Boolean {
+        val agent = withHarnessLock(agents) { agents[id] } ?: return false
+        if (agent.status == "running") {
+            agent.job?.cancel()
+            agent.status = "stopped"
+        }
+        withHarnessLock(agents) { agents.remove(id) }
+        return true
+    }
+
+    fun removeFinished(conversationId: Long?) {
+        withHarnessLock(agents) {
+            val toRemove = agents.values
+                .filter { it.status != "running" && it.conversationId == conversationId }
+                .map { it.id }
+            toRemove.forEach { agents.remove(it) }
+        }
+    }
+
+    fun migrateLegacy() {
+        withHarnessLock(agents) {
+            val toRemove = agents.values
+                .filter { it.conversationId == null && it.status != "running" }
+                .map { it.id }
+            toRemove.forEach { agents.remove(it) }
+        }
     }
 
     @OptIn(kotlin.concurrent.atomics.ExperimentalAtomicApi::class)
     fun start(parent: HarnessCtx, task: String, toolNames: Set<String>, model: String): SubAgent {
         val id = "sub-${counter.fetchAndIncrement()}"
-        val agent = SubAgent(id, task, toolNames, System.currentTimeMillis(), parent.subAgentId)
-        agents[id] = agent
-        prune()
+        val agent = SubAgent(id, task, toolNames, System.currentTimeMillis(), parent.subAgentId, parent.conversationId)
+        withHarnessLock(agents) { agents[id] = agent }
+        prune(parent.conversationId)
         val llm = HarnessRuntime.llm
         if (llm == null) {
             agent.status = "failed"
@@ -131,7 +177,7 @@ object SubAgents {
     }
 
     fun stop(id: String): Boolean {
-        val agent = agents[id] ?: return false
+        val agent = withHarnessLock(agents) { agents[id] } ?: return false
         agent.job?.cancel()
         agent.status = "stopped"
         if (agent.result.isEmpty()) agent.result = "Stopped by the parent agent."
@@ -139,7 +185,7 @@ object SubAgents {
     }
 
     fun instruct(id: String, text: String): Boolean {
-        val agent = agents[id] ?: return false
+        val agent = withHarnessLock(agents) { agents[id] } ?: return false
         if (text.isBlank()) return false
         agent.instruct(text)
         return true

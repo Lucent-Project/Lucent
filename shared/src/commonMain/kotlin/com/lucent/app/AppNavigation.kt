@@ -53,6 +53,17 @@ object AppNavigation {
         subAgentPageId = if (subAgentBackStack.isEmpty()) null else subAgentBackStack.removeAt(subAgentBackStack.lastIndex)
     }
 
+    fun clearSubAgentNav() {
+        subAgentPageId = null
+        subAgentBackStack.clear()
+    }
+
+    fun navigateToSubAgentChain(id: String, ancestors: List<String>) {
+        subAgentBackStack.clear()
+        subAgentBackStack.addAll(ancestors)
+        subAgentPageId = id
+    }
+
     fun requestTerminal() {
         terminalRequested = true
         requestedScreen = Screen.Assistant

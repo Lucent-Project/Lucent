@@ -258,6 +258,7 @@ class AssistantControllerImpl(
     private var conversationsJob: Job? = null
 
     fun ensureMessagesLoaded(appContext: PlatformContext) {
+        com.lucent.app.harness.SubAgents.migrateLegacy()
         appContextRef = appContext.applicationContext
         if (conversationsJob == null) {
             conversationsJob = scope.launch {
@@ -323,6 +324,7 @@ class AssistantControllerImpl(
     }
 
     fun startNewConversation(appContext: PlatformContext) {
+        com.lucent.app.AppNavigation.clearSubAgentNav()
         localTurnOrNull()?.let { stopTurn(it, silent = true) }
         setActiveConversation(null)
         if (errorConversationId == null) clearError()
@@ -330,6 +332,7 @@ class AssistantControllerImpl(
     }
 
     fun switchConversation(appContext: PlatformContext, id: Long) {
+        com.lucent.app.AppNavigation.clearSubAgentNav()
         val localTurn = localTurnOrNull()
         if (localTurn != null) {
             if (localTurn.conversationId == id) return

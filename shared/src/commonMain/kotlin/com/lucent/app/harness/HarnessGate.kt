@@ -207,7 +207,16 @@ object HarnessGate {
                 audit(tool, argumentsJson, started, "asked", "asked", "waiting for the user to allow ${tool.name}")
             )
         }
-        var ctx = HarnessCtx(context, db, config, capabilities, android, HarnessRuntime.workspacePath(), subAgentId)
+        var ctx = HarnessCtx(
+            context,
+            db,
+            config,
+            capabilities,
+            android,
+            HarnessRuntime.workspacePath(),
+            subAgentId,
+            HarnessRuntime.conversationId.takeIf { it != 0L }
+        )
         var attempt = run(name, ctx, args)
         var escalated = false
         if (attempt.blocked && escalation != null && !escalatedInThisConversation(name)) {

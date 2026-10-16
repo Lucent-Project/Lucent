@@ -32,8 +32,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,184 +57,284 @@ import com.lucent.app.harness.SubAgents
 import com.lucent.app.i18n.S
 import kotlinx.coroutines.delay
 
-@Composable
-fun SubAgentStrip(
-    visible: Boolean,
-    tint: Color,
-    mutedTint: Color,
-    modifier: Modifier = Modifier
-) {
-    if (!visible) return
-    var tick by remember { mutableStateOf(0) }
-    val agents = remember(tick) { SubAgents.list() }
-    var expandedTreeId by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(1200)
-            if (SubAgents.running() > 0) tick++
-        }
-    }
-
-    if (agents.isEmpty()) return
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(S.agentSubAgents, color = mutedTint, fontSize = 11.sp)
-        agents.forEach { agent ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-            Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(percent = 50))
-                    .background(tint.copy(alpha = 0.12f))
-                    .border(1.dp, tint.copy(alpha = 0.24f), RoundedCornerShape(percent = 50))
-                    .clickable { com.lucent.app.AppNavigation.openSubAgent(agent.id) }
-                    .padding(horizontal = 10.dp, vertical = 5.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(agent.id, color = tint, fontSize = 11.sp)
-                Spacer(modifier = Modifier.width(5.dp))
-                Text(statusLabel(agent.status), color = mutedTint, fontSize = 11.sp)
-                Spacer(modifier = Modifier.width(5.dp))
-                Text(
-                    agent.task.replace('\n', ' '),
-                    color = mutedTint,
-                    fontSize = 11.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.width(120.dp)
-                )
-            }
-            val children = agents.filter { it.parentId == agent.id }
-            if (children.isNotEmpty()) {
-                Box {
-                    Text("⌄", color = tint, modifier = Modifier.clickable { expandedTreeId = agent.id }.padding(horizontal = 5.dp, vertical = 4.dp))
-                    LucentGlassDropdownMenu(expanded = expandedTreeId == agent.id, onDismissRequest = { expandedTreeId = null }) {
-                        children.forEach { child ->
-                            LucentGlassDropdownMenuItem(
-                                text = { Text(child.id + " · " + child.task, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                                onClick = { expandedTreeId = null; com.lucent.app.AppNavigation.openSubAgent(child.id) }
-                            )
-                        }
-                    }
-                }
-            }
-            }
-        }
-    }
-
-}
-
 private fun statusLabel(status: String): String = when (status) {
     "done" -> S.subAgentStatusDone
     "failed" -> S.subAgentStatusFailed
+    "stopped" -> S.subAgentStop
     else -> S.subAgentStatusRunning
 }
 
-private const val SUB_AGENT_HEADER_CHIPS = 2
+private data class SubAgentTreeNode(
+    val agent: SubAgent,
+    val depth: Int
+)
+
+private fun buildTreeNodes(agents: List<SubAgent>): List<SubAgentTreeNode> {
+    val byParent = agents.groupBy { it.parentId }
+    val result = mutableListOf<SubAgentTreeNode>()
+    fun traverse(parentId: String?, depth: Int) {
+        val children = byParent[parentId].orEmpty().sortedBy { it.startedAt }
+        for (child in children) {
+            result.add(SubAgentTreeNode(child, depth))
+            traverse(child.id, depth + 1)
+        }
+    }
+    traverse(null, 0)
+    val addedIds = result.map { it.agent.id }.toSet()
+    val orphaned = agents.filter { it.id !in addedIds }.sortedBy { it.startedAt }
+    for (orphan in orphaned) {
+        result.add(SubAgentTreeNode(orphan, 0))
+    }
+    return result
+}
 
 @Composable
-fun SubAgentHeaderChips(
+fun SubAgentBreadcrumb(
+    currentAgentId: String,
     tint: Color,
     mutedTint: Color,
     modifier: Modifier = Modifier
 ) {
     var tick by remember { mutableStateOf(0) }
-
-    LaunchedEffect(Unit) {
+    LaunchedEffect(currentAgentId) {
         while (true) {
             delay(1200)
             tick++
         }
     }
-
-    val agents = remember(tick) { SubAgents.list() }
-    headerAgents(agents).forEach { agent ->
-        SubAgentNameChip(
-            agent = agent,
-            tint = tint,
-            mutedTint = mutedTint,
-            onClick = { com.lucent.app.AppNavigation.openSubAgent(agent.id) },
-            modifier = modifier
-        )
+    val chain = remember(currentAgentId, tick) {
+        val result = mutableListOf<SubAgent>()
+        var curr: SubAgent? = SubAgents.get(currentAgentId)
+        val seen = mutableSetOf<String>()
+        while (curr != null && seen.add(curr.id)) {
+            result.add(curr)
+            val pId = curr.parentId ?: break
+            curr = SubAgents.get(pId)
+        }
+        result.reversed()
     }
 
-}
-
-private fun headerAgents(agents: List<SubAgent>): List<SubAgent> {
-    val running = agents.filter { it.status == "running" }
-    val pool = if (running.isEmpty()) agents.take(1) else running
-    return pool.take(SUB_AGENT_HEADER_CHIPS)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = S.subAgentMainAgent,
+            color = mutedTint,
+            fontSize = 12.sp,
+            modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .clickable { com.lucent.app.AppNavigation.clearSubAgentNav() }
+                .padding(horizontal = 4.dp, vertical = 2.dp)
+        )
+        Text(
+            text = " > ",
+            color = mutedTint.copy(alpha = 0.6f),
+            fontSize = 12.sp
+        )
+        if (chain.isEmpty()) {
+            Text(
+                text = currentAgentId,
+                color = tint,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+            )
+        } else {
+            chain.forEachIndexed { index, agent ->
+                val isCurrent = index == chain.lastIndex
+                if (isCurrent) {
+                    Text(
+                        text = agent.id,
+                        color = tint,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                    )
+                } else {
+                    Text(
+                        text = agent.id,
+                        color = mutedTint,
+                        fontSize = 12.sp,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable {
+                                val ancestors = chain.take(index).map { it.id }
+                                com.lucent.app.AppNavigation.navigateToSubAgentChain(agent.id, ancestors)
+                            }
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                    )
+                    Text(
+                        text = " > ",
+                        color = mutedTint.copy(alpha = 0.6f),
+                        fontSize = 12.sp
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
-fun SubAgentNameChip(
-    agent: SubAgent,
+fun SubAgentTreePopup(
+    conversationId: Long?,
     tint: Color,
     mutedTint: Color,
-    onClick: () -> Unit,
+    onDismiss: () -> Unit,
+    onNavigate: (String) -> Unit,
+    onReturnToMain: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val working = agent.status == "running"
-    Row(
-        modifier = modifier
-            .widthIn(max = 92.dp)
-            .clip(RoundedCornerShape(percent = 50))
-            .background(tint.copy(alpha = if (working) 0.18f else 0.10f))
-            .border(
-                1.dp,
-                tint.copy(alpha = if (working) 0.38f else 0.20f),
-                RoundedCornerShape(percent = 50)
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 5.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    var tick by remember { mutableStateOf(0) }
+    LaunchedEffect(conversationId) {
+        while (true) {
+            delay(1200)
+            if (SubAgents.running(conversationId) > 0) tick++
+        }
+    }
+    val agents = remember(conversationId, tick) { SubAgents.list(conversationId) }
+    val treeNodes = remember(agents) { buildTreeNodes(agents) }
+    val hasFinished = remember(agents) { agents.any { it.status != "running" } }
+
+    LaunchedEffect(agents.isEmpty()) {
+        if (agents.isEmpty()) {
+            onDismiss()
+        }
+    }
+
+    LucentGlassDropdownMenu(
+        expanded = true,
+        onDismissRequest = onDismiss,
+        modifier = modifier.widthIn(min = 220.dp, max = 340.dp)
     ) {
-        Text(
-            agent.id,
-            color = if (working) tint else mutedTint,
-            fontSize = 10.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+        LucentGlassDropdownMenuItem(
+            text = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null,
+                        tint = tint,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(S.subAgentMainConversation, color = tint, fontSize = 13.sp)
+                }
+            },
+            onClick = onReturnToMain
         )
+
+        treeNodes.forEach { node ->
+            val agent = node.agent
+            val finished = agent.status != "running"
+            LucentGlassDropdownMenuItem(
+                text = {
+                    Row(
+                        modifier = Modifier.padding(start = (node.depth * 14).dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(agent.id, color = tint, fontSize = 12.sp)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("·", color = mutedTint, fontSize = 11.sp)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(statusLabel(agent.status), color = mutedTint, fontSize = 11.sp)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            agent.task.replace('\n', ' '),
+                            color = mutedTint,
+                            fontSize = 11.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                },
+                onClick = { onNavigate(agent.id) },
+                trailingIcon = if (finished) {
+                    {
+                        IconButton(
+                            onClick = {
+                                SubAgents.remove(agent.id)
+                                if (com.lucent.app.AppNavigation.subAgentPageId == agent.id) {
+                                    com.lucent.app.AppNavigation.backFromSubAgent()
+                                }
+                                tick++
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = S.actionDismiss,
+                                tint = mutedTint,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                } else null
+            )
+        }
+
+        if (hasFinished) {
+            LucentGlassDropdownMenuItem(
+                text = {
+                    Text(S.subAgentClearFinished, fontSize = 12.sp)
+                },
+                isDestructive = true,
+                onClick = {
+                    SubAgents.removeFinished(conversationId)
+                    tick++
+                }
+            )
+        }
     }
 }
 
 @Composable
 fun SubAgentChip(
+    conversationId: Long?,
     tint: Color,
     mutedTint: Color,
     modifier: Modifier = Modifier
 ) {
-    var running by remember { mutableStateOf(SubAgents.running()) }
-    var total by remember { mutableStateOf(SubAgents.list().size) }
-    var first by remember { mutableStateOf<SubAgent?>(null) }
-
-    LaunchedEffect(Unit) {
+    var tick by remember { mutableStateOf(0) }
+    LaunchedEffect(conversationId) {
         while (true) {
-            running = SubAgents.running()
-            total = SubAgents.list().size
-            first = SubAgents.list().firstOrNull()
             delay(1200)
+            if (SubAgents.running(conversationId) > 0) tick++
         }
     }
+    val running = remember(conversationId, tick) { SubAgents.running(conversationId) }
+    val total = remember(conversationId, tick) { SubAgents.list(conversationId).size }
 
     if (total == 0) return
 
-    HeaderPanelChip(
-        icon = Icons.Default.Groups,
-        contentDescription = S.agentSubAgents,
-        onClick = { first?.let { com.lucent.app.AppNavigation.openSubAgent(it.id) } },
-        tint = tint,
-        modifier = modifier,
-        badge = if (running > 0) "$running" else "$total"
-    )
+    var showTreePopup by remember { mutableStateOf(false) }
 
+    Box(modifier = modifier) {
+        HeaderPanelChip(
+            icon = Icons.Default.Groups,
+            contentDescription = S.agentSubAgents,
+            onClick = { showTreePopup = !showTreePopup },
+            tint = tint,
+            badge = if (running > 0) "$running" else "$total"
+        )
+        if (showTreePopup) {
+            SubAgentTreePopup(
+                conversationId = conversationId,
+                tint = tint,
+                mutedTint = mutedTint,
+                onDismiss = { showTreePopup = false },
+                onNavigate = { id ->
+                    showTreePopup = false
+                    com.lucent.app.AppNavigation.openSubAgent(id)
+                },
+                onReturnToMain = {
+                    showTreePopup = false
+                    com.lucent.app.AppNavigation.clearSubAgentNav()
+                }
+            )
+        }
+    }
 }
 
 @Composable
@@ -376,14 +478,29 @@ fun SubAgentChatPage(agentId: String, tint: Color, mutedTint: Color, onBack: () 
         return
     }
     Column(Modifier.fillMaxSize().padding(12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = S.actionBack, tint = tint) }
-            Column {
+        SubAgentBreadcrumb(currentAgentId = agentId, tint = tint, mutedTint = mutedTint)
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f, fill = false)) {
                 Text(current.id + " · " + statusLabel(current.status), color = tint, fontSize = 16.sp)
                 Text(current.task, color = mutedTint, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
+            if (current.status != "running") {
+                TextButton(
+                    onClick = {
+                        SubAgents.remove(current.id)
+                        onBack()
+                    }
+                ) {
+                    Text(S.actionDismiss, color = tint, fontSize = 13.sp)
+                }
+            }
         }
-        val children = SubAgents.list().filter { it.parentId == current.id }
+        val children = SubAgents.list(current.conversationId).filter { it.parentId == current.id }
         if (children.isNotEmpty()) {
             Text(S.agentSubAgents, color = tint, fontSize = 13.sp, modifier = Modifier.clickable { expanded = !expanded }.padding(8.dp))
             if (expanded) children.forEach { child ->
@@ -397,10 +514,29 @@ fun SubAgentChatPage(agentId: String, tint: Color, mutedTint: Color, onBack: () 
             current.transcriptLines().forEach { Text(it, color = mutedTint, fontSize = 12.sp, modifier = Modifier.padding(vertical = 3.dp)) }
             if (current.result.isNotBlank()) Text(current.result, color = tint, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
         }
-        if (current.status == "running") Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(value = instruction, onValueChange = { instruction = it }, placeholder = { Text(S.subAgentInstructHint) }, modifier = Modifier.weight(1f))
-            IconButton(enabled = instruction.isNotBlank(), onClick = { SubAgents.instruct(current.id, instruction); instruction = "" }) {
-                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = S.subAgentSend, tint = tint)
+        val isRunning = current.status == "running"
+        val placeholder = if (isRunning) S.subAgentInstructHint else statusLabel(current.status)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = instruction,
+                onValueChange = { instruction = it },
+                enabled = isRunning,
+                placeholder = { Text(placeholder) },
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(
+                enabled = isRunning && instruction.isNotBlank(),
+                onClick = {
+                    SubAgents.instruct(current.id, instruction)
+                    instruction = ""
+                    tick++
+                }
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.Send,
+                    contentDescription = S.subAgentSend,
+                    tint = if (isRunning) tint else mutedTint
+                )
             }
         }
     }

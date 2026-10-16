@@ -729,8 +729,11 @@ fun AssistantChatBody(
                     JobsChip(tint = onGradient, mutedTint = onGradientMuted)
                 }
                 if (toolkit.enabled && toolkit.subAgents) {
-                    SubAgentChip(tint = onGradient, mutedTint = onGradientMuted)
-                    SubAgentHeaderChips(tint = onGradient, mutedTint = onGradientMuted)
+                    SubAgentChip(
+                        conversationId = AssistantController.currentConversationId,
+                        tint = onGradient,
+                        mutedTint = onGradientMuted
+                    )
                 }
                 if (toolkit.enabled) {
                     RunningCounterChip(tint = onGradient, mutedTint = onGradientMuted)
@@ -779,14 +782,6 @@ fun AssistantChatBody(
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-
-        val toolkit = com.lucent.app.harness.HarnessRuntime.config()
-        SubAgentStrip(
-            visible = toolkit.enabled && toolkit.subAgents,
-            tint = onGradient,
-            mutedTint = onGradientMuted,
-            modifier = Modifier.padding(top = 8.dp)
-        )
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             LazyColumn(
