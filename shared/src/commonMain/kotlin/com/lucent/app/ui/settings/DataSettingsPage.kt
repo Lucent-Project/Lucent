@@ -16,6 +16,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,6 +44,7 @@ import com.lucent.app.ui.ExportKind
 import com.lucent.app.ui.GlassButton
 import com.lucent.app.ui.LocalOnGradient
 import com.lucent.app.ui.LocalOnGradientMuted
+import com.lucent.app.ui.LucentGlassAlertDialog
 import com.lucent.app.ui.LucentToast
 import com.lucent.app.ui.SettingsRoute
 import com.lucent.app.ui.StepperRow
@@ -202,8 +204,11 @@ fun DataSettingsPage(
                 }
             }
         )
+    }
 
-        Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(12.dp))
+
+    Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
         Text(S.autoBackupPasswordsTitle, color = onGradient)
         Spacer(modifier = Modifier.height(4.dp))
         Text(S.autoBackupPasswordsDesc, color = onGradientMuted, fontSize = 12.sp)
@@ -213,6 +218,7 @@ fun DataSettingsPage(
 
         var newPasswordDraft by remember { mutableStateOf("") }
         var newPasswordVisible by remember { mutableStateOf(false) }
+        var passwordPendingRemove by remember { mutableStateOf<Int?>(null) }
 
         Spacer(modifier = Modifier.height(8.dp))
         autoPasswords.forEachIndexed { index, currentPw ->
@@ -252,9 +258,33 @@ fun DataSettingsPage(
                     compact = true,
                     danger = true,
                     onClick = {
-                        scope.launch { repo.setAutoBackupPassword(index, "") }
+                        passwordPendingRemove = index
                     }
                 )
+            }
+        }
+
+        passwordPendingRemove?.let { index ->
+            if (index in autoPasswords.indices) {
+                LucentGlassAlertDialog(
+                    onDismissRequest = { passwordPendingRemove = null },
+                    title = { Text(S.autoBackupRemovePasswordTitle) },
+                    text = { Text(S.autoBackupRemovePasswordBody(S.autoBackupPasswordSlot(index + 1))) },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            val targetIndex = index
+                            passwordPendingRemove = null
+                            scope.launch { repo.setAutoBackupPassword(targetIndex, "") }
+                        }) { Text(S.autoBackupRemovePassword) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { passwordPendingRemove = null }) {
+                            Text(S.actionCancel)
+                        }
+                    }
+                )
+            } else {
+                passwordPendingRemove = null
             }
         }
 
@@ -275,7 +305,7 @@ fun DataSettingsPage(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             GlassButton(
                 text = S.autoBackupAddPassword,
                 compact = true,
@@ -337,12 +367,8 @@ fun DataSettingsPage(
                 }
             )
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(S.backupRecoveryDesc, color = onGradientMuted, fontSize = 12.sp)
 
         if (recoveryEnabled) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(S.backupRecoveryWarnBody, color = onGradientMuted, fontSize = 11.sp)
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = questionDraft,
@@ -387,10 +413,20 @@ fun DataSettingsPage(
     Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
         Text(S.backupRestoreTitle, color = onGradient)
         Spacer(modifier = Modifier.height(12.dp))
-        Row {
-            GlassButton(text = S.exportBackup, onClick = onRequestExportBackup)
-            Spacer(modifier = Modifier.width(12.dp))
-            GlassButton(text = S.importBackup, onClick = onImportBackupClick)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            GlassButton(
+                text = S.exportBackup,
+                onClick = onRequestExportBackup,
+                modifier = Modifier.weight(1f)
+            )
+            GlassButton(
+                text = S.importBackup,
+                onClick = onImportBackupClick,
+                modifier = Modifier.weight(1f)
+            )
         }
         if (backupStatus.isNotBlank()) {
             Spacer(modifier = Modifier.height(8.dp))
