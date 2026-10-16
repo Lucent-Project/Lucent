@@ -22,7 +22,7 @@ jobs:
       - name: Check i18n generation is up-to-date
         run: |
           python3 tools/i18n/gen_i18n.py
-          git diff --exit-code -- shared/src/main/kotlin/com/lucent/app/i18n/I18n.kt
+          git diff --exit-code -- shared/src/commonMain/kotlin/com/lucent/app/i18n/I18n.kt
 
       - name: Check the three version numbers agree
         run: python3 tools/version_check.py
