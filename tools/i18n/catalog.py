@@ -1410,8 +1410,8 @@ ENTRIES = [
     ("formatMarkdown", "Markdown", "Markdown", "Markdown", "Markdown"),
 
     ("aboutAutoUpdate", "Auto-update", "自动更新", "自動更新", "자동 업데이트"),
-    ("autoUpdateNoticeTitle", "Auto-update enabled", "已开启自动更新", "自動更新をオンにしました", "자동 업데이트를 켰습니다"),
-    ("autoUpdateNoticeBody", "Update downloads may be unstable due to network fluctuations. If a download fails, please try again later.", "更新下载可能因网络波动而不稳定。若下载失败，请稍后再试。", "ネットワークの状況によっては、更新のダウンロードが不安定になる場合があります。失敗した場合は、しばらくしてからもう一度お試しください。", "네트워크 상황에 따라 업데이트 다운로드가 불안정할 수 있습니다. 다운로드에 실패하면 잠시 후 다시 시도해 주세요."),
+    ("autoUpdateNoticeTitle", "Auto-update", "自动更新", "自動更新", "자동 업데이트"),
+    ("autoUpdateNoticeBody", "Auto-update downloads updates over the network. Downloads may be slow or unstable during network fluctuations.", "自动更新通过网络下载更新。网络波动时，下载可能缓慢或不稳定。", "自動更新はネットワーク経由でダウンロードします。ネットワークが不安定な場合、ダウンロードが遅くなったり失敗したりすることがあります。", "자동 업데이트는 네트워크를 통해 다운로드됩니다. 네트워크가 불안정하면 다운로드가 느려지거나 실패할 수 있습니다。"),
 
     ("updateChannelTitle", "Update channel", "更新通道", "アップデートチャンネル", "업데이트 채널"),
     ("updateChannelStable", "Stable", "稳定版", "安定版", "안정판"),

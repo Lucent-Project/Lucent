@@ -162,7 +162,7 @@ private fun AboutUpdateCard(
     val onGradient = LocalOnGradient.current
     val onGradientMuted = LocalOnGradientMuted.current
     Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
             Text(S.aboutAutoUpdate, color = onGradient, fontSize = 15.sp, modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.width(12.dp))
             Switch(checked = autoUpdateOn, onCheckedChange = onToggle)

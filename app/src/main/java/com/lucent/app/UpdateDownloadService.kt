@@ -380,18 +380,11 @@ class UpdateDownloadService : Service() {
         }
     }
 
-    private fun openAppIntent(): PendingIntent = PendingIntent.getActivity(
-        this,
-        2,
-        Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-
     private fun updateIntent(): PendingIntent = PendingIntent.getActivity(
         this,
         3,
         Intent(this, MainActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             .putExtra(EXTRA_SHOW_UPDATE, true),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
