@@ -91,7 +91,8 @@ compose.desktop {
             packageName = "Lucent"
             packageVersion = "3.1.2"
 
-            includeAllModules = true
+            includeAllModules = false
+            modules("java.base", "java.desktop", "java.datatransfer", "java.sql", "java.net.http", "java.xml", "java.logging", "java.management", "jdk.unsupported", "jdk.crypto.ec", "jdk.crypto.mscapi", "jdk.charsets")
 
             windows {
                 menu = true

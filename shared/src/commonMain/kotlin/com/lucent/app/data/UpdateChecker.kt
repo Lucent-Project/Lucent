@@ -19,7 +19,8 @@ import kotlinx.serialization.json.longOrNull
 data class ReleaseAsset(
     val name: String,
     val url: String,
-    val sizeBytes: Long
+    val sizeBytes: Long,
+    val fallbackDownloadUrl: String? = null
 )
 
 @Serializable
@@ -45,6 +46,9 @@ data class ReleaseInfo(
 }
 
 object UpdateChecker {
+
+    const val MIRROR_MANIFEST_URL = "https://yuan0-o.github.io/lucentapp/downloads/version.json"
+    const val GITHUB_LATEST_URL = "https://api.github.com/repos/Yuan0-o/Lucent/releases/latest"
 
     internal val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
@@ -97,14 +101,19 @@ object UpdateChecker {
         }
     }
 
-    private suspend fun fetchJson(url: String): JsonObject? = withContext(Dispatchers.IO) {
+    private suspend fun fetchJson(url: String, timeoutSeconds: Long = 20): JsonObject? = withContext(Dispatchers.IO) {
+        val httpClient = client.newBuilder()
+            .callTimeout(java.time.Duration.ofSeconds(timeoutSeconds))
+            .connectTimeout(java.time.Duration.ofSeconds(timeoutSeconds))
+            .readTimeout(java.time.Duration.ofSeconds(timeoutSeconds))
+            .build()
         val request = Request.Builder()
             .url(url)
             .header("Accept", "application/vnd.github+json")
             .header("User-Agent", "Lucent")
             .build()
         val body = runCatching {
-            client.newCall(request).execute().use { response ->
+            httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) null else response.body?.string()
             }
         }.getOrNull() ?: return@withContext null
@@ -124,7 +133,7 @@ object UpdateChecker {
         return sha
     }
 
-    private fun parseAssets(root: JsonObject): Pair<ReleaseAsset?, ReleaseAsset?> {
+    private fun parseAssets(root: JsonObject, tagName: String = ""): Pair<ReleaseAsset?, ReleaseAsset?> {
         var apk: ReleaseAsset? = null
         var installer: ReleaseAsset? = null
         val assets = root["assets"]?.jsonArray ?: return null to null
@@ -133,7 +142,9 @@ object UpdateChecker {
             val name = item["name"]?.jsonPrimitive?.content ?: ""
             val url = item["browser_download_url"]?.jsonPrimitive?.content ?: ""
             if (name.isBlank() || url.isBlank()) continue
-            val asset = ReleaseAsset(name, url, item["size"]?.jsonPrimitive?.longOrNull ?: 0L)
+            val fallbackUrl = item["fallback_download_url"]?.jsonPrimitive?.content?.ifBlank { null }
+                ?: if (tagName.isNotBlank()) "https://github.com/Yuan0-o/Lucent/releases/download/$tagName/$name" else null
+            val asset = ReleaseAsset(name, url, item["size"]?.jsonPrimitive?.longOrNull ?: 0L, fallbackUrl)
             when {
                 name.endsWith(".apk", ignoreCase = true) && apk == null -> apk = asset
                 name.endsWith(".exe", ignoreCase = true) && installer == null -> installer = asset
@@ -142,37 +153,50 @@ object UpdateChecker {
         return apk to installer
     }
 
+    private fun parseRelease(root: JsonObject): Pair<ReleaseInfo, String>? {
+        val tag = root["tag_name"]?.jsonPrimitive?.content ?: ""
+        val isDraftOrPrerelease = (root["draft"]?.jsonPrimitive?.booleanOrNull == true) || (root["prerelease"]?.jsonPrimitive?.booleanOrNull == true)
+        if (tag.isBlank() || isDraftOrPrerelease) return null
+        val body = root["body"]?.jsonPrimitive?.content ?: ""
+        val buildId = Regex("(?m)^(?:-\\s*)?Build-ID:\\s*(\\S+)").find(body)?.groupValues?.get(1)?.ifBlank { null }
+        val (apk, installer) = parseAssets(root, tag)
+        val info = ReleaseInfo(
+            tag = tag,
+            version = tag.trimStart('v', 'V'),
+            title = root["name"]?.jsonPrimitive?.content?.ifBlank { tag } ?: tag,
+            apk = apk,
+            installer = installer,
+            notesUrl = root["html_url"]?.jsonPrimitive?.content ?: "",
+            channel = "stable",
+            buildId = buildId
+        )
+        return info to tag
+    }
+
+    private suspend fun fetchLatestRelease(): Pair<ReleaseInfo, String>? = withContext(Dispatchers.IO) {
+        val mirror = runCatching { fetchJson(MIRROR_MANIFEST_URL, 8)?.let { parseRelease(it) } }.getOrNull()
+        if (mirror != null) return@withContext mirror
+        val github = runCatching { fetchJson(GITHUB_LATEST_URL, 12)?.let { parseRelease(it) } }.getOrNull()
+        github
+    }
+
     suspend fun latest(currentVersion: String): ReleaseInfo? = withContext(Dispatchers.IO) {
         var stable: ReleaseInfo? = null
         var stableTag = ""
-        val root = fetchJson(LucentBuild.RELEASES_API)
-        if (root != null) {
-            val tag = root["tag_name"]?.jsonPrimitive?.content ?: ""
-            val isDraftOrPrerelease = (root["draft"]?.jsonPrimitive?.booleanOrNull == true) || (root["prerelease"]?.jsonPrimitive?.booleanOrNull == true)
-            if (tag.isNotBlank() && !isDraftOrPrerelease) {
-                stableTag = tag
-                val body = root["body"]?.jsonPrimitive?.content ?: ""
-                val buildId = Regex("(?m)^(?:-\\s*)?Build-ID:\\s*(\\S+)").find(body)?.groupValues?.get(1)?.ifBlank { null }
-                val cBuildId = LucentBuild.BUILD_ID
-                val usesBuildId = buildId != null && parseBuildId(buildId) != null && parseBuildId(cBuildId) != null
-                val isNewerStable = if (usesBuildId) {
-                    isNewerBuildId(buildId, cBuildId)
-                } else {
-                    isNewer(tag, currentVersion)
-                }
-                if (isNewerStable) {
-                    val (apk, installer) = parseAssets(root)
-                    stable = ReleaseInfo(
-                        tag = tag,
-                        version = tag.trimStart('v', 'V'),
-                        title = root["name"]?.jsonPrimitive?.content?.ifBlank { tag } ?: tag,
-                        apk = apk,
-                        installer = installer,
-                        notesUrl = root["html_url"]?.jsonPrimitive?.content ?: "",
-                        channel = "stable",
-                        buildId = buildId
-                    )
-                }
+        val release = fetchLatestRelease()
+        if (release != null) {
+            val (info, tag) = release
+            stableTag = tag
+            val buildId = info.buildId
+            val cBuildId = LucentBuild.BUILD_ID
+            val usesBuildId = buildId != null && parseBuildId(buildId) != null && parseBuildId(cBuildId) != null
+            val isNewerStable = if (usesBuildId) {
+                isNewerBuildId(buildId, cBuildId)
+            } else {
+                isNewer(tag, currentVersion)
+            }
+            if (isNewerStable) {
+                stable = info
             }
         }
 

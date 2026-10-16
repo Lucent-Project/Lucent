@@ -37,17 +37,12 @@ class DesktopUpdateInstaller : AutoUpdate.Installer {
         job?.cancel()
         job = AppScope.io.launch {
             val target = partialFile(asset.name)
-            val finished = try {
-                withTimeoutOrNull(DOWNLOAD_TIMEOUT_MS) { fetch(asset, target) }
-            } catch (t: Throwable) {
-                log("update: download failed (${t::class.simpleName}: ${t.message})")
-                null
-            }
+            val finished = downloadWithFallback(asset, target)
             if (!isActive) {
                 target.delete()
                 return@launch
             }
-            if (finished != true || target.length() <= 0L) {
+            if (!finished || target.length() <= 0L) {
                 target.delete()
                 AutoUpdate.reportDownloadFailed(com.lucent.app.i18n.S.updateDownloadFailed)
                 log("update: the download did not finish, partial file removed")
@@ -60,6 +55,30 @@ class DesktopUpdateInstaller : AutoUpdate.Installer {
             AutoUpdate.reportProgress(1f)
             AutoUpdate.reportDownloadReady(listOf(asset.name))
             AutoUpdate.report(null)
+        }
+    }
+
+    private suspend fun downloadWithFallback(asset: ReleaseAsset, target: File): Boolean {
+        val primarySuccess = try {
+            withTimeoutOrNull(DOWNLOAD_TIMEOUT_MS) { fetch(asset.url, target) } == true && target.length() > 0L
+        } catch (t: Throwable) {
+            if (t is kotlinx.coroutines.CancellationException) throw t
+            log("update: download failed (${t::class.simpleName}: ${t.message})")
+            false
+        }
+        if (primarySuccess) return true
+
+        target.delete()
+        val fallbackUrl = asset.fallbackDownloadUrl
+        if (fallbackUrl.isNullOrBlank() || fallbackUrl == asset.url) return false
+
+        log("update: primary download failed, retrying against fallback URL")
+        return try {
+            withTimeoutOrNull(DOWNLOAD_TIMEOUT_MS) { fetch(fallbackUrl, target) } == true && target.length() > 0L
+        } catch (t: Throwable) {
+            if (t is kotlinx.coroutines.CancellationException) throw t
+            log("update: fallback download failed (${t::class.simpleName}: ${t.message})")
+            false
         }
     }
 
@@ -158,13 +177,13 @@ class DesktopUpdateInstaller : AutoUpdate.Installer {
         }
     }
 
-    private suspend fun fetch(asset: ReleaseAsset, target: File): Boolean = withContext(Dispatchers.IO) {
+    private suspend fun fetch(url: String, target: File): Boolean = withContext(Dispatchers.IO) {
         val client = OkHttpClient.Builder()
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(180, TimeUnit.SECONDS)
             .callTimeout(DOWNLOAD_TIMEOUT_MS, TimeUnit.MILLISECONDS)
             .build()
-        val request = Request.Builder().url(asset.url).header("User-Agent", "Lucent").build()
+        val request = Request.Builder().url(url).header("User-Agent", "Lucent").build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 log("update: the download answered ${response.code}")

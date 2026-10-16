@@ -43,6 +43,7 @@ class UpdateDownloadService : Service() {
         const val ACTION_CANCEL = "com.lucent.app.action.UPDATE_DOWNLOAD_CANCEL"
         const val EXTRA_URL = "url"
         const val EXTRA_NAME = "name"
+        const val EXTRA_FALLBACK_URL = "fallback_url"
         const val EXTRA_SHOW_UPDATE = "com.lucent.app.extra.SHOW_UPDATE"
 
         private const val CHANNEL_ID = "update_download"
@@ -56,6 +57,7 @@ class UpdateDownloadService : Service() {
                 .setAction(ACTION_START)
                 .putExtra(EXTRA_URL, asset.url)
                 .putExtra(EXTRA_NAME, asset.name)
+                .putExtra(EXTRA_FALLBACK_URL, asset.fallbackDownloadUrl)
             ContextCompat.startForegroundService(context, intent)
         }
 
@@ -129,37 +131,30 @@ class UpdateDownloadService : Service() {
             else -> {
                 val url = intent?.getStringExtra(EXTRA_URL).orEmpty()
                 val name = intent?.getStringExtra(EXTRA_NAME).orEmpty()
+                val fallbackUrl = intent?.getStringExtra(EXTRA_FALLBACK_URL)
                 if (url.isBlank() || name.isBlank()) {
                     finish()
                 } else if (job?.isActive != true) {
-                    begin(url, name)
+                    begin(url, name, fallbackUrl)
                 }
             }
         }
         return START_NOT_STICKY
     }
 
-    private fun begin(url: String, name: String) {
+    private fun begin(url: String, name: String, fallbackUrl: String? = null) {
         currentName = name
         lastPercent = -1
         lastNotifiedAt = 0L
         promoteToForeground(-1)
         job = scope.launch {
             val target = partialFile(applicationContext, name)
-            val finished = try {
-                withTimeoutOrNull(DOWNLOAD_TIMEOUT_MS) { fetch(url, target) }
-            } catch (t: Throwable) {
-                StartupLog.event(
-                    applicationContext,
-                    "update: download failed (${t::class.simpleName}: ${t.message})"
-                )
-                null
-            }
+            val finished = downloadWithFallback(url, fallbackUrl, target)
             if (!isActive) {
                 target.delete()
                 return@launch
             }
-            if (finished != true || target.length() <= 0L) {
+            if (!finished || target.length() <= 0L) {
                 target.delete()
                 AutoUpdate.reportDownloadFailed(com.lucent.app.i18n.S.updateDownloadFailed)
                 StartupLog.event(applicationContext, "update: the download did not finish, partial file removed")
@@ -177,6 +172,38 @@ class UpdateDownloadService : Service() {
             stopForegroundCompat()
             notifyReady(stored)
             stopSelf()
+        }
+    }
+
+    private suspend fun downloadWithFallback(url: String, fallbackUrl: String?, target: File): Boolean {
+        val primarySuccess = try {
+            withTimeoutOrNull(DOWNLOAD_TIMEOUT_MS) { fetch(url, target) } == true && target.length() > 0L
+        } catch (t: Throwable) {
+            if (t is kotlinx.coroutines.CancellationException) throw t
+            StartupLog.event(
+                applicationContext,
+                "update: download failed (${t::class.simpleName}: ${t.message})"
+            )
+            false
+        }
+        if (primarySuccess) return true
+
+        target.delete()
+        if (fallbackUrl.isNullOrBlank() || fallbackUrl == url) return false
+
+        lastPercent = -1
+        lastNotifiedAt = 0L
+        promoteToForeground(-1)
+        StartupLog.event(applicationContext, "update: primary download failed, retrying against fallback URL")
+        return try {
+            withTimeoutOrNull(DOWNLOAD_TIMEOUT_MS) { fetch(fallbackUrl, target) } == true && target.length() > 0L
+        } catch (t: Throwable) {
+            if (t is kotlinx.coroutines.CancellationException) throw t
+            StartupLog.event(
+                applicationContext,
+                "update: fallback download failed (${t::class.simpleName}: ${t.message})"
+            )
+            false
         }
     }
 
