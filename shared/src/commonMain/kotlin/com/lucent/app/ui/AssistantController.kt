@@ -173,8 +173,9 @@ class AssistantControllerImpl(
     private val debounceMs = 1200L
     private var pendingParams: SendParams? = null
     private var currentBurstBatchId: String? = null
+    private var flushActive = false
 
-    val sending: Boolean get() = turns.isNotEmpty() || (debounceJob?.isActive == true && synchronized(pendingLock) { pendingQueue.isNotEmpty() })
+    val sending: Boolean get() = turns.isNotEmpty() || synchronized(pendingLock) { flushActive || pendingQueue.isNotEmpty() } || (debounceJob?.isActive == true && synchronized(pendingLock) { pendingQueue.isNotEmpty() })
 
     fun isGenerating(conversationId: Long?): Boolean = turnFor(conversationId) != null
 
@@ -719,6 +720,7 @@ class AssistantControllerImpl(
             if (pendingQueue.isEmpty()) return
             batch = pendingQueue.toList()
             pendingQueue.clear()
+            flushActive = true
             params = pendingParams ?: return
             pendingParams = null
             batchId = currentBurstBatchId
@@ -871,6 +873,9 @@ class AssistantControllerImpl(
         }
         networkErrorMessage = null
         registerTurn(turn, params.name)
+        synchronized(pendingLock) {
+            flushActive = false
+        }
 
         turn.job = genScope.launch {
             try {
