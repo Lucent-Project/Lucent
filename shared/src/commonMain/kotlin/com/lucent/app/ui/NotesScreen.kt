@@ -1900,97 +1900,102 @@ fun NotesScreen(active: Boolean = true) {
 
         else -> {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                if (selectionMode) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { exitSelection() }) {
-                            Icon(Icons.Default.Close, contentDescription = com.lucent.app.i18n.S.a11yCancelSelection, tint = onGradient)
-                        }
-                        Text(
-                            com.lucent.app.i18n.S.nSelected(selectedNoteIds.size),
-                            color = onGradient,
-                            fontSize = 18.sp,
-                            modifier = Modifier.weight(1f)
-                        )
-                        if (HiddenArea.visible) {
-                            IconButton(onClick = {
-                                val ids = selectedNoteIds
-                                val target = showHidden
-                                AppScope.io.launch {
-                                    ids.forEach { id ->
-                                        db.noteDao.getByIdOnce(id)?.let { row ->
-                                            db.noteDao.update(row.copy(hidden = !target))
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (selectionMode) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { exitSelection() }) {
+                                Icon(Icons.Default.Close, contentDescription = com.lucent.app.i18n.S.a11yCancelSelection, tint = onGradient)
+                            }
+                            Text(
+                                com.lucent.app.i18n.S.nSelected(selectedNoteIds.size),
+                                color = onGradient,
+                                fontSize = 18.sp,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (HiddenArea.visible) {
+                                IconButton(onClick = {
+                                    val ids = selectedNoteIds
+                                    val target = showHidden
+                                    AppScope.io.launch {
+                                        ids.forEach { id ->
+                                            db.noteDao.getByIdOnce(id)?.let { row ->
+                                                db.noteDao.update(row.copy(hidden = !target))
+                                            }
                                         }
                                     }
+                                    exitSelection()
+                                }) {
+                                    Icon(
+                                        Icons.Default.VisibilityOff,
+                                        contentDescription = if (showHidden) com.lucent.app.i18n.S.hiddenRemove
+                                                             else com.lucent.app.i18n.S.hiddenAdd,
+                                        tint = onGradient
+                                    )
                                 }
-                                exitSelection()
+                            }
+                            TextButton(onClick = {
+                                val allIds = sortedNotes.map { it.id }.toSet()
+                                selectedNoteIds = if (selectedNoteIds.containsAll(allIds)) emptySet() else allIds
                             }) {
-                                Icon(
-                                    Icons.Default.VisibilityOff,
-                                    contentDescription = if (showHidden) com.lucent.app.i18n.S.hiddenRemove
-                                                         else com.lucent.app.i18n.S.hiddenAdd,
-                                    tint = onGradient
-                                )
+                                Text(if (selectedNoteIds.containsAll(sortedNotes.map { it.id }.toSet()) && sortedNotes.isNotEmpty()) com.lucent.app.i18n.S.clearAllSelection else com.lucent.app.i18n.S.selectAll)
+                            }
+                            IconButton(
+                                onClick = { if (selectedNoteIds.isNotEmpty()) showNotebookPicker = true },
+                                enabled = selectedNoteIds.isNotEmpty()
+                            ) {
+                                Icon(Icons.Default.Book, contentDescription = com.lucent.app.i18n.S.notebookA11yAddItems, tint = onGradient)
+                            }
+                            IconButton(
+                                onClick = { if (selectedNoteIds.isNotEmpty()) showBatchDeleteConfirm = true },
+                                enabled = selectedNoteIds.isNotEmpty()
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = com.lucent.app.i18n.S.a11yDeleteSelected, tint = onGradient)
                             }
                         }
-                        TextButton(onClick = {
-                            val allIds = sortedNotes.map { it.id }.toSet()
-                            selectedNoteIds = if (selectedNoteIds.containsAll(allIds)) emptySet() else allIds
-                        }) {
-                            Text(if (selectedNoteIds.containsAll(sortedNotes.map { it.id }.toSet()) && sortedNotes.isNotEmpty()) com.lucent.app.i18n.S.clearAllSelection else com.lucent.app.i18n.S.selectAll)
-                        }
-                        IconButton(
-                            onClick = { if (selectedNoteIds.isNotEmpty()) showNotebookPicker = true },
-                            enabled = selectedNoteIds.isNotEmpty()
-                        ) {
-                            Icon(Icons.Default.Book, contentDescription = com.lucent.app.i18n.S.notebookA11yAddItems, tint = onGradient)
-                        }
-                        IconButton(
-                            onClick = { if (selectedNoteIds.isNotEmpty()) showBatchDeleteConfirm = true },
-                            enabled = selectedNoteIds.isNotEmpty()
-                        ) {
-                            Icon(Icons.Default.Delete, contentDescription = com.lucent.app.i18n.S.a11yDeleteSelected, tint = onGradient)
-                        }
-                    }
-                } else {
-                    CollapsibleActionBar(
-                        expanded = actionsExpanded,
-                        onToggleExpanded = { actionsExpanded = !actionsExpanded },
-                        search = {
-                            OutlinedTextField(
-                                value = searchText,
-                                onValueChange = { searchText  = com.lucent.app.collapseExcessBlankLines(it) },
-                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = com.lucent.app.i18n.S.a11ySearchNotes) },
-                                trailingIcon = { SearchHelpButton() },
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        },
-                        actions = {
-                            DateFilterIconButton(
-                                active = dateRange != null,
-                                onClick = {
-                                    showDateRangePicker(context, dateRange?.first, dateRange?.second) { start, end ->
-                                        dateRange = start to end
+                    } else {
+                        CollapsibleActionBar(
+                            expanded = actionsExpanded,
+                            onToggleExpanded = { actionsExpanded = !actionsExpanded },
+                            search = {
+                                OutlinedTextField(
+                                    value = searchText,
+                                    onValueChange = { searchText  = com.lucent.app.collapseExcessBlankLines(it) },
+                                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = com.lucent.app.i18n.S.a11ySearchNotes) },
+                                    trailingIcon = { SearchHelpButton() },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            },
+                            actions = {
+                                DateFilterIconButton(
+                                    active = dateRange != null,
+                                    onClick = {
+                                        showDateRangePicker(context, dateRange?.first, dateRange?.second) { start, end ->
+                                            dateRange = start to end
+                                        }
                                     }
-                                }
-                            )
-                            SortMenuButton(
-                                current = sortOption,
-                                options = NoteSort.entries.toList(),
-                                label = { it.label },
-                                onSelect = { option -> scope.launch { settingsRepo.setNotesSort(option.key) } },
-                                tint = onGradientMuted,
-                                activeTint = onGradient
-                            )
-                        },
-                        trailing = {
-                            NewItemButton(contentDescription = com.lucent.app.i18n.S.newNote, onClick = { startCreate() })
-                        }
-                    )
+                                )
+                                SortMenuButton(
+                                    current = sortOption,
+                                    options = NoteSort.entries.toList(),
+                                    label = { it.label },
+                                    onSelect = { option -> scope.launch { settingsRepo.setNotesSort(option.key) } },
+                                    tint = onGradientMuted,
+                                    activeTint = onGradient
+                                )
+                            },
+                            trailing = {
+                                NewItemButton(contentDescription = com.lucent.app.i18n.S.newNote, onClick = { startCreate() })
+                            }
+                        )
 
-                    dateRange?.let { (start, end) ->
-                        Spacer(modifier = Modifier.height(8.dp))
-                        DateFilterChip(startMillis = start, endMillis = end, onClear = { dateRange = null })
+                        dateRange?.let { (start, end) ->
+                            Spacer(modifier = Modifier.height(8.dp))
+                            DateFilterChip(startMillis = start, endMillis = end, onClear = { dateRange = null })
+                        }
                     }
                 }
 

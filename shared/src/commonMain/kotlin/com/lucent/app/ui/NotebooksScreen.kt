@@ -375,101 +375,106 @@ fun NotebooksScreen(
             BackHeader(onBack = onBack)
         }
 
-        if (selectionMode) {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                IconButton(onClick = { exitSelection() }) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = com.lucent.app.i18n.S.a11yCancelSelection,
-                        tint = onGradient
-                    )
-                }
-                Text(
-                    com.lucent.app.i18n.S.nSelected(selectedIds.size),
-                    color = onGradient,
-                    fontSize = 18.sp,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = {
-                    val targets = visible.filter { it.id in selectedIds }
-                    val anyUnpinned = targets.any { !it.pinned }
-                    setPinned(targets, anyUnpinned)
-                    exitSelection()
-                }) {
-                    Icon(
-                        if (visible.filter { it.id in selectedIds }.all { it.pinned }) Icons.Default.PushPin
-                        else Icons.Default.PushPin,
-                        contentDescription = com.lucent.app.i18n.S.notebookPinA11y,
-                        tint = onGradient
-                    )
-                }
-                IconButton(
-                    onClick = { if (selectedIds.isNotEmpty()) batchDeleting = true },
-                    enabled = selectedIds.isNotEmpty()
-                ) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = com.lucent.app.i18n.S.a11yDeleteSelected,
-                        tint = onGradient
-                    )
-                }
-                TextButton(onClick = {
-                    val allIds = visible.map { it.id }.toSet()
-                    selectedIds = if (selectedIds.containsAll(allIds)) emptySet() else allIds
-                }) {
-                    Text(
-                        if (selectedIds.containsAll(visible.map { it.id }.toSet()) && visible.isNotEmpty())
-                            com.lucent.app.i18n.S.clearAllSelection
-                        else com.lucent.app.i18n.S.selectAll
-                    )
-                }
-            }
-        } else {
-            CollapsibleActionBar(
-                expanded = actionsExpanded,
-                onToggleExpanded = { actionsExpanded = !actionsExpanded },
-                search = {
-                    OutlinedTextField(
-                        value = searchText,
-                        onValueChange = { searchText  = com.lucent.app.collapseExcessBlankLines(it) },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = com.lucent.app.i18n.S.a11ySearchNotebooks) },
-                        trailingIcon = { SearchHelpButton() },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                },
-                actions = {
-                    DateFilterIconButton(
-                        active = dateRange != null,
-                        onClick = {
-                            showDateRangePicker(context, dateRange?.first, dateRange?.second) { start, end ->
-                                dateRange = start to end
-                            }
-                        }
-                    )
-                    SortMenuButton(
-                        current = sortOption,
-                        options = NotebookSort.entries.toList(),
-                        label = { it.label },
-                        onSelect = { option -> scope.launch { settingsRepo.setNotebooksSort(option.key) } },
-                        tint = onGradientMuted,
-                        activeTint = onGradient
-                    )
-                    IconButton(onClick = { showTrash = true }) {
+        Box(
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (selectionMode) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    IconButton(onClick = { exitSelection() }) {
                         Icon(
-                            Icons.Default.Delete,
-                            contentDescription = com.lucent.app.i18n.S.screenTrash,
-                            tint = onGradientMuted
+                            Icons.Default.Close,
+                            contentDescription = com.lucent.app.i18n.S.a11yCancelSelection,
+                            tint = onGradient
                         )
                     }
-                },
-                trailing = {
-                    NewItemButton(
-                        contentDescription = com.lucent.app.i18n.S.notebookNew,
-                        onClick = { creating = true }
+                    Text(
+                        com.lucent.app.i18n.S.nSelected(selectedIds.size),
+                        color = onGradient,
+                        fontSize = 18.sp,
+                        modifier = Modifier.weight(1f)
                     )
+                    IconButton(onClick = {
+                        val targets = visible.filter { it.id in selectedIds }
+                        val anyUnpinned = targets.any { !it.pinned }
+                        setPinned(targets, anyUnpinned)
+                        exitSelection()
+                    }) {
+                        Icon(
+                            if (visible.filter { it.id in selectedIds }.all { it.pinned }) Icons.Default.PushPin
+                            else Icons.Default.PushPin,
+                            contentDescription = com.lucent.app.i18n.S.notebookPinA11y,
+                            tint = onGradient
+                        )
+                    }
+                    IconButton(
+                        onClick = { if (selectedIds.isNotEmpty()) batchDeleting = true },
+                        enabled = selectedIds.isNotEmpty()
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = com.lucent.app.i18n.S.a11yDeleteSelected,
+                            tint = onGradient
+                        )
+                    }
+                    TextButton(onClick = {
+                        val allIds = visible.map { it.id }.toSet()
+                        selectedIds = if (selectedIds.containsAll(allIds)) emptySet() else allIds
+                    }) {
+                        Text(
+                            if (selectedIds.containsAll(visible.map { it.id }.toSet()) && visible.isNotEmpty())
+                                com.lucent.app.i18n.S.clearAllSelection
+                            else com.lucent.app.i18n.S.selectAll
+                        )
+                    }
                 }
-            )
+            } else {
+                CollapsibleActionBar(
+                    expanded = actionsExpanded,
+                    onToggleExpanded = { actionsExpanded = !actionsExpanded },
+                    search = {
+                        OutlinedTextField(
+                            value = searchText,
+                            onValueChange = { searchText  = com.lucent.app.collapseExcessBlankLines(it) },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = com.lucent.app.i18n.S.a11ySearchNotebooks) },
+                            trailingIcon = { SearchHelpButton() },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    actions = {
+                        DateFilterIconButton(
+                            active = dateRange != null,
+                            onClick = {
+                                showDateRangePicker(context, dateRange?.first, dateRange?.second) { start, end ->
+                                    dateRange = start to end
+                                }
+                            }
+                        )
+                        SortMenuButton(
+                            current = sortOption,
+                            options = NotebookSort.entries.toList(),
+                            label = { it.label },
+                            onSelect = { option -> scope.launch { settingsRepo.setNotebooksSort(option.key) } },
+                            tint = onGradientMuted,
+                            activeTint = onGradient
+                        )
+                        IconButton(onClick = { showTrash = true }) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = com.lucent.app.i18n.S.screenTrash,
+                                tint = onGradientMuted
+                            )
+                        }
+                    },
+                    trailing = {
+                        NewItemButton(
+                            contentDescription = com.lucent.app.i18n.S.notebookNew,
+                            onClick = { creating = true }
+                        )
+                    }
+                )
+            }
         }
 
         dateRange?.let { (start, end) ->
