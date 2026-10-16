@@ -131,7 +131,7 @@ Lucent 自身的许可证管辖你安装的一切；上述项目作为创意与�
 
 Lucent 以 **MIT 许可证** 发布——见 [`LICENSE`](../LICENSE)。你可以对它做几乎任何你喜欢的事：使用它、修改它、把它塞进商业产品、在它之上构建更好的东西，且永远不必写信致谢。唯一一个完全合理的要求是：我们的版权声明与许可证文本须随任何副本或实质性部分的代码一同传播——因此若你复用了 Lucent，请把 `LICENSE` 文件（以及上面的署名）连同你分发的成果一并带上，我们便两讫了。上述第三方组件也各有其类似的、谦和的要求；以同样的精神尊重它们，大家便依然是朋友。
 
-隐私政策：**[`PRIVACY/PRIVACY.zh-CN.md`](https://github.com/Yuan0-o/Lucent/blob/main/PRIVACY/PRIVACY.zh-CN.md)** —— Lucent 在本机保存什么、什么会离开设备，以及每一项由你掌握的控制。
+隐私政策：**[`PRIVACY/PRIVACY.zh-CN.md`](https://yuan0-o.github.io/lucentapp/zh/privacy.html)** —— Lucent 在本机保存什么、什么会离开设备，以及每一项由你掌握的控制。
 
 ## 贡献
 

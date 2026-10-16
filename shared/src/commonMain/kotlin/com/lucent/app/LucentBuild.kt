@@ -2,7 +2,7 @@ package com.lucent.app
 
 object LucentBuild {
 
-    const val VERSION = "3.1.1"
+    const val VERSION = "3.1.2"
 
     const val BUILD_NUMBER = "311"
     
@@ -32,12 +32,12 @@ object LucentBuild {
 
     const val REPO_API = "https://api.github.com/repos/Yuan0-o/Lucent"
 
-    private const val PRIVACY_PAGE = "https://github.com/Yuan0-o/Lucent/blob/main/PRIVACY/PRIVACY"
+    private const val PRIVACY_PAGE = "https://yuan0-o.github.io/lucentapp"
 
     fun privacyPage(languageKey: String): String = when (languageKey) {
-        "zh" -> "$PRIVACY_PAGE.zh-CN.md"
-        "ja" -> "$PRIVACY_PAGE.ja.md"
-        "ko" -> "$PRIVACY_PAGE.ko.md"
-        else -> "$PRIVACY_PAGE.md"
+        "zh" -> "$PRIVACY_PAGE/zh/privacy.html"
+        "ja" -> "$PRIVACY_PAGE/ja/privacy.html"
+        "ko" -> "$PRIVACY_PAGE/ko/privacy.html"
+        else -> "$PRIVACY_PAGE/privacy.html"
     }
 }
