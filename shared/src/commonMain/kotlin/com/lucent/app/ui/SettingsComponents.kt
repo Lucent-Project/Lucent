@@ -507,11 +507,5 @@ fun GlobalTextSelectionContainer(
     androidx.compose.runtime.LaunchedEffect(enabledFlow) {
         enabledFlow.collect { enabled = it }
     }
-    if (enabled) {
-        androidx.compose.foundation.text.selection.SelectionContainer {
-            content()
-        }
-    } else {
-        content()
-    }
+    OptionalSelectionContainer(enabled = enabled, content = content)
 }

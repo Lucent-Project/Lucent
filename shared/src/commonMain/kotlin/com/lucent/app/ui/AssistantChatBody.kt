@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -1320,109 +1321,111 @@ fun AssistantChatBody(
             onSubmitted()
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(modifier = Modifier.align(Alignment.CenterVertically)) {
-                ComposerGlassButton(
-                    icon = Icons.Default.AttachFile,
-                    contentDescription = com.lucent.app.i18n.S.a11yAttachFile,
-                    onClick = { attachMenuOpen = true },
-                    tint = onGradient
-                )
-                LucentGlassDropdownMenu(expanded = attachMenuOpen, onDismissRequest = { attachMenuOpen = false }) {
-                    attachMenuContent { attachMenuOpen = false }
-                }
-            }
-            OutlinedTextField(
-                value = draft.input,
-                onValueChange = { draft.input  = com.lucent.app.collapseExcessBlankLines(it) },
-                trailingIcon = {
-                    var inputExpanded by androidx.compose.runtime.remember {
-                        androidx.compose.runtime.mutableStateOf(false)
+        DisableSelection {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(modifier = Modifier.align(Alignment.CenterVertically)) {
+                    ComposerGlassButton(
+                        icon = Icons.Default.AttachFile,
+                        contentDescription = com.lucent.app.i18n.S.a11yAttachFile,
+                        onClick = { attachMenuOpen = true },
+                        tint = onGradient
+                    )
+                    LucentGlassDropdownMenu(expanded = attachMenuOpen, onDismissRequest = { attachMenuOpen = false }) {
+                        attachMenuContent { attachMenuOpen = false }
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        QuickModelSwitcher(
-                            currentModel = savedModel,
-                            recents = modelRecents,
-                            baseUrl = savedUrl,
-                            spec = when (savedSpecStr) {
-                                "anthropic" -> ApiSpec.ANTHROPIC
-                                "google" -> ApiSpec.GOOGLE
-                                else -> ApiSpec.OPENAI
-                            },
-                            apiKey = savedKey,
-                            selectedModels = activeApiProfile?.selectedModels ?: emptyList(),
-                            hasProfile = activeApiProfile != null,
-                            localModelEnabled = localModelEnabled,
-                            tint = onGradient,
-                            mutedTint = onGradientMuted,
-                            onPickCloudModel = { model -> scope.launch { repo.setActiveModel(model) } },
-                            onSelectedModelsChange = { picked -> persistSelectedModels(picked) },
-                            buttonSize = 34.dp,
-                            plain = true,
-                            reasoningProviderId = com.lucent.app.data.ApiProviders.forRequest(savedSpecStr, savedUrl),
-                            reasoningCurrent = reasoningKey,
-                            onPickReasoning = { picked ->
-                                SettingsCache.reasoning = picked.key
-                                scope.launch { repo.setReasoning(picked.key) }
-                            }
-                        )
-                        DictationButton(
-                            onText = { spoken ->
-                                draft.input = com.lucent.app.collapseExcessBlankLines(
-                                    if (draft.input.isBlank()) spoken
-                                    else draft.input + (if (draft.input.endsWith(" ")) "" else " ") + spoken
+                }
+                OutlinedTextField(
+                    value = draft.input,
+                    onValueChange = { draft.input  = com.lucent.app.collapseExcessBlankLines(it) },
+                    trailingIcon = {
+                        var inputExpanded by androidx.compose.runtime.remember {
+                            androidx.compose.runtime.mutableStateOf(false)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            QuickModelSwitcher(
+                                currentModel = savedModel,
+                                recents = modelRecents,
+                                baseUrl = savedUrl,
+                                spec = when (savedSpecStr) {
+                                    "anthropic" -> ApiSpec.ANTHROPIC
+                                    "google" -> ApiSpec.GOOGLE
+                                    else -> ApiSpec.OPENAI
+                                },
+                                apiKey = savedKey,
+                                selectedModels = activeApiProfile?.selectedModels ?: emptyList(),
+                                hasProfile = activeApiProfile != null,
+                                localModelEnabled = localModelEnabled,
+                                tint = onGradient,
+                                mutedTint = onGradientMuted,
+                                onPickCloudModel = { model -> scope.launch { repo.setActiveModel(model) } },
+                                onSelectedModelsChange = { picked -> persistSelectedModels(picked) },
+                                buttonSize = 34.dp,
+                                plain = true,
+                                reasoningProviderId = com.lucent.app.data.ApiProviders.forRequest(savedSpecStr, savedUrl),
+                                reasoningCurrent = reasoningKey,
+                                onPickReasoning = { picked ->
+                                    SettingsCache.reasoning = picked.key
+                                    scope.launch { repo.setReasoning(picked.key) }
+                                }
+                            )
+                            DictationButton(
+                                onText = { spoken ->
+                                    draft.input = com.lucent.app.collapseExcessBlankLines(
+                                        if (draft.input.isBlank()) spoken
+                                        else draft.input + (if (draft.input.endsWith(" ")) "" else " ") + spoken
+                                    )
+                                },
+                                modifier = Modifier.size(34.dp)
+                            )
+                            IconButton(
+                                onClick = { inputExpanded = true },
+                                modifier = Modifier.size(34.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.OpenInFull,
+                                    contentDescription = com.lucent.app.i18n.S.expandTextBox,
+                                    tint = onGradientMuted,
+                                    modifier = Modifier.size(17.dp)
                                 )
-                            },
-                            modifier = Modifier.size(34.dp)
-                        )
-                        IconButton(
-                            onClick = { inputExpanded = true },
-                            modifier = Modifier.size(34.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.OpenInFull,
-                                contentDescription = com.lucent.app.i18n.S.expandTextBox,
-                                tint = onGradientMuted,
-                                modifier = Modifier.size(17.dp)
+                            }
+                        }
+                        if (inputExpanded) {
+                            LucentExpandedInput(
+                                value = draft.input,
+                                onValueChange = { draft.input  = com.lucent.app.collapseExcessBlankLines(it) },
+                                placeholder = com.lucent.app.i18n.S.messagePlaceholder,
+                                title = com.lucent.app.i18n.S.messagePlaceholder,
+                                onCollapse = { inputExpanded = false }
                             )
                         }
-                    }
-                    if (inputExpanded) {
-                        LucentExpandedInput(
-                            value = draft.input,
-                            onValueChange = { draft.input  = com.lucent.app.collapseExcessBlankLines(it) },
-                            placeholder = com.lucent.app.i18n.S.messagePlaceholder,
-                            title = com.lucent.app.i18n.S.messagePlaceholder,
-                            onCollapse = { inputExpanded = false }
-                        )
-                    }
-                },
-                placeholder = { Text(com.lucent.app.i18n.S.messagePlaceholder, fontSize = 13.sp) },
-                singleLine = inputSingleLine,
-                maxLines = inputMaxLines,
-                textStyle = LocalTextStyle.current.copy(fontSize = 13.sp),
-                modifier = Modifier.weight(1f).then(inputModifier(submitMessage, sending))
-            )
-            if (sending) {
-                ComposerGlassButton(
-                    icon = Icons.Default.Stop,
-                    contentDescription = com.lucent.app.i18n.S.a11yStopGenerating,
-                    onClick = { AssistantController.stopGeneration() },
-                    tint = onGradient,
-                    modifier = Modifier.align(Alignment.CenterVertically)
+                    },
+                    placeholder = { Text(com.lucent.app.i18n.S.messagePlaceholder, fontSize = 13.sp) },
+                    singleLine = inputSingleLine,
+                    maxLines = inputMaxLines,
+                    textStyle = LocalTextStyle.current.copy(fontSize = 13.sp),
+                    modifier = Modifier.weight(1f).then(inputModifier(submitMessage, sending))
                 )
-            } else {
-                ComposerGlassButton(
-                    icon = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = com.lucent.app.i18n.S.a11ySend,
-                    onClick = submitMessage,
-                    tint = onGradient,
-                    modifier = Modifier.align(Alignment.CenterVertically)
-                )
+                if (sending) {
+                    ComposerGlassButton(
+                        icon = Icons.Default.Stop,
+                        contentDescription = com.lucent.app.i18n.S.a11yStopGenerating,
+                        onClick = { AssistantController.stopGeneration() },
+                        tint = onGradient,
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                    )
+                } else {
+                    ComposerGlassButton(
+                        icon = Icons.AutoMirrored.Filled.Send,
+                        contentDescription = com.lucent.app.i18n.S.a11ySend,
+                        onClick = submitMessage,
+                        tint = onGradient,
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                    )
+                }
             }
         }
     }

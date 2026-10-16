@@ -54,6 +54,7 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -1205,6 +1206,7 @@ fun NotesScreen(active: Boolean = true) {
                     .padding(end = 14.dp, bottom = LocalBottomBarInset.current + 14.dp)
             )
             }
+            DisableSelection {
             Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize().imePadding().padding(16.dp).verticalScroll(composerScroll).padding(bottom = LocalBottomBarInset.current)) {
                 Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1545,6 +1547,7 @@ fun NotesScreen(active: Boolean = true) {
             bodyTools()
         }
         }
+        }
 
         historyForId != null && viewingNote != null -> {
             NoteHistoryScreen(
@@ -1735,14 +1738,16 @@ fun NotesScreen(active: Boolean = true) {
                         .frostedGlass(tint = NoteColor.fromKey(note.color).swatch)
                         .padding(16.dp)
                 ) {
-                    SelectionContainer {
-                        Column {
-                            Text(note.title.ifBlank { com.lucent.app.i18n.S.untitled }, color = onGradient, fontSize = 22.sp)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(formatTimestamp(note.updatedAt), color = onGradientMuted, fontSize = 12.sp)
-                            if (note.tags.isNotBlank()) {
+                    DisableSelection {
+                        SelectionContainer {
+                            Column {
+                                Text(note.title.ifBlank { com.lucent.app.i18n.S.untitled }, color = onGradient, fontSize = 22.sp)
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text(com.lucent.app.data.NoteTags.displayLine(note.tags), color = onGradientMuted, fontSize = 12.sp)
+                                Text(formatTimestamp(note.updatedAt), color = onGradientMuted, fontSize = 12.sp)
+                                if (note.tags.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(com.lucent.app.data.NoteTags.displayLine(note.tags), color = onGradientMuted, fontSize = 12.sp)
+                                }
                             }
                         }
                     }

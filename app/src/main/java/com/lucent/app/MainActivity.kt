@@ -506,7 +506,10 @@ class MainActivity : FragmentActivity() {
                     val appLockOn by settingsRepo.appLockEnabled.collectAsState(initial = lockEnabled)
                     LaunchedEffect(appLockOn) { AppLockController.enabled = appLockOn }
 
-                    com.lucent.app.ui.GlobalTextSelectionContainer(enabledFlow = settingsRepo.globalTextSelectionEnabled) {
+                    val globalTextSelectionOn by settingsRepo.globalTextSelectionEnabled.collectAsState(
+                        initial = startup.globalTextSelectionEnabled
+                    )
+                    com.lucent.app.ui.OptionalSelectionContainer(enabled = globalTextSelectionOn) {
                         Box(modifier = Modifier.fillMaxSize()) {
                             val startupError = AppReady.databaseError
                             if (startupError != null) {

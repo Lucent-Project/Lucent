@@ -7,14 +7,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,10 +43,13 @@ fun EditorSettingsPage(
     val linksEnabled by repo.linksEnabled.collectAsState(initial = SettingsCache.linksEnabled)
     val blackoutOn by repo.blackoutEnabled.collectAsState(initial = SettingsCache.blackoutEnabled)
     val openLinksExternallyOn by repo.openLinksExternally.collectAsState(initial = SettingsCache.openLinksExternally)
-    var globalTextSelectionEnabled by remember { mutableStateOf(SettingsCache.globalTextSelectionEnabled) }
+    val globalTextSelectionEnabled by repo.globalTextSelectionEnabled.collectAsState(initial = SettingsCache.globalTextSelectionEnabled)
 
-    BackHeader(onBack = { onRoute(SettingsRoute.Root) })
-    Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
+    DisableSelection {
+        BackHeader(onBack = { onRoute(SettingsRoute.Root) })
+    }
+    DisableSelection {
+        Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(S.markdownFormattingTitle, color = onGradient)
@@ -100,7 +101,6 @@ fun EditorSettingsPage(
             Switch(
                 checked = globalTextSelectionEnabled,
                 onCheckedChange = { checked ->
-                    globalTextSelectionEnabled = checked
                     SettingsCache.globalTextSelectionEnabled = checked
                     scope.launch { repo.setGlobalTextSelectionEnabled(checked) }
                 }
@@ -128,5 +128,6 @@ fun EditorSettingsPage(
             Spacer(modifier = Modifier.height(4.dp))
             Text(S.openLinksBlockedByBlackout, color = onGradientMuted, fontSize = 12.sp)
         }
+    }
     }
 }

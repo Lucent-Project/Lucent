@@ -43,6 +43,7 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -906,6 +907,7 @@ fun TasksScreen(active: Boolean = true) {
                     .padding(end = 14.dp, bottom = LocalBottomBarInset.current + 14.dp)
             )
             }
+            DisableSelection {
             Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize().imePadding().padding(16.dp).verticalScroll(composerScroll).padding(bottom = LocalBottomBarInset.current)) {
                 Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1067,6 +1069,7 @@ fun TasksScreen(active: Boolean = true) {
                 }
             }
             bodyTools()
+        }
         }
         }
 
@@ -1262,48 +1265,50 @@ fun TasksScreen(active: Boolean = true) {
                         .padding(16.dp)
                 ) {
                     Row(verticalAlignment = Alignment.Top) {
-                        SelectionContainer(modifier = Modifier.weight(1f)) {
-                            Column {
-                                Text(
-                                    task.title.ifBlank { com.lucent.app.i18n.S.untitledTask },
-                                    color = onGradient,
-                                    fontSize = 22.sp,
-                                    textDecoration = if (task.isDone) TextDecoration.LineThrough else null
-                                )
-                                if (taskPriority != TaskPriority.NONE) {
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    PriorityBadge(taskPriority)
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(com.lucent.app.i18n.S.createdOn(formatTimestamp(task.createdAt)), color = onGradientMuted, fontSize = 12.sp)
-                                task.dueAt?.let { due ->
+                        DisableSelection {
+                            SelectionContainer(modifier = Modifier.weight(1f)) {
+                                Column {
                                     Text(
-                                        if (overdue) friendlyDue(due) else com.lucent.app.i18n.S.dueWhen(friendlyDue(due)),
-                                        color = if (overdue) OverdueColor else onGradientMuted,
-                                        fontSize = 12.sp
+                                        task.title.ifBlank { com.lucent.app.i18n.S.untitledTask },
+                                        color = onGradient,
+                                        fontSize = 22.sp,
+                                        textDecoration = if (task.isDone) TextDecoration.LineThrough else null
                                     )
-                                }
-                                if (taskRepeat != RepeatRule.NONE) {
-                                    Text(com.lucent.app.i18n.S.repeatsEvery(taskRepeat.uiLabel), color = onGradientMuted, fontSize = 12.sp)
-                                }
-                                if (task.reminderEnabled && task.dueAt != null && !task.isDone) {
-                                    Text(com.lucent.app.i18n.S.reminderOn, color = onGradientMuted, fontSize = 12.sp)
-                                }
-                                task.completedAt?.let { done ->
-                                    Text(com.lucent.app.i18n.S.completedOn(formatTimestamp(done)), color = onGradientMuted, fontSize = 12.sp)
-                                }
-                                if (task.notes.isNotBlank()) {
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    val detailFormat = com.lucent.app.data.ContentFormats.resolve(
-                                        markdownEnabled = markdownEnabled,
-                                        richTextEnabled = richTextEnabled,
-                                        override = task.formatOverride,
-                                        body = task.notes
-                                    )
-                                    if (detailFormat == com.lucent.app.data.ContentFormat.MARKDOWN) {
-                                        MarkdownText(text = task.notes)
-                                    } else {
-                                        Text(task.notes, color = onGradient)
+                                    if (taskPriority != TaskPriority.NONE) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        PriorityBadge(taskPriority)
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(com.lucent.app.i18n.S.createdOn(formatTimestamp(task.createdAt)), color = onGradientMuted, fontSize = 12.sp)
+                                    task.dueAt?.let { due ->
+                                        Text(
+                                            if (overdue) friendlyDue(due) else com.lucent.app.i18n.S.dueWhen(friendlyDue(due)),
+                                            color = if (overdue) OverdueColor else onGradientMuted,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                    if (taskRepeat != RepeatRule.NONE) {
+                                        Text(com.lucent.app.i18n.S.repeatsEvery(taskRepeat.uiLabel), color = onGradientMuted, fontSize = 12.sp)
+                                    }
+                                    if (task.reminderEnabled && task.dueAt != null && !task.isDone) {
+                                        Text(com.lucent.app.i18n.S.reminderOn, color = onGradientMuted, fontSize = 12.sp)
+                                    }
+                                    task.completedAt?.let { done ->
+                                        Text(com.lucent.app.i18n.S.completedOn(formatTimestamp(done)), color = onGradientMuted, fontSize = 12.sp)
+                                    }
+                                    if (task.notes.isNotBlank()) {
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        val detailFormat = com.lucent.app.data.ContentFormats.resolve(
+                                            markdownEnabled = markdownEnabled,
+                                            richTextEnabled = richTextEnabled,
+                                            override = task.formatOverride,
+                                            body = task.notes
+                                        )
+                                        if (detailFormat == com.lucent.app.data.ContentFormat.MARKDOWN) {
+                                            MarkdownText(text = task.notes)
+                                        } else {
+                                            Text(task.notes, color = onGradient)
+                                        }
                                     }
                                 }
                             }

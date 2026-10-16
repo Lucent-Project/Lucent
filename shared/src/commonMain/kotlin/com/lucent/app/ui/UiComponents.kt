@@ -4,6 +4,8 @@ import com.lucent.app.platform.LocalPlatformContext
 import com.lucent.app.platform.PlatformContext
 
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.fillMaxSize
@@ -528,6 +530,12 @@ fun LucentExpandedInput(
             )
         }
     }
+}
+
+@Composable
+fun OptionalSelectionContainer(enabled: Boolean, content: @Composable () -> Unit) {
+    val movable = remember(content) { movableContentOf { content() } }
+    if (enabled) SelectionContainer { movable() } else movable()
 }
 
 expect fun showDateRangePicker(context: PlatformContext, currentStart: Long?, currentEnd: Long?, onPicked: (Long, Long) -> Unit)

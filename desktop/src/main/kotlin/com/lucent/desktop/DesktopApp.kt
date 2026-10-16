@@ -183,7 +183,10 @@ fun DesktopApp(startup: SettingsRepository.StartupPrefs, active: Boolean) {
             LocalOnGradientMuted provides onGradientMuted,
             LocalBackgroundEnvironment provides backgroundEnvironment
         ) {
-            com.lucent.app.ui.GlobalTextSelectionContainer(enabledFlow = repo.globalTextSelectionEnabled) {
+            val globalTextSelectionOn by repo.globalTextSelectionEnabled.collectAsState(
+                initial = startup.globalTextSelectionEnabled
+            )
+            com.lucent.app.ui.OptionalSelectionContainer(enabled = globalTextSelectionOn) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     if (com.lucent.app.ui.AppLockController.locked) {
                         LockScreen(
