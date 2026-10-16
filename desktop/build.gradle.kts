@@ -92,7 +92,7 @@ compose.desktop {
             packageVersion = "3.1.2"
 
             includeAllModules = false
-            modules("java.base", "java.desktop", "java.datatransfer", "java.sql", "java.net.http", "java.xml", "java.logging", "java.management", "jdk.unsupported", "jdk.crypto.ec", "jdk.crypto.mscapi", "jdk.charsets")
+            modules("java.base", "java.desktop", "java.datatransfer", "java.sql", "java.net.http", "java.xml", "java.logging", "java.management", "jdk.unsupported", "jdk.crypto.ec", "jdk.crypto.mscapi")
 
             windows {
                 menu = true
@@ -105,5 +105,87 @@ compose.desktop {
                 if (icoFile.exists()) iconFile.set(icoFile)
             }
         }
+
+        buildTypes.release.proguard {
+            version.set("7.6.1")
+            isEnabled.set(true)
+            obfuscate.set(false)
+            optimize.set(false)
+            configurationFiles.from(project.file("proguard-desktop.pro"))
+        }
     }
+}
+
+tasks.withType<org.jetbrains.compose.desktop.application.tasks.AbstractJLinkTask>().configureEach {
+    stripDebug.set(true)
+    noHeaderFiles.set(true)
+    noManPages.set(true)
+}
+
+val stripNonWindowsNatives = tasks.register("stripNonWindowsNatives") {
+    doLast {
+        val keepMarkers = listOf("win32-x86-64", "windows-x86_64", "windows/x86-64")
+        val dropDirMarkers = listOf(
+            "win32-x86/", "win32-aarch64/",
+            "windows/x86/", "windows/aarch64/", "windows/armv7/",
+            "windows-x86/", "windows-aarch64/"
+        )
+        val dropOsTokens = listOf("linux", "mac", "darwin", "musl", "freebsd", "openbsd")
+        val binariesDir = layout.buildDirectory.dir("compose/binaries").get().asFile
+        if (!binariesDir.isDirectory) return@doLast
+        var jarsTouched = 0
+        var entriesDropped = 0
+        binariesDir.walkTopDown()
+            .filter { it.isDirectory && it.name == "app" }
+            .forEach { appDir ->
+                appDir.walkTopDown()
+                    .filter { it.isFile && it.extension.equals("jar", ignoreCase = true) }
+                    .forEach { jar ->
+                        val tmp = kotlin.io.path.createTempFile("strip", ".jar").toFile()
+                        var dropped = 0
+                        java.util.zip.ZipFile(jar).use { zin ->
+                            java.util.zip.ZipOutputStream(tmp.outputStream().buffered()).use { zout ->
+                                val entries = zin.entries().asSequence().toList()
+                                for (e in entries) {
+                                    val lower = e.name.lowercase()
+                                    val keep = keepMarkers.any { lower.contains(it) }
+                                    val segments = lower.split('/')
+                                    val drop = !keep && (
+                                        lower.endsWith(".so") || lower.endsWith(".dylib") ||
+                                        dropDirMarkers.any { lower.contains(it) } ||
+                                        dropOsTokens.any { tok ->
+                                            segments.any { seg -> seg == tok || seg.startsWith("$tok-") || seg.startsWith("${tok}_") }
+                                        }
+                                    )
+                                    if (drop) {
+                                        dropped++
+                                    } else {
+                                        zout.putNextEntry(java.util.zip.ZipEntry(e))
+                                        zin.getInputStream(e).use { it.copyTo(zout) }
+                                        zout.closeEntry()
+                                    }
+                                }
+                            }
+                        }
+                        if (dropped > 0) {
+                            java.nio.file.Files.move(
+                                tmp.toPath(), jar.toPath(),
+                                java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                            )
+                            jarsTouched++
+                            entriesDropped += dropped
+                        } else {
+                            tmp.delete()
+                        }
+                    }
+            }
+        logger.lifecycle("stripNonWindowsNatives: dropped $entriesDropped entries from $jarsTouched jars")
+    }
+}
+tasks.configureEach {
+    if (name == "packageReleaseDistributionForCurrentOS") dependsOn(stripNonWindowsNatives)
+}
+stripNonWindowsNatives.configure {
+    dependsOn(tasks.matching { it.name == "createReleaseDistributable" })
+    mustRunAfter(tasks.matching { it.name == "createReleaseDistributable" })
 }

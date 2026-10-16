@@ -455,8 +455,8 @@ jobs:
       - name: Package EXE
         shell: pwsh
         run: |
-          ./gradlew :desktop:packageDistributionForCurrentOS --no-daemon --stacktrace -PbuildId='${{ needs.prepare.outputs.build_id }}'
-          if ($LASTEXITCODE -ne 0) { Start-Sleep -Seconds 30; ./gradlew :desktop:packageDistributionForCurrentOS --no-daemon --stacktrace -PbuildId='${{ needs.prepare.outputs.build_id }}' }
+          ./gradlew :desktop:packageReleaseDistributionForCurrentOS --no-daemon --stacktrace -PbuildId='${{ needs.prepare.outputs.build_id }}'
+          if ($LASTEXITCODE -ne 0) { Start-Sleep -Seconds 30; ./gradlew :desktop:packageReleaseDistributionForCurrentOS --no-daemon --stacktrace -PbuildId='${{ needs.prepare.outputs.build_id }}' }
           exit $LASTEXITCODE
 
       - name: Sign installer
