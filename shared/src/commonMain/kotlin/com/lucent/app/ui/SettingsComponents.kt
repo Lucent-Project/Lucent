@@ -162,8 +162,9 @@ object SettingsTrail {
         SettingsRoute.Personalization, SettingsRoute.CloudModel, SettingsRoute.LocalModel -> SettingsRoute.Assistant
         SettingsRoute.Agent, SettingsRoute.Shizuku -> SettingsRoute.Advanced
         SettingsRoute.Workspace, SettingsRoute.Capabilities, SettingsRoute.Permissions, SettingsRoute.Groups,
-        SettingsRoute.Execution, SettingsRoute.Github, SettingsRoute.Plugins, SettingsRoute.PluginSetup,
+        SettingsRoute.Execution, SettingsRoute.Github,
         SettingsRoute.Mcp, SettingsRoute.Audit -> SettingsRoute.Agent
+        SettingsRoute.Plugins, SettingsRoute.PluginSetup -> SettingsRoute.Capabilities
         else -> SettingsRoute.Root
     }
 

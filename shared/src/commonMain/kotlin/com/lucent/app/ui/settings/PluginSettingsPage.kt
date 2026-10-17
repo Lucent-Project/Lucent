@@ -216,7 +216,7 @@ fun PluginSettingsPage(
             searchQuery = ""
             focusManager.clearFocus()
         } else {
-            onRoute(SettingsRoute.Agent)
+            onRoute(SettingsRoute.Capabilities)
         }
     })
     Column(modifier = Modifier.fillMaxWidth().clearFocusOnTap(focusManager)) {

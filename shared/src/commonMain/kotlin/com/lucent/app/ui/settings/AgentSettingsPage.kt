@@ -67,7 +67,6 @@ fun toolkitPages(): List<ToolkitPage> = listOf(
     ToolkitPage(S.agentGroupsTitle, S.agentGroupsSub, SettingsRoute.Groups),
     ToolkitPage(S.agentSandboxTitle, S.agentSandboxSub, SettingsRoute.Execution),
     ToolkitPage(S.agentGithubTitle, S.agentGithubSub, SettingsRoute.Github),
-    ToolkitPage(S.agentPluginsTitle, S.agentPluginsSub, SettingsRoute.Plugins),
     ToolkitPage(S.agentMcpTitle, S.agentMcpSub, SettingsRoute.Mcp),
     ToolkitPage(S.agentAuditTitle, S.agentAuditSub, SettingsRoute.Audit)
 )
