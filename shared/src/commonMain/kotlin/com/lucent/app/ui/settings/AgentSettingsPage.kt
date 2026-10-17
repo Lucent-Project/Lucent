@@ -62,6 +62,7 @@ data class ToolkitPage(val title: String, val subtitle: String, val route: Setti
 
 fun toolkitPages(): List<ToolkitPage> = listOf(
     ToolkitPage(S.agentWorkspaceTitle, S.agentWorkspaceSub, SettingsRoute.Workspace),
+    ToolkitPage(S.agentPluginsTitle, S.agentPluginsSub, SettingsRoute.Plugins),
     ToolkitPage(S.agentCapabilitiesTitle, S.agentCapabilitiesSub, SettingsRoute.Capabilities),
     ToolkitPage(S.agentPermissionsTitle, S.agentPermissionsSub, SettingsRoute.Permissions),
     ToolkitPage(S.agentGroupsTitle, S.agentGroupsSub, SettingsRoute.Groups),

@@ -17,7 +17,6 @@ import com.lucent.app.i18n.S
 import com.lucent.app.ui.BackHeader
 import com.lucent.app.ui.LocalOnGradient
 import com.lucent.app.ui.LocalOnGradientMuted
-import com.lucent.app.ui.NavCard
 import com.lucent.app.ui.SettingsRoute
 
 @Composable
@@ -51,8 +50,6 @@ fun CapabilitiesSettingsPage(
                 if (wanted && !accessibilityRunning) onOpenAccessibility()
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        NavCard(S.agentPluginsTitle, S.agentPluginsSub) { onRoute(SettingsRoute.Plugins) }
         Spacer(modifier = Modifier.height(12.dp))
     }
 }
