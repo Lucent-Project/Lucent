@@ -1535,6 +1535,7 @@ ENTRIES = [
     ("smallModelModeSub", "Trim the prompts for weaker or smaller models", "为能力较弱或体积更小的模型精简提示词", "小さい・弱いモデル向けにプロンプトを削ります", "작거나 약한 모델을 위해 프롬프트를 줄입니다"),
     ("aboutPrivacy", "Privacy policy", "隐私政策", "プライバシーポリシー", "개인정보 처리방침"),
     ("aboutPrivacyOpen", "how Lucent handles your data", "查看 Lucent 如何处理你的数据", "Lucent がデータをどう扱うか", "Lucent가 데이터를 다루는 방식"),
+    ("aboutDonate", "Support Lucent", "支持 Lucent", "Lucentを支援", "Lucent 후원"),
     ("updateNotesOnGitHub", "See what's new on GitHub", "前往 GitHub 查看更新内容", "GitHub で更新内容を見る", "GitHub에서 업데이트 내용 보기"),
     ("a11ySearchNotebooks", "Search notebooks", "搜索笔记本", "ノートブックを検索", "노트북 검색"),
     ("notebookNoMatch", "No notebooks match your search.", "没有匹配的笔记本。", "検索に一致するノートブックはありません。", "검색과 일치하는 노트북이 없습니다."),
