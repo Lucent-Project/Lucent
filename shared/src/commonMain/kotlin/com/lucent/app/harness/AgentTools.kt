@@ -14,8 +14,10 @@ class SubAgent internal constructor(
     val tools: Set<String>,
     val startedAt: Long,
     val parentId: String? = null,
-    val conversationId: Long? = null
+    val conversationId: Long? = null,
+    val seq: Int = 1
 ) {
+    val displayId get() = "sub-$seq"
     @Volatile var status: String = "running"
     @Volatile var result: String = ""
     @Volatile var rounds: Int = 0
@@ -58,6 +60,8 @@ object SubAgents {
     private const val MAX_ROUNDS = 12
     @OptIn(ExperimentalAtomicApi::class)
     private val counter = AtomicInt(1)
+    @OptIn(ExperimentalAtomicApi::class)
+    private val seqCounters = mutableMapOf<Long?, AtomicInt>()
     private val agents = mutableMapOf<String, SubAgent>()
 
     fun list(): List<SubAgent> = withHarnessLock(agents) { agents.values.sortedByDescending { it.startedAt } }
@@ -119,7 +123,8 @@ object SubAgents {
     @OptIn(kotlin.concurrent.atomics.ExperimentalAtomicApi::class)
     fun start(parent: HarnessCtx, task: String, toolNames: Set<String>, model: String): SubAgent {
         val id = "sub-${counter.fetchAndIncrement()}"
-        val agent = SubAgent(id, task, toolNames, System.currentTimeMillis(), parent.subAgentId, parent.conversationId)
+        val seq: Int = withHarnessLock(agents) { seqCounters.getOrPut(parent.conversationId) { AtomicInt(1) }.fetchAndIncrement() }
+        val agent = SubAgent(id, task, toolNames, System.currentTimeMillis(), parent.subAgentId, parent.conversationId, seq)
         withHarnessLock(agents) { agents[id] = agent }
         prune(parent.conversationId)
         val llm = HarnessRuntime.llm

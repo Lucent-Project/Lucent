@@ -137,7 +137,7 @@ fun SubAgentBreadcrumb(
         )
         if (chain.isEmpty()) {
             Text(
-                text = currentAgentId,
+                text = SubAgents.get(currentAgentId)?.displayId ?: currentAgentId,
                 color = tint,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -148,7 +148,7 @@ fun SubAgentBreadcrumb(
                 val isCurrent = index == chain.lastIndex
                 if (isCurrent) {
                     Text(
-                        text = agent.id,
+                        text = agent.displayId,
                         color = tint,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -156,7 +156,7 @@ fun SubAgentBreadcrumb(
                     )
                 } else {
                     Text(
-                        text = agent.id,
+                        text = agent.displayId,
                         color = mutedTint,
                         fontSize = 12.sp,
                         modifier = Modifier
@@ -236,7 +236,7 @@ fun SubAgentTreePopup(
                         modifier = Modifier.padding(start = (node.depth * 14).dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(agent.id, color = tint, fontSize = 12.sp)
+                        Text(agent.displayId, color = tint, fontSize = 12.sp)
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("·", color = mutedTint, fontSize = 11.sp)
                         Spacer(modifier = Modifier.width(4.dp))
@@ -375,7 +375,7 @@ fun SubAgentDialog(
         onDismissRequest = onDismiss,
         title = {
             Column {
-                Text(current.id + " · " + statusLabel(current.status), color = tint, fontSize = 15.sp)
+                Text(current.displayId + " · " + statusLabel(current.status), color = tint, fontSize = 15.sp)
                 Text(S.subAgentRounds(current.rounds), color = mutedTint, fontSize = 11.sp)
             }
         },
@@ -487,7 +487,7 @@ fun SubAgentChatPage(agentId: String, tint: Color, mutedTint: Color, onBack: () 
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f, fill = false)) {
-                Text(current.id + " · " + statusLabel(current.status), color = tint, fontSize = 16.sp)
+                Text(current.displayId + " · " + statusLabel(current.status), color = tint, fontSize = 16.sp)
                 Text(current.task, color = mutedTint, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
             if (current.status != "running") {
@@ -505,7 +505,7 @@ fun SubAgentChatPage(agentId: String, tint: Color, mutedTint: Color, onBack: () 
         if (children.isNotEmpty()) {
             Text(S.agentSubAgents, color = tint, fontSize = 13.sp, modifier = Modifier.clickable { expanded = !expanded }.padding(8.dp))
             if (expanded) children.forEach { child ->
-                Text(child.id + " · " + child.task, color = mutedTint, fontSize = 12.sp, modifier = Modifier.fillMaxWidth().clickable {
+                Text(child.displayId + " · " + child.task, color = mutedTint, fontSize = 12.sp, modifier = Modifier.fillMaxWidth().clickable {
                     com.lucent.app.AppNavigation.openSubAgent(child.id)
                 }.padding(start = 18.dp, top = 5.dp, bottom = 5.dp))
             }

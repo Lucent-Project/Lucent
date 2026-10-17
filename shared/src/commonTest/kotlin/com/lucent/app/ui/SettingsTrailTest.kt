@@ -30,19 +30,20 @@ class SettingsTrailTest {
             SettingsRoute.Groups,
             SettingsRoute.Execution,
             SettingsRoute.Github,
-            SettingsRoute.Plugins,
             SettingsRoute.Mcp,
             SettingsRoute.Audit
         )
         pages.forEach { page ->
             assertEquals(SettingsRoute.Agent, SettingsTrail.parent(page), page.name)
         }
+        assertEquals(SettingsRoute.Capabilities, SettingsTrail.parent(SettingsRoute.Plugins))
+        assertEquals(SettingsRoute.Capabilities, SettingsTrail.parent(SettingsRoute.PluginSetup))
     }
 
     @Test
     fun theToolkitSitsBetweenTheRootAndItsSubPages() {
         assertEquals(
-            listOf(SettingsRoute.Root, SettingsRoute.Advanced, SettingsRoute.Agent, SettingsRoute.Plugins),
+            listOf(SettingsRoute.Root, SettingsRoute.Advanced, SettingsRoute.Agent, SettingsRoute.Capabilities, SettingsRoute.Plugins),
             SettingsTrail.trail(SettingsRoute.Plugins)
         )
         assertEquals(
