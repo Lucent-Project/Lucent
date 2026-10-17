@@ -1,5 +1,6 @@
 package com.lucent.app.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,6 +35,8 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.ui.text.font.FontWeight
@@ -353,6 +356,103 @@ private fun EmptyAgentDialog(
     )
 }
 
+private sealed interface SubAgentTranscriptItem {
+    data class ToolGroup(val lines: List<String>) : SubAgentTranscriptItem
+    data class Single(val line: String) : SubAgentTranscriptItem
+}
+
+private fun groupTranscript(lines: List<String>): List<SubAgentTranscriptItem> {
+    if (lines.isEmpty()) return emptyList()
+    val result = mutableListOf<SubAgentTranscriptItem>()
+    val toolBuffer = mutableListOf<String>()
+
+    fun flushTools() {
+        if (toolBuffer.isNotEmpty()) {
+            result.add(SubAgentTranscriptItem.ToolGroup(toolBuffer.toList()))
+            toolBuffer.clear()
+        }
+    }
+
+    for (line in lines) {
+        if (line.startsWith("tool ")) {
+            toolBuffer.add(line)
+        } else {
+            flushTools()
+            result.add(SubAgentTranscriptItem.Single(line))
+        }
+    }
+    flushTools()
+    return result
+}
+
+@Composable
+private fun SubAgentToolBlock(
+    tools: List<String>,
+    tint: Color,
+    mutedTint: Color,
+    modifier: Modifier = Modifier
+) {
+    if (tools.isEmpty()) return
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Build,
+                contentDescription = null,
+                tint = mutedTint,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(S.agentTraceTitle, color = mutedTint, fontSize = 12.sp)
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(S.agentTraceStepCount(tools.size), color = mutedTint, fontSize = 11.sp)
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(
+                if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = null,
+                tint = mutedTint,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        AnimatedVisibility(visible = expanded) {
+            Column(modifier = Modifier.fillMaxWidth().padding(top = 2.dp)) {
+                tools.forEach { line ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp)
+                            .background(tint.copy(alpha = 0.03f), RoundedCornerShape(6.dp))
+                            .border(1.dp, mutedTint.copy(alpha = 0.10f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 8.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Build,
+                            contentDescription = null,
+                            tint = mutedTint,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            line,
+                            color = mutedTint,
+                            fontSize = 11.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun SubAgentDialog(
     agent: SubAgent,
@@ -392,8 +492,30 @@ fun SubAgentDialog(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(S.subAgentWork, color = mutedTint, fontSize = 11.sp)
-                current.transcriptLines().forEach { line ->
-                    Text(line, color = mutedTint, fontSize = 11.sp, modifier = Modifier.padding(vertical = 2.dp))
+                groupTranscript(current.transcriptLines()).forEach { item ->
+                    when (item) {
+                        is SubAgentTranscriptItem.ToolGroup -> {
+                            SubAgentToolBlock(
+                                tools = item.lines,
+                                tint = tint,
+                                mutedTint = mutedTint,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            )
+                        }
+                        is SubAgentTranscriptItem.Single -> {
+                            val line = item.line
+                            if (line.startsWith("thinking: ")) {
+                                AssistantReasoningBlock(
+                                    reasoning = line.removePrefix("thinking: "),
+                                    tint = tint,
+                                    mutedTint = mutedTint,
+                                    modifier = Modifier.padding(vertical = 2.dp)
+                                )
+                            } else {
+                                Text(line, color = mutedTint, fontSize = 11.sp, modifier = Modifier.padding(vertical = 2.dp))
+                            }
+                        }
+                    }
                 }
                 if (current.result.isNotBlank()) {
                     Spacer(modifier = Modifier.height(6.dp))
@@ -491,16 +613,6 @@ fun SubAgentChatPage(agentId: String, tint: Color, mutedTint: Color, onBack: () 
                 Text(current.displayId + " · " + statusLabel(current.status), color = tint, fontSize = 16.sp)
                 Text(current.task, color = mutedTint, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
-            if (current.status != "running") {
-                TextButton(
-                    onClick = {
-                        SubAgents.remove(current.id)
-                        onBack()
-                    }
-                ) {
-                    Text(S.actionDismiss, color = tint, fontSize = 13.sp)
-                }
-            }
         }
         val children = SubAgents.list(current.conversationId).filter { it.parentId == current.id }
         if (children.isNotEmpty()) {
@@ -531,79 +643,67 @@ fun SubAgentChatPage(agentId: String, tint: Color, mutedTint: Color, onBack: () 
                     Text(current.task, color = tint, fontSize = 13.sp)
                 }
             }
-            current.transcriptLines().forEach { line ->
-                when {
-                    line.startsWith("parent: ") -> {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .widthIn(max = 480.dp)
-                                    .background(tint.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
-                                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                            ) {
-                                Text(line.removePrefix("parent: "), color = tint, fontSize = 13.sp)
-                            }
-                        }
-                    }
-                    line.startsWith("agent: ") -> {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .widthIn(max = 480.dp)
-                                    .background(tint.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
-                                    .border(1.dp, mutedTint.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
-                                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                            ) {
-                                Text(line.removePrefix("agent: "), color = tint, fontSize = 13.sp)
-                            }
-                        }
-                    }
-                    line.startsWith("thinking: ") -> {
-                        AssistantReasoningBlock(
-                            reasoning = line.removePrefix("thinking: "),
+            groupTranscript(current.transcriptLines()).forEach { item ->
+                when (item) {
+                    is SubAgentTranscriptItem.ToolGroup -> {
+                        SubAgentToolBlock(
+                            tools = item.lines,
                             tint = tint,
                             mutedTint = mutedTint,
                             modifier = Modifier.padding(vertical = 4.dp)
                         )
                     }
-                    line.startsWith("tool ") -> {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp)
-                                .background(tint.copy(alpha = 0.03f), RoundedCornerShape(6.dp))
-                                .border(1.dp, mutedTint.copy(alpha = 0.10f), RoundedCornerShape(6.dp))
-                                .padding(horizontal = 8.dp, vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                Icons.Default.Build,
-                                contentDescription = null,
-                                tint = mutedTint,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                line,
-                                color = mutedTint,
-                                fontSize = 11.sp,
-                                modifier = Modifier.weight(1f)
-                            )
+                    is SubAgentTranscriptItem.Single -> {
+                        val line = item.line
+                        when {
+                            line.startsWith("parent: ") -> {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .widthIn(max = 480.dp)
+                                            .background(tint.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    ) {
+                                        Text(line.removePrefix("parent: "), color = tint, fontSize = 13.sp)
+                                    }
+                                }
+                            }
+                            line.startsWith("agent: ") -> {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.Start
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .widthIn(max = 480.dp)
+                                            .background(tint.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                                            .border(1.dp, mutedTint.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    ) {
+                                        Text(line.removePrefix("agent: "), color = tint, fontSize = 13.sp)
+                                    }
+                                }
+                            }
+                            line.startsWith("thinking: ") -> {
+                                AssistantReasoningBlock(
+                                    reasoning = line.removePrefix("thinking: "),
+                                    tint = tint,
+                                    mutedTint = mutedTint,
+                                    modifier = Modifier.padding(vertical = 4.dp)
+                                )
+                            }
+                            else -> {
+                                Text(
+                                    line,
+                                    color = mutedTint,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(vertical = 2.dp)
+                                )
+                            }
                         }
-                    }
-                    else -> {
-                        Text(
-                            line,
-                            color = mutedTint,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(vertical = 2.dp)
-                        )
                     }
                 }
             }
