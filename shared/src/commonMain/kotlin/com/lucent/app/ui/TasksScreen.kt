@@ -1213,8 +1213,10 @@ fun TasksScreen(active: Boolean = true) {
                                 tint = onGradient
                             )
                         }
-                        IconButton(onClick = { startEdit(task) }) {
-                            Icon(Icons.Default.Edit, contentDescription = com.lucent.app.i18n.S.actionEdit, tint = onGradient)
+                        if (!task.isDone) {
+                            IconButton(onClick = { startEdit(task) }) {
+                                Icon(Icons.Default.Edit, contentDescription = com.lucent.app.i18n.S.actionEdit, tint = onGradient)
+                            }
                         }
                         if (markdownEnabled && richTextEnabled) {
                             FormatOverrideButton(

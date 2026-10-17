@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,9 +28,6 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,11 +37,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.lucent.app.data.AppDatabase
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
-import com.lucent.app.data.createAppDatabase
 
 @OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
@@ -55,35 +49,10 @@ fun HomeDrawerSheet(
     onOpenPanel: (HomePanel) -> Unit
 ) {
     val context = LocalContext.current
-    val db = remember { createAppDatabase(context) }
     val onGradient = LocalOnGradient.current
     val onGradientMuted = LocalOnGradientMuted.current
     val glassDark = isDarkGlass()
     val sheetShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)
-
-    val noteDrafts by remember { db.noteDao.getDrafts() }.collectAsState(initial = emptyList())
-    val noteArchive by remember { db.noteDao.getArchived() }.collectAsState(initial = emptyList())
-    val noteTrash by remember { db.noteDao.getTrashed() }.collectAsState(initial = emptyList())
-    val noteHidden by remember { db.noteDao.getHidden() }.collectAsState(initial = emptyList())
-    val taskDrafts by remember { db.taskDao.getDrafts() }.collectAsState(initial = emptyList())
-    val taskArchive by remember { db.taskDao.getCompleted() }.collectAsState(initial = emptyList())
-    val taskTrash by remember { db.taskDao.getTrashed() }.collectAsState(initial = emptyList())
-    val taskHidden by remember { db.taskDao.getHidden() }.collectAsState(initial = emptyList())
-
-    fun countFor(panel: HomePanel): Int = when (mode) {
-        HomeMode.Notes -> when (panel) {
-            HomePanel.Drafts -> noteDrafts.size
-            HomePanel.Archive -> noteArchive.size
-            HomePanel.Trash -> noteTrash.size
-            HomePanel.Hidden -> noteHidden.size
-        }
-        HomeMode.Tasks -> when (panel) {
-            HomePanel.Drafts -> taskDrafts.size
-            HomePanel.Archive -> taskArchive.size
-            HomePanel.Trash -> taskTrash.size
-            HomePanel.Hidden -> taskHidden.size
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -126,7 +95,6 @@ fun HomeDrawerSheet(
                 DrawerRow(
                     icon = drawerIcon(panel, mode),
                     label = panel.label(mode),
-                    count = countFor(panel),
                     onClick = {
                         Haptics.tick(context)
                         onOpenPanel(panel)
@@ -144,9 +112,8 @@ fun HomeDrawerSheet(
 }
 
 @Composable
-private fun DrawerRow(icon: ImageVector, label: String, count: Int, onClick: () -> Unit) {
+private fun DrawerRow(icon: ImageVector, label: String, onClick: () -> Unit) {
     val onGradient = LocalOnGradient.current
-    val onGradientMuted = LocalOnGradientMuted.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -158,16 +125,6 @@ private fun DrawerRow(icon: ImageVector, label: String, count: Int, onClick: () 
         Icon(icon, contentDescription = null, tint = onGradient, modifier = Modifier.size(22.dp))
         Spacer(modifier = Modifier.width(14.dp))
         Text(label, color = onGradient, fontSize = 15.sp, maxLines = 1, modifier = Modifier.weight(1f))
-        if (count > 0) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(percent = 50))
-                    .background(onGradient.copy(alpha = 0.10f))
-                    .padding(horizontal = 9.dp, vertical = 2.dp)
-            ) {
-                Text(count.toString(), color = onGradientMuted, fontSize = 12.sp)
-            }
-        }
     }
 }
 

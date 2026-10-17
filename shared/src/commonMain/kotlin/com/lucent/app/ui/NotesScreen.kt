@@ -1679,8 +1679,10 @@ fun NotesScreen(active: Boolean = true) {
                             pinned = note.pinned,
                             onToggle = { noteToTogglePin = note }
                         )
-                        IconButton(onClick = { startEdit(note) }) {
-                            Icon(Icons.Default.Edit, contentDescription = com.lucent.app.i18n.S.actionEdit, tint = onGradient)
+                        if (!note.archived) {
+                            IconButton(onClick = { startEdit(note) }) {
+                                Icon(Icons.Default.Edit, contentDescription = com.lucent.app.i18n.S.actionEdit, tint = onGradient)
+                            }
                         }
                         if (markdownEnabled && richTextEnabled) {
                             FormatOverrideButton(
@@ -1838,12 +1840,14 @@ fun NotesScreen(active: Boolean = true) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    GlassCapsuleButton(
-                        text = com.lucent.app.i18n.S.editNote,
-                        icon = Icons.Default.Edit,
-                        onClick = { startEdit(note) },
-                        modifier = Modifier.weight(1f)
-                    )
+                    if (!note.archived) {
+                        GlassCapsuleButton(
+                            text = com.lucent.app.i18n.S.editNote,
+                            icon = Icons.Default.Edit,
+                            onClick = { startEdit(note) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                     GlassCapsuleButton(
                         text = if (note.archived) com.lucent.app.i18n.S.actionRestore else com.lucent.app.i18n.S.archive,
                         icon = if (note.archived) Icons.Filled.Unarchive else Icons.Default.Archive,

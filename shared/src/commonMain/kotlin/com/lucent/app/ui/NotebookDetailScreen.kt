@@ -270,11 +270,6 @@ fun NotebookDetailScreen(
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(title, color = onGradient, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    com.lucent.app.i18n.S.notebookItemsCount(items.count { it.itemKind == "TASK" }, items.count { it.itemKind == "NOTE" }),
-                    color = onGradientMuted,
-                    fontSize = 12.sp
-                )
             }
             IconButton(onClick = { renaming = true }) {
                 Icon(Icons.Default.MoreVert, contentDescription = com.lucent.app.i18n.S.actionRename, tint = onGradientMuted)

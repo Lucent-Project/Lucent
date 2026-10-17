@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.CompositionLocalProvider
 import com.lucent.app.platform.LocalPlatformContext
 import androidx.activity.SystemBarStyle
@@ -113,7 +114,6 @@ import com.lucent.app.ui.AutoUpdateDialog
 import com.lucent.app.ui.FluidGlassBackground
 import com.lucent.app.ui.HomeDrawerSheet
 import com.lucent.app.ui.HomeMode
-import com.lucent.app.ui.HomeModeSwitcher
 import com.lucent.app.ui.LocalBackgroundEnvironment
 import com.lucent.app.ui.rememberBackgroundEnvironment
 import com.lucent.app.ui.LocalHazeState
@@ -832,7 +832,7 @@ fun LucentApp(paletteColors: List<Color>, backdropColor: Color, backgroundAnimat
                         title = {
                             val homeMode = HomeMode.of(currentScreen)
                             if (homeMode != null) {
-                                HomeModeSwitcher(mode = homeMode, onSelect = { mode -> selectHomeMode(mode) })
+                                Text("Lucent", color = onGradient, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                             } else if (currentScreen == Screen.Settings) {
                                 com.lucent.app.ui.SettingsBreadcrumb(
                                     route = AppNavigation.settingsRoute,

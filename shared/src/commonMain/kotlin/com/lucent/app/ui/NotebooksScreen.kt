@@ -89,8 +89,6 @@ fun NotebooksScreen(
     val scope = rememberCoroutineScope()
     val settingsRepo = remember { createSettingsRepository(context) }
     val notebooks by db.notebookDao.getAll().collectAsState(initial = emptyList())
-    val counts by db.notebookDao.itemCounts().collectAsState(initial = emptyList())
-    val statsById = remember(counts) { counts.associateBy { it.notebookId } }
     val onGradient = LocalOnGradient.current
     val onGradientMuted = LocalOnGradientMuted.current
 
@@ -504,7 +502,6 @@ fun NotebooksScreen(
             items(visible, key = { it.id }) { notebook ->
                 NotebookShelfItem(
                     notebook = notebook,
-                    tasks = statsById[notebook.id]?.tasks ?: 0, notes = statsById[notebook.id]?.notes ?: 0,
                     selectionMode = selectionMode,
                     selected = notebook.id in selectedIds,
                     itemModifier = Modifier
@@ -552,8 +549,6 @@ private const val DAY_MS = 24L * 60 * 60 * 1000
 @Composable
 private fun NotebookShelfItem(
     notebook: Notebook,
-    tasks: Int,
-    notes: Int,
     selectionMode: Boolean,
     selected: Boolean,
     itemModifier: Modifier,
@@ -650,12 +645,6 @@ private fun NotebookShelfItem(
             fontSize = 13.sp,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            com.lucent.app.i18n.S.notebookItemsCount(tasks, notes),
-            color = onGradientMuted,
-            fontSize = 11.sp,
             textAlign = TextAlign.Center
         )
     }
