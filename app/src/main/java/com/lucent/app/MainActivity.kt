@@ -870,7 +870,7 @@ fun LucentApp(paletteColors: List<Color>, backdropColor: Color, backgroundAnimat
                     )
                 },
                 bottomBar = {
-                    androidx.compose.animation.AnimatedVisibility(visible = !AppNavigation.terminalOpen) {
+                    androidx.compose.animation.AnimatedVisibility(visible = !AppNavigation.terminalOpen && AppNavigation.subAgentPageId == null) {
                     val capsuleShape = RoundedCornerShape(percent = 50)
                     val glassDark = onGradient.luminance() > 0.5f
                     val capsuleFill = Color.White.copy(

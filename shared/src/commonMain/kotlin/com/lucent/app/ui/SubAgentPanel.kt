@@ -32,6 +32,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Stop
@@ -510,33 +511,145 @@ fun SubAgentChatPage(agentId: String, tint: Color, mutedTint: Color, onBack: () 
                 }.padding(start = 18.dp, top = 5.dp, bottom = 5.dp))
             }
         }
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(8.dp)) {
-            Text(current.task, color = tint, fontSize = 14.sp)
-            current.transcriptLines().forEach { Text(it, color = mutedTint, fontSize = 12.sp, modifier = Modifier.padding(vertical = 3.dp)) }
-            if (current.result.isNotBlank()) Text(current.result, color = tint, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Box(
+                    modifier = Modifier
+                        .widthIn(max = 480.dp)
+                        .background(tint.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text(current.task, color = tint, fontSize = 13.sp)
+                }
+            }
+            current.transcriptLines().forEach { line ->
+                when {
+                    line.startsWith("parent: ") -> {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .widthIn(max = 480.dp)
+                                    .background(tint.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Text(line.removePrefix("parent: "), color = tint, fontSize = 13.sp)
+                            }
+                        }
+                    }
+                    line.startsWith("agent: ") -> {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .widthIn(max = 480.dp)
+                                    .background(tint.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                                    .border(1.dp, mutedTint.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Text(line.removePrefix("agent: "), color = tint, fontSize = 13.sp)
+                            }
+                        }
+                    }
+                    line.startsWith("thinking: ") -> {
+                        AssistantReasoningBlock(
+                            reasoning = line.removePrefix("thinking: "),
+                            tint = tint,
+                            mutedTint = mutedTint,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                    }
+                    line.startsWith("tool ") -> {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp)
+                                .background(tint.copy(alpha = 0.03f), RoundedCornerShape(6.dp))
+                                .border(1.dp, mutedTint.copy(alpha = 0.10f), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 8.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Build,
+                                contentDescription = null,
+                                tint = mutedTint,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                line,
+                                color = mutedTint,
+                                fontSize = 11.sp,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                    else -> {
+                        Text(
+                            line,
+                            color = mutedTint,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        )
+                    }
+                }
+            }
+            if (current.result.isNotBlank() && current.transcriptLines().none { it == "agent: ${current.result}" }) {
+                val isError = current.status == "failed"
+                val resultBg = if (isError) OverdueColor.copy(alpha = 0.10f) else tint.copy(alpha = 0.05f)
+                val resultBorder = if (isError) OverdueColor.copy(alpha = 0.25f) else mutedTint.copy(alpha = 0.15f)
+                val resultTextColor = if (isError) OverdueColor else tint
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .background(resultBg, RoundedCornerShape(8.dp))
+                        .border(1.dp, resultBorder, RoundedCornerShape(8.dp))
+                        .padding(10.dp)
+                ) {
+                    Text(current.result, color = resultTextColor, fontSize = 12.sp)
+                }
+            }
         }
-        val isRunning = current.status == "running"
-        val placeholder = if (isRunning) S.subAgentInstructHint else statusLabel(current.status)
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = instruction,
                 onValueChange = { instruction = it },
-                enabled = isRunning,
-                placeholder = { Text(placeholder) },
+                placeholder = { Text(S.subAgentInstructHint) },
                 modifier = Modifier.weight(1f)
             )
             IconButton(
-                enabled = isRunning && instruction.isNotBlank(),
+                enabled = instruction.isNotBlank(),
                 onClick = {
-                    SubAgents.instruct(current.id, instruction)
-                    instruction = ""
-                    tick++
+                    val text = instruction.trim()
+                    if (text.isNotBlank()) {
+                        if (current.status == "running") {
+                            SubAgents.instruct(current.id, text)
+                        } else {
+                            SubAgents.resume(current.id, text)
+                        }
+                        instruction = ""
+                        tick++
+                    }
                 }
             ) {
                 Icon(
                     Icons.AutoMirrored.Filled.Send,
                     contentDescription = S.subAgentSend,
-                    tint = if (isRunning) tint else mutedTint
+                    tint = if (instruction.isNotBlank()) tint else mutedTint
                 )
             }
         }

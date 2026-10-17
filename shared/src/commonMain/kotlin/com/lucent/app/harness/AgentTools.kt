@@ -15,7 +15,9 @@ class SubAgent internal constructor(
     val startedAt: Long,
     val parentId: String? = null,
     val conversationId: Long? = null,
-    val seq: Int = 1
+    val seq: Int = 1,
+    internal var parentCtx: HarnessCtx? = null,
+    internal var model: String = ""
 ) {
     val displayId get() = "sub-$seq"
     @Volatile var status: String = "running"
@@ -124,7 +126,7 @@ object SubAgents {
     fun start(parent: HarnessCtx, task: String, toolNames: Set<String>, model: String): SubAgent {
         val id = "sub-${counter.fetchAndIncrement()}"
         val seq: Int = withHarnessLock(agents) { seqCounters.getOrPut(parent.conversationId) { AtomicInt(1) }.fetchAndIncrement() }
-        val agent = SubAgent(id, task, toolNames, System.currentTimeMillis(), parent.subAgentId, parent.conversationId, seq)
+        val agent = SubAgent(id, task, toolNames, System.currentTimeMillis(), parent.subAgentId, parent.conversationId, seq, parent, model)
         withHarnessLock(agents) { agents[id] = agent }
         prune(parent.conversationId)
         val llm = HarnessRuntime.llm
@@ -133,20 +135,32 @@ object SubAgents {
             agent.result = "This build cannot run sub-agents."
             return agent
         }
+        launchLoop(agent)
+        return agent
+    }
+
+    private fun launchLoop(agent: SubAgent) {
+        val parent = agent.parentCtx ?: return
+        val llm = HarnessRuntime.llm ?: run {
+            agent.status = "failed"
+            agent.result = "This build cannot run sub-agents."
+            return
+        }
         agent.job = HarnessRuntime.background().launch {
             try {
-                val system = buildSystem(parent, toolNames)
+                val system = buildSystem(parent, agent.tools)
                 while (agent.rounds < MAX_ROUNDS && agent.status == "running") {
                     agent.drainInbox().forEach { text ->
                         agent.transcript.add("parent: ${text.take(2000)}")
                     }
                     agent.rounds++
-                    val step = llm.step(system, task, agent.transcript.toList(), toolNames, model)
+                    val step = llm.step(system, agent.task, agent.transcript.toList(), agent.tools, agent.model)
                     if (step.error.isNotEmpty()) {
                         agent.status = "failed"
                         agent.result = step.error
                         break
                     }
+                    if (step.reasoning.isNotBlank()) agent.transcript.add("thinking: ${step.reasoning}")
                     if (step.text.isNotBlank()) agent.transcript.add("agent: ${step.text.take(2000)}")
                     if (step.toolCalls.isEmpty()) {
                         agent.result = step.text
@@ -154,7 +168,7 @@ object SubAgents {
                         break
                     }
                     for (call in step.toolCalls) {
-                        val allowed = toolNames.isEmpty() || toolNames.contains(call.name)
+                        val allowed = agent.tools.isEmpty() || agent.tools.contains(call.name)
                         val outcome = if (!allowed) {
                             ToolExecResult("${call.name} is not available to a sub-agent.", success = false)
                         } else {
@@ -178,7 +192,6 @@ object SubAgents {
                 agent.result = e.message ?: e::class.simpleName ?: "failed"
             }
         }
-        return agent
     }
 
     fun stop(id: String): Boolean {
@@ -193,6 +206,18 @@ object SubAgents {
         val agent = withHarnessLock(agents) { agents[id] } ?: return false
         if (text.isBlank()) return false
         agent.instruct(text)
+        return true
+    }
+
+    fun resume(id: String, text: String): Boolean {
+        val agent = withHarnessLock(agents) { agents[id] } ?: return false
+        if (text.isBlank()) return false
+        agent.job?.cancel()
+        agent.instruct(text)
+        agent.status = "running"
+        agent.result = ""
+        agent.rounds = 0
+        launchLoop(agent)
         return true
     }
 

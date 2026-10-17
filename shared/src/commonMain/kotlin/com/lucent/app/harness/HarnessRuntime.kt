@@ -132,7 +132,8 @@ data class SubAgentStep(
     val text: String,
     val toolCalls: List<SubAgentCall> = emptyList(),
     val done: Boolean = true,
-    val error: String = ""
+    val error: String = "",
+    val reasoning: String = ""
 )
 
 data class SubAgentCall(val name: String, val argumentsJson: String)

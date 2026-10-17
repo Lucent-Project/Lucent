@@ -2369,7 +2369,8 @@ class AssistantControllerImpl(
                 toolCalls = value.toolCalls.map {
                     com.lucent.app.harness.SubAgentCall(it.name, it.argumentsJson)
                 },
-                done = value.toolCalls.isEmpty()
+                done = value.toolCalls.isEmpty(),
+                reasoning = value.reasoningContent
             )
         }
     }
