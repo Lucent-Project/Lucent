@@ -90,6 +90,9 @@ jobs:
     needs: prepare
     uses: ./.github/workflows/build-preview.yml
     secrets: inherit
+    permissions:
+      contents: write
+      actions: read
     with:
       version_name: ${{ needs.prepare.outputs.version }}
       build_id: ${{ needs.prepare.outputs.build_id }}
