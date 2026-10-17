@@ -303,7 +303,6 @@ fun SubAgentChip(
             if (SubAgents.running(conversationId) > 0) tick++
         }
     }
-    val running = remember(conversationId, tick) { SubAgents.running(conversationId) }
     val total = remember(conversationId, tick) { SubAgents.list(conversationId).size }
 
     if (total == 0) return
@@ -316,7 +315,7 @@ fun SubAgentChip(
             contentDescription = S.agentSubAgents,
             onClick = { showTreePopup = !showTreePopup },
             tint = tint,
-            badge = if (running > 0) "$running" else "$total"
+            badge = null
         )
         if (showTreePopup) {
             SubAgentTreePopup(

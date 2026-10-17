@@ -758,9 +758,6 @@ fun AssistantChatBody(
                         mutedTint = onGradientMuted
                     )
                 }
-                if (toolkit.enabled) {
-                    RunningCounterChip(tint = onGradient, mutedTint = onGradientMuted)
-                }
                 GlassRoundButton(
                     icon = Icons.Default.Archive,
                     contentDescription = com.lucent.app.i18n.S.a11yExportChat,
@@ -1425,37 +1422,6 @@ fun AssistantChatBody(
 }
 }
 
-@Composable
-private fun RunningCounterChip(tint: Color, mutedTint: Color) {
-    var jobs by remember { mutableStateOf(com.lucent.app.harness.HarnessJobs.runningCount()) }
-    var agents by remember { mutableStateOf(com.lucent.app.harness.SubAgents.running()) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            jobs = com.lucent.app.harness.HarnessJobs.runningCount()
-            agents = com.lucent.app.harness.SubAgents.running()
-            kotlinx.coroutines.delay(1500)
-        }
-    }
-
-    if (jobs == 0 && agents == 0) return
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(percent = 50))
-            .background(tint.copy(alpha = 0.16f))
-            .border(1.dp, tint.copy(alpha = 0.30f), RoundedCornerShape(percent = 50))
-            .padding(horizontal = 7.dp, vertical = 3.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            com.lucent.app.i18n.S.runningCounter(jobs, agents),
-            color = tint,
-            fontSize = 10.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
 
 @Composable
 private fun JumpToLatestButton(
