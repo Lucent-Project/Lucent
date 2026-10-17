@@ -1156,7 +1156,7 @@ fun TasksScreen(active: Boolean = true) {
                             onHorizontalDrag = { change, dragAmount ->
                                 if (armed) {
                                     val idx = swipeList.indexOfFirst { it.id == task.id }
-                                    val actualDrag = -dragAmount
+                                    val actualDrag = dragAmount
                                     val blocked = idx < 0 ||
                                         (actualDrag < 0 && idx >= swipeList.lastIndex) ||
                                         (actualDrag > 0 && idx <= 0)
@@ -1320,7 +1320,7 @@ fun TasksScreen(active: Boolean = true) {
                                         if (detailFormat == com.lucent.app.data.ContentFormat.MARKDOWN) {
                                             MarkdownText(text = task.notes)
                                         } else {
-                                            Text(task.notes, color = onGradient)
+                                            LinkedPlainText(task.notes, color = onGradient)
                                         }
                                     }
                                 }

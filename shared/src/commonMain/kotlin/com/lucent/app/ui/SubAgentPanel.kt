@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import com.lucent.app.ui.LucentGlassAlertDialog
 import com.lucent.app.ui.LucentGlassDropdownMenu
@@ -41,6 +42,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -481,78 +483,85 @@ fun SubAgentDialog(
             }
         },
         text = {
-            Column(modifier = Modifier.heightIn(max = 380.dp).verticalScroll(rememberScrollState())) {
-                Text(current.task, color = tint, fontSize = 13.sp)
-                if (current.inbox.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(S.subAgentInbox, color = mutedTint, fontSize = 11.sp)
-                    current.inbox.forEach { line ->
-                        Text(line, color = mutedTint, fontSize = 11.sp, modifier = Modifier.padding(vertical = 2.dp))
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(S.subAgentWork, color = mutedTint, fontSize = 11.sp)
-                groupTranscript(current.transcriptLines()).forEach { item ->
-                    when (item) {
-                        is SubAgentTranscriptItem.ToolGroup -> {
-                            SubAgentToolBlock(
-                                tools = item.lines,
-                                tint = tint,
-                                mutedTint = mutedTint,
-                                modifier = Modifier.padding(vertical = 2.dp)
-                            )
-                        }
-                        is SubAgentTranscriptItem.Single -> {
-                            val line = item.line
-                            if (line.startsWith("thinking: ")) {
-                                AssistantReasoningBlock(
-                                    reasoning = line.removePrefix("thinking: "),
-                                    tint = tint,
-                                    mutedTint = mutedTint,
-                                    modifier = Modifier.padding(vertical = 2.dp)
-                                )
-                            } else {
-                                Text(line, color = mutedTint, fontSize = 11.sp, modifier = Modifier.padding(vertical = 2.dp))
+            CompositionLocalProvider(
+                LocalOnGradient provides tint,
+                LocalOnGradientMuted provides mutedTint
+            ) {
+                SelectionContainer {
+                    Column(modifier = Modifier.heightIn(max = 380.dp).verticalScroll(rememberScrollState())) {
+                        LinkedPlainText(current.task, color = tint, fontSize = 13.sp)
+                        if (current.inbox.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(S.subAgentInbox, color = mutedTint, fontSize = 11.sp)
+                            current.inbox.forEach { line ->
+                                LinkedPlainText(line, color = mutedTint, fontSize = 11.sp, modifier = Modifier.padding(vertical = 2.dp))
                             }
                         }
-                    }
-                }
-                if (current.result.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(S.subAgentResult, color = mutedTint, fontSize = 11.sp)
-                    Text(current.result, color = tint, fontSize = 12.sp)
-                }
-                if (current.status == "running") {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(
-                            value = instruction,
-                            onValueChange = { instruction  = com.lucent.app.collapseExcessBlankLines(it) },
-                            placeholder = { Text(S.subAgentInstructHint, color = mutedTint, fontSize = 11.sp) },
-                            maxLines = 2,
-                            textStyle = LocalTextStyle.current.copy(fontSize = 12.sp),
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(
-                            enabled = instruction.isNotBlank(),
-                            onClick = {
-                                SubAgents.instruct(current.id, instruction)
-                                instruction = ""
-                                tick++
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.Send,
-                                contentDescription = S.subAgentSend,
-                                tint = tint,
-                                modifier = Modifier.size(18.dp)
-                            )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(S.subAgentWork, color = mutedTint, fontSize = 11.sp)
+                        groupTranscript(current.transcriptLines()).forEach { item ->
+                            when (item) {
+                                is SubAgentTranscriptItem.ToolGroup -> {
+                                    SubAgentToolBlock(
+                                        tools = item.lines,
+                                        tint = tint,
+                                        mutedTint = mutedTint,
+                                        modifier = Modifier.padding(vertical = 2.dp)
+                                    )
+                                }
+                                is SubAgentTranscriptItem.Single -> {
+                                    val line = item.line
+                                    if (line.startsWith("thinking: ")) {
+                                        AssistantReasoningBlock(
+                                            reasoning = line.removePrefix("thinking: "),
+                                            tint = tint,
+                                            mutedTint = mutedTint,
+                                            modifier = Modifier.padding(vertical = 2.dp)
+                                        )
+                                    } else {
+                                        LinkedPlainText(line, color = mutedTint, fontSize = 11.sp, modifier = Modifier.padding(vertical = 2.dp))
+                                    }
+                                }
+                            }
                         }
+                        if (current.result.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(S.subAgentResult, color = mutedTint, fontSize = 11.sp)
+                            MarkdownText(current.result)
+                        }
+                        if (current.status == "running") {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                OutlinedTextField(
+                                    value = instruction,
+                                    onValueChange = { instruction  = com.lucent.app.collapseExcessBlankLines(it) },
+                                    placeholder = { Text(S.subAgentInstructHint, color = mutedTint, fontSize = 11.sp) },
+                                    maxLines = 2,
+                                    textStyle = LocalTextStyle.current.copy(fontSize = 12.sp),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(
+                                    enabled = instruction.isNotBlank(),
+                                    onClick = {
+                                        SubAgents.instruct(current.id, instruction)
+                                        instruction = ""
+                                        tick++
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.Send,
+                                        contentDescription = S.subAgentSend,
+                                        tint = tint,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(S.subAgentReportFolder(SubAgentReports.FOLDER), color = mutedTint, fontSize = 10.sp)
                     }
                 }
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(S.subAgentReportFolder(SubAgentReports.FOLDER), color = mutedTint, fontSize = 10.sp)
             }
         },
         confirmButton = {
@@ -630,97 +639,108 @@ fun SubAgentChatPage(agentId: String, tint: Color, mutedTint: Color, onBack: () 
                 .verticalScroll(rememberScrollState())
                 .padding(8.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.End
+            CompositionLocalProvider(
+                LocalOnGradient provides tint,
+                LocalOnGradientMuted provides mutedTint
             ) {
-                Box(
-                    modifier = Modifier
-                        .widthIn(max = 480.dp)
-                        .background(tint.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                ) {
-                    Text(current.task, color = tint, fontSize = 13.sp)
-                }
-            }
-            groupTranscript(current.transcriptLines()).forEach { item ->
-                when (item) {
-                    is SubAgentTranscriptItem.ToolGroup -> {
-                        SubAgentToolBlock(
-                            tools = item.lines,
-                            tint = tint,
-                            mutedTint = mutedTint,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
-                    }
-                    is SubAgentTranscriptItem.Single -> {
-                        val line = item.line
-                        when {
-                            line.startsWith("parent: ") -> {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                    horizontalArrangement = Arrangement.End
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .widthIn(max = 480.dp)
-                                            .background(tint.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
-                                            .padding(horizontal = 12.dp, vertical = 8.dp)
-                                    ) {
-                                        Text(line.removePrefix("parent: "), color = tint, fontSize = 13.sp)
+                SelectionContainer {
+                    Column(Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .widthIn(max = 480.dp)
+                                    .background(tint.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                LinkedPlainText(current.task, color = tint, fontSize = 13.sp)
+                            }
+                        }
+                        groupTranscript(current.transcriptLines()).forEach { item ->
+                            when (item) {
+                                is SubAgentTranscriptItem.ToolGroup -> {
+                                    SubAgentToolBlock(
+                                        tools = item.lines,
+                                        tint = tint,
+                                        mutedTint = mutedTint,
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+                                }
+                                is SubAgentTranscriptItem.Single -> {
+                                    val line = item.line
+                                    when {
+                                        line.startsWith("parent: ") -> {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                                horizontalArrangement = Arrangement.End
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .widthIn(max = 480.dp)
+                                                        .background(tint.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                                                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                                                ) {
+                                                    LinkedPlainText(line.removePrefix("parent: "), color = tint, fontSize = 13.sp)
+                                                }
+                                            }
+                                        }
+                                        line.startsWith("agent: ") -> {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                                horizontalArrangement = Arrangement.Start
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .widthIn(max = 480.dp)
+                                                        .background(tint.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                                                        .border(1.dp, mutedTint.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                                                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                                                ) {
+                                                    MarkdownText(line.removePrefix("agent: "))
+                                                }
+                                            }
+                                        }
+                                        line.startsWith("thinking: ") -> {
+                                            AssistantReasoningBlock(
+                                                reasoning = line.removePrefix("thinking: "),
+                                                tint = tint,
+                                                mutedTint = mutedTint,
+                                                modifier = Modifier.padding(vertical = 4.dp)
+                                            )
+                                        }
+                                        else -> {
+                                            LinkedPlainText(
+                                                line,
+                                                color = mutedTint,
+                                                fontSize = 12.sp,
+                                                modifier = Modifier.padding(vertical = 2.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
-                            line.startsWith("agent: ") -> {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                                    horizontalArrangement = Arrangement.Start
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .widthIn(max = 480.dp)
-                                            .background(tint.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
-                                            .border(1.dp, mutedTint.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
-                                            .padding(horizontal = 12.dp, vertical = 8.dp)
-                                    ) {
-                                        Text(line.removePrefix("agent: "), color = tint, fontSize = 13.sp)
-                                    }
+                        }
+                        if (current.result.isNotBlank() && current.transcriptLines().none { it == "agent: ${current.result}" }) {
+                            val isError = current.status == "failed"
+                            val resultBg = if (isError) OverdueColor.copy(alpha = 0.10f) else tint.copy(alpha = 0.05f)
+                            val resultBorder = if (isError) OverdueColor.copy(alpha = 0.25f) else mutedTint.copy(alpha = 0.15f)
+                            val resultTextColor = if (isError) OverdueColor else tint
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                                    .background(resultBg, RoundedCornerShape(8.dp))
+                                    .border(1.dp, resultBorder, RoundedCornerShape(8.dp))
+                                    .padding(10.dp)
+                            ) {
+                                CompositionLocalProvider(LocalOnGradient provides resultTextColor) {
+                                    MarkdownText(current.result)
                                 }
-                            }
-                            line.startsWith("thinking: ") -> {
-                                AssistantReasoningBlock(
-                                    reasoning = line.removePrefix("thinking: "),
-                                    tint = tint,
-                                    mutedTint = mutedTint,
-                                    modifier = Modifier.padding(vertical = 4.dp)
-                                )
-                            }
-                            else -> {
-                                Text(
-                                    line,
-                                    color = mutedTint,
-                                    fontSize = 12.sp,
-                                    modifier = Modifier.padding(vertical = 2.dp)
-                                )
                             }
                         }
                     }
-                }
-            }
-            if (current.result.isNotBlank() && current.transcriptLines().none { it == "agent: ${current.result}" }) {
-                val isError = current.status == "failed"
-                val resultBg = if (isError) OverdueColor.copy(alpha = 0.10f) else tint.copy(alpha = 0.05f)
-                val resultBorder = if (isError) OverdueColor.copy(alpha = 0.25f) else mutedTint.copy(alpha = 0.15f)
-                val resultTextColor = if (isError) OverdueColor else tint
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .background(resultBg, RoundedCornerShape(8.dp))
-                        .border(1.dp, resultBorder, RoundedCornerShape(8.dp))
-                        .padding(10.dp)
-                ) {
-                    Text(current.result, color = resultTextColor, fontSize = 12.sp)
                 }
             }
         }

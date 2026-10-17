@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.DisableSelection
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -814,11 +815,13 @@ fun AssistantChatBody(
                     item(key = "greeting") {
                         Box(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.align(Alignment.CenterStart).frostedGlass().padding(12.dp)) {
-                                Text(
-                                    com.lucent.app.i18n.S.assistantGreeting(assistantName)
-                                        .withLineStartPunctuationAllowed(),
-                                    color = onGradient
-                                )
+                                SelectionContainer {
+                                    Text(
+                                        com.lucent.app.i18n.S.assistantGreeting(assistantName)
+                                            .withLineStartPunctuationAllowed(),
+                                        color = onGradient
+                                    )
+                                }
                             }
                         }
                     }
@@ -849,15 +852,6 @@ fun AssistantChatBody(
                                 .graphicsLayer { scaleX = bounce.value; scaleY = bounce.value }
                                 .frostedGlass()
                                 .onSizeChanged { messageSize = it }
-                                .pointerInput(msg.id) {
-                                    detectTapGestures(
-                                        onLongPress = { pressOffset ->
-                                            Haptics.tick(context)
-                                            contextMenuOffset = pressOffset
-                                            contextMenuMessage = msg
-                                        }
-                                    )
-                                }
                                 .onSecondaryClick {
                                     Haptics.tick(context)
                                     contextMenuOffset = Offset.Zero
@@ -872,7 +866,7 @@ fun AssistantChatBody(
                             val hasProcessContent = savedTrace != null || reasoning.isNotBlank()
                             var processVisible by remember(msg.id) { mutableStateOf<Boolean?>(null) }
 
-                            if (!isUser && (assistantName.isNotBlank() || hasProcessContent)) {
+                            if (!isUser) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(bottom = 3.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -897,6 +891,41 @@ fun AssistantChatBody(
                                                 modifier = Modifier.size(16.dp)
                                             )
                                         }
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            contextMenuOffset = Offset.Zero
+                                            contextMenuMessage = msg
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.MoreVert,
+                                            contentDescription = com.lucent.app.i18n.S.a11yMoreOptions,
+                                            tint = onGradientMuted,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            } else {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
+                                    horizontalArrangement = Arrangement.End,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    IconButton(
+                                        onClick = {
+                                            contextMenuOffset = Offset.Zero
+                                            contextMenuMessage = msg
+                                        },
+                                        modifier = Modifier.size(20.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.MoreVert,
+                                            contentDescription = com.lucent.app.i18n.S.a11yMoreOptions,
+                                            tint = onGradientMuted,
+                                            modifier = Modifier.size(14.dp)
+                                        )
                                     }
                                 }
                             }
@@ -963,25 +992,27 @@ fun AssistantChatBody(
                                     Spacer(modifier = Modifier.height(4.dp))
                                 }
                             }
-                            val plainContent = isUser ||
-                                (isHighlighted && highlightLen > 0)
-                            if (!plainContent) {
-                                MarkdownText(msg.content.withLineStartPunctuationAllowed())
-                            } else {
-                                val contentText = if (isHighlighted && highlightLen > 0) {
-                                    buildAnnotatedString {
-                                        val s = highlightStart.coerceIn(0, msg.content.length)
-                                        val e = (highlightStart + highlightLen).coerceIn(s, msg.content.length)
-                                        append(msg.content.substring(0, s).withLineStartPunctuationAllowed())
-                                        withStyle(SpanStyle(background = Color(0x66FFC107), fontWeight = FontWeight.Bold)) {
-                                            append(msg.content.substring(s, e).withLineStartPunctuationAllowed())
-                                        }
-                                        append(msg.content.substring(e).withLineStartPunctuationAllowed())
-                                    }
+                            SelectionContainer {
+                                val plainContent = isUser ||
+                                    (isHighlighted && highlightLen > 0)
+                                if (!plainContent) {
+                                    MarkdownText(msg.content.withLineStartPunctuationAllowed())
                                 } else {
-                                    buildAnnotatedString { append(msg.content.withLineStartPunctuationAllowed()) }
+                                    val contentText = if (isHighlighted && highlightLen > 0) {
+                                        buildAnnotatedString {
+                                            val s = highlightStart.coerceIn(0, msg.content.length)
+                                            val e = (highlightStart + highlightLen).coerceIn(s, msg.content.length)
+                                            appendWithUrls(msg.content.substring(0, s).withLineStartPunctuationAllowed(), onGradient)
+                                            withStyle(SpanStyle(background = Color(0x66FFC107), fontWeight = FontWeight.Bold)) {
+                                                append(msg.content.substring(s, e).withLineStartPunctuationAllowed())
+                                            }
+                                            appendWithUrls(msg.content.substring(e).withLineStartPunctuationAllowed(), onGradient)
+                                        }
+                                    } else {
+                                        buildAnnotatedStringWithUrls(msg.content.withLineStartPunctuationAllowed(), onGradient)
+                                    }
+                                    Text(contentText, color = onGradient)
                                 }
-                                Text(contentText, color = onGradient)
                             }
                             if (!isUser) {
                                 val siblings = variantGroups[msg.replyToId]
@@ -1121,7 +1152,9 @@ fun AssistantChatBody(
                                     )
                                     Spacer(modifier = Modifier.height(6.dp))
                                 }
-                                Text(streamingText.withLineStartPunctuationAllowed(), color = onGradient)
+                                SelectionContainer {
+                                    MarkdownText(streamingText.withLineStartPunctuationAllowed())
+                                }
                             }
                         }
                     }

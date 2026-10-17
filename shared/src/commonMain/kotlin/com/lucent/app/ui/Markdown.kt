@@ -143,7 +143,8 @@ private val INLINE = Regex(
         """|__([^_]+)__""" +
         """|~~([^~]+)~~""" +
         """|\*([^*\n]+)\*""" +
-        """|_([^_\n]+)_"""
+        """|_([^_\n]+)_""" +
+        """|(https?://[^\s<>"'*]+[^\s<>"',;:!?)\]}\.])"""
 )
 
 @Composable
@@ -199,6 +200,15 @@ private fun inlineAnnotated(
                 g[7].isNotEmpty() -> withStyle(SpanStyle(textDecoration = TextDecoration.LineThrough)) { append(g[7]) }
                 g[8].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(g[8]) }
                 g[9].isNotEmpty() -> withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(g[9]) }
+                g[10].isNotEmpty() -> {
+                    if (!linksEnabled) {
+                        append(g[10])
+                    } else {
+                        withLink(LinkAnnotation.Url(url = g[10], styles = TextLinkStyles(style = linkStyle))) {
+                            append(g[10])
+                        }
+                    }
+                }
             }
             cursor = match.range.last + 1
         }
@@ -206,16 +216,47 @@ private fun inlineAnnotated(
     }
 }
 
-private val LINKS_ONLY = Regex("""\[\[([^\[\]]+)]]|\[([^\]]+)]\(([^)\s]+)\)""")
+private val LINKS_ONLY = Regex("""\[\[([^\[\]]+)]]|\[([^\]]+)]\(([^)\s]+)\)|(https?://[^\s<>"'*]+[^\s<>"',;:!?)\]}\.])""")
+
+fun AnnotatedString.Builder.appendWithUrls(text: String, linkColor: Color = Color.Unspecified) {
+    val linkStyle = SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline)
+    var cursor = 0
+    for (match in LINKS_ONLY.findAll(text)) {
+        if (match.range.first > cursor) {
+            append(text.substring(cursor, match.range.first))
+        }
+        val g = match.groupValues
+        when {
+            g[1].isNotEmpty() -> append(g[1])
+            g[2].isNotEmpty() && g[3].isNotEmpty() -> {
+                withLink(LinkAnnotation.Url(url = g[3], styles = TextLinkStyles(style = linkStyle))) {
+                    append(g[2])
+                }
+            }
+            g[4].isNotEmpty() -> {
+                withLink(LinkAnnotation.Url(url = g[4], styles = TextLinkStyles(style = linkStyle))) {
+                    append(g[4])
+                }
+            }
+        }
+        cursor = match.range.last + 1
+    }
+    if (cursor < text.length) append(text.substring(cursor))
+}
+
+fun buildAnnotatedStringWithUrls(text: String, linkColor: Color = Color.Unspecified): AnnotatedString =
+    buildAnnotatedString { appendWithUrls(text, linkColor) }
 
 @Composable
 fun LinkedPlainText(
     text: String,
     modifier: Modifier = Modifier,
+    color: Color = LocalOnGradient.current,
+    fontSize: androidx.compose.ui.unit.TextUnit = androidx.compose.ui.unit.TextUnit.Unspecified,
     brokenLinks: Set<String> = emptySet(),
     onWikiLink: (String) -> Unit = {}
 ) {
-    val onGradient = LocalOnGradient.current
+    val onGradient = color
     val brokenStyle = SpanStyle(color = OverdueColor, textDecoration = TextDecoration.Underline)
     val linkStyle = SpanStyle(color = onGradient, textDecoration = TextDecoration.Underline)
 
@@ -244,13 +285,18 @@ fun LinkedPlainText(
                         append(g[2])
                     }
                 }
+                g[4].isNotEmpty() -> {
+                    withLink(LinkAnnotation.Url(url = g[4], styles = TextLinkStyles(style = linkStyle))) {
+                        append(g[4])
+                    }
+                }
             }
             cursor = match.range.last + 1
         }
         if (cursor < text.length) append(text.substring(cursor))
     }
 
-    Text(annotated, color = onGradient, modifier = modifier)
+    Text(annotated, color = onGradient, fontSize = fontSize, modifier = modifier)
 }
 
 @Composable

@@ -4,6 +4,8 @@ import com.lucent.app.platform.LocalPlatformContext
 import com.lucent.app.platform.PlatformContext
 
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.foundation.layout.imePadding
@@ -528,6 +530,23 @@ fun LucentExpandedInput(
                 textStyle = androidx.compose.material3.LocalTextStyle.current.copy(color = onGradient),
                 modifier = Modifier.fillMaxWidth().weight(1f)
             )
+        }
+    }
+}
+
+@Composable
+fun rememberLucentUriHandler(): UriHandler {
+    val current = LocalUriHandler.current
+    return remember(current) {
+        object : UriHandler {
+            override fun openUri(uri: String) {
+                if (com.lucent.app.data.SettingsCache.blackoutEnabled) return
+                if (com.lucent.app.data.SettingsCache.openLinksExternally) {
+                    LucentBrowser.openUrl(uri)
+                } else {
+                    current.openUri(uri)
+                }
+            }
         }
     }
 }

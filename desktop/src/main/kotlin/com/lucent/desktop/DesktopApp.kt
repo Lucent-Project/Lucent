@@ -181,7 +181,8 @@ fun DesktopApp(startup: SettingsRepository.StartupPrefs, active: Boolean) {
         CompositionLocalProvider(
             LocalOnGradient provides onGradient,
             LocalOnGradientMuted provides onGradientMuted,
-            LocalBackgroundEnvironment provides backgroundEnvironment
+            LocalBackgroundEnvironment provides backgroundEnvironment,
+            androidx.compose.ui.platform.LocalUriHandler provides com.lucent.app.ui.rememberLucentUriHandler()
         ) {
             val globalTextSelectionOn by repo.globalTextSelectionEnabled.collectAsState(
                 initial = startup.globalTextSelectionEnabled

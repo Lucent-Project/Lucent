@@ -502,7 +502,8 @@ class MainActivity : FragmentActivity() {
                 CompositionLocalProvider(
                     LocalOnGradient provides onGradient,
                     LocalOnGradientMuted provides onGradientMuted,
-                    LocalBackgroundEnvironment provides backgroundEnvironment
+                    LocalBackgroundEnvironment provides backgroundEnvironment,
+                    androidx.compose.ui.platform.LocalUriHandler provides com.lucent.app.ui.rememberLucentUriHandler()
                 ) {
                     val appLockOn by settingsRepo.appLockEnabled.collectAsState(initial = lockEnabled)
                     LaunchedEffect(appLockOn) { AppLockController.enabled = appLockOn }
@@ -637,14 +638,13 @@ fun LucentApp(paletteColors: List<Color>, backdropColor: Color, backgroundAnimat
     var currentScreen by rememberSaveable { mutableStateOf(LastScreen.current) }
     val tabs = HomeTab.entries
     val currentTab = HomeTab.of(currentScreen)
-    val swipeChain = remember { listOf(Screen.Tasks, Screen.Notes, Screen.Notebooks, Screen.Assistant, Screen.Settings) }
     val pagerState = rememberPagerState(
-        initialPage = swipeChain.indexOf(currentScreen).takeIf { it >= 0 } ?: 0,
-        pageCount = { swipeChain.size }
+        initialPage = tabs.indexOf(currentTab).takeIf { it >= 0 } ?: 0,
+        pageCount = { tabs.size }
     )
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     LaunchedEffect(currentScreen) {
-        val target = swipeChain.indexOf(currentScreen)
+        val target = tabs.indexOf(currentTab)
         if (target >= 0 && pagerState.currentPage != target) {
             pagerState.scrollToPage(target)
         }
@@ -939,7 +939,7 @@ fun LucentApp(paletteColors: List<Color>, backdropColor: Color, backgroundAnimat
                                         selected = currentTab == tab,
                                         onClick = {
                                             currentScreen = tab.screen(LastScreen.homeMode)
-                                            tabScope.launch { pagerState.scrollToPage(swipeChain.indexOf(currentScreen)) }
+                                            tabScope.launch { pagerState.scrollToPage(tabs.indexOf(tab)) }
                                         },
                                         modifier = Modifier.weight(1f)
                                     )
@@ -958,7 +958,11 @@ fun LucentApp(paletteColors: List<Color>, backdropColor: Color, backgroundAnimat
                     Modifier.padding(top = topPad).fillMaxSize()
                 }
                 CompositionLocalProvider(LocalBottomBarInset provides bottomInset) {
-                    KeepAliveTabs(pagerState = pagerState, modifier = contentModifier)
+                    KeepAliveTabs(
+                        pagerState = pagerState,
+                        homeMode = HomeMode.of(currentScreen) ?: LastScreen.homeMode,
+                        modifier = contentModifier
+                    )
                 }
             }
             }
