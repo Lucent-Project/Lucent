@@ -24,11 +24,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -122,17 +120,12 @@ private fun inertOwnerOf(real: OnBackPressedDispatcherOwner?): OnBackPressedDisp
 
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-internal fun KeepAliveTabs(
-    pagerState: PagerState,
-    homeMode: HomeMode = LastScreen.homeMode,
-    modifier: Modifier = Modifier
-) {
+internal fun KeepAliveTabs(pagerState: PagerState, modifier: Modifier = Modifier) {
     val realBackOwner = LocalOnBackPressedDispatcherOwner.current
     val inertBackOwner = remember(realBackOwner) { inertOwnerOf(realBackOwner) }
     val sharedHaze = LocalHazeState.current
     val context = LocalContext.current
-    val tabs = remember { HomeTab.entries }
-    val currentHomeMode by rememberUpdatedState(homeMode)
+    val swipeChain = remember { listOf(Screen.Tasks, Screen.Notes, Screen.Notebooks, Screen.Assistant, Screen.Settings) }
     val pendingPhotoCallback: androidx.compose.runtime.MutableState<((String?) -> Unit)?> = remember { androidx.compose.runtime.mutableStateOf<((String?) -> Unit)?>(null) }
     val photoPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
@@ -150,31 +143,29 @@ internal fun KeepAliveTabs(
 
     LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
         if (!pagerState.isScrollInProgress) {
-            AppNavigation.requestScreen(tabs[pagerState.currentPage].screen(currentHomeMode))
+            AppNavigation.requestScreen(swipeChain[pagerState.currentPage])
         }
     }
 
     HorizontalPager(
         state = pagerState,
-        beyondViewportPageCount = tabs.lastIndex,
+        beyondViewportPageCount = swipeChain.lastIndex,
         userScrollEnabled = !AppNavigation.innerBackActive,
         modifier = modifier
     ) { page ->
-        val tab = tabs[page]
+        val screen = swipeChain[page]
         val isActive = pagerState.currentPage == page
-        key(if (tab == HomeTab.Home) homeMode else tab) {
+        key(screen) {
             val dummyHaze = rememberHazeState()
             Box(modifier = Modifier.fillMaxSize()) {
                 CompositionLocalProvider(
                     LocalHazeState provides (if (isActive) sharedHaze else dummyHaze),
                     LocalOnBackPressedDispatcherOwner provides (if (isActive) realBackOwner!! else inertBackOwner)
                 ) {
-                    when (tab) {
-                        HomeTab.Home -> when (homeMode) {
-                            HomeMode.Tasks -> TasksScreen(active = isActive)
-                            HomeMode.Notes -> NotesScreen(active = isActive)
-                        }
-                        HomeTab.Notebooks -> NotebooksScreen(
+                    when (screen) {
+                        Screen.Tasks -> TasksScreen(active = isActive)
+                        Screen.Notes -> NotesScreen(active = isActive)
+                        Screen.Notebooks -> NotebooksScreen(
                             onBack = { AppNavigation.requestScreen(LastScreen.homeMode.screen) },
                             onOpenNote = { note -> AppNavigation.openNote(note.id, from = Screen.Notebooks) },
                             onOpenTask = { task -> AppNavigation.openTask(task.id, from = Screen.Notebooks) },
@@ -185,8 +176,9 @@ internal fun KeepAliveTabs(
                             },
                             active = isActive
                         )
-                        HomeTab.Assistant -> AssistantScreen(active = isActive)
-                        HomeTab.Settings -> SettingsScreen(active = isActive)
+                        Screen.Assistant -> AssistantScreen(active = isActive)
+                        Screen.Settings -> SettingsScreen(active = isActive)
+                        else -> {}
                     }
                 }
             }
