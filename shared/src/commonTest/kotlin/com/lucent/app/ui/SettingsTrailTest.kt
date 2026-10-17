@@ -36,6 +36,10 @@ class SettingsTrailTest {
         pages.forEach { page ->
             assertEquals(SettingsRoute.Agent, SettingsTrail.parent(page), page.name)
         }
+    }
+
+    @Test
+    fun pluginSettingsHangOffCapabilities() {
         assertEquals(SettingsRoute.Capabilities, SettingsTrail.parent(SettingsRoute.Plugins))
         assertEquals(SettingsRoute.Capabilities, SettingsTrail.parent(SettingsRoute.PluginSetup))
     }
