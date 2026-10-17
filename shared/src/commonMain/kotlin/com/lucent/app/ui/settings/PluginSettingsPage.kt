@@ -408,7 +408,7 @@ private fun StorageCard(
 }
 
 @Composable
-private fun PluginRow(
+internal fun PluginRow(
     plugin: PluginSpec,
     installed: Boolean,
     shellReady: Boolean,

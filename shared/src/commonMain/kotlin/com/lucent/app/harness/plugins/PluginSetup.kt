@@ -54,7 +54,7 @@ object PluginSetup {
             diskSpaceNeeded = max(diskSpaceNeeded, BUILTIN_ENV_DISK_BYTES)
         }
         val toolsPassed = coroutineScope {
-            val tools = PluginCatalog.forPlatformEffective(android).filter { it.id != "playwright" }
+            val tools = PluginCatalog.forPlatformEffective(android).filter { it.id != "playwright" && it.required }
             val checks = tools.map { plugin ->
                 async {
                     if (config.pluginInstalled(plugin.id)) true

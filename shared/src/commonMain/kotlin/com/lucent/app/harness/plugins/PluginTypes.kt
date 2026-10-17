@@ -25,7 +25,8 @@ data class PluginSpec(
     val needsShell: Boolean = true,
     val windowsDetect: String = "",
     val windowsInstall: String = "",
-    val windowsRemove: String = ""
+    val windowsRemove: String = "",
+    val required: Boolean = false
 ) {
     fun probeFor(android: Boolean): String = if (!android && windowsDetect.isNotBlank()) windowsDetect else detectCommand
 

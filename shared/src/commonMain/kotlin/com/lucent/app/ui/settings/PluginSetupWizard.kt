@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import com.lucent.app.harness.HarnessRuntime
 import com.lucent.app.harness.plugins.PluginCatalog
 import com.lucent.app.harness.plugins.PluginSource
+import com.lucent.app.harness.plugins.PluginSpec
 import com.lucent.app.harness.plugins.PluginSetup
 import com.lucent.app.harness.plugins.SetupStep
 import com.lucent.app.harness.plugins.SetupStepState
@@ -30,6 +31,7 @@ import kotlinx.coroutines.delay
 
 @Composable
 fun PluginSetupWizard(onBack: () -> Unit) {
+    val android = HarnessRuntime.android
     val scope = rememberCoroutineScope()
     var steps by remember { mutableStateOf<List<SetupStep>>(emptyList()) }
     var busy by remember { mutableStateOf("") }
@@ -40,6 +42,7 @@ fun PluginSetupWizard(onBack: () -> Unit) {
     var errorStep by remember { mutableStateOf("") }
     var setupComplete by remember { mutableStateOf(HarnessRuntime.config().setupComplete) }
     var pickingWorkspace by remember { mutableStateOf(false) }
+    var optionalPlugins by remember { mutableStateOf<List<PluginSpec>>(emptyList()) }
 
     val reload = {
         scope.launch {
@@ -60,7 +63,31 @@ fun PluginSetupWizard(onBack: () -> Unit) {
         }
     }
 
+    fun installOptional(plugin: PluginSpec) {
+        if (busy.isNotEmpty()) return
+        val target = HarnessRuntime.pluginHost ?: return
+        busy = "optional:" + plugin.id
+        progress = 0f
+        statusMsg = plugin.name
+        logLines = emptyList()
+        scope.launch {
+            val outcome = target.install(plugin, PluginSource("", "", ""), onProgress = { p, t ->
+                progress = p
+                statusMsg = "${plugin.name}: $t"
+            }, onOutput = { line ->
+                logLines = (logLines + line).takeLast(300)
+            })
+            if (!outcome.ok) {
+                logLines = (logLines + "[install failed] " + outcome.message).takeLast(300)
+            }
+            statusMsg = ""
+            busy = ""
+            reload()
+        }
+    }
+
     LaunchedEffect(Unit) { reload() }
+    LaunchedEffect(Unit) { optionalPlugins = PluginCatalog.forPlatformEffective(android).filter { !it.required && it.id != "playwright" && it.id != "ubuntu" } }
 
     DisposableEffect(Unit) {
         val listener: (com.lucent.app.harness.HarnessConfig) -> Unit = { reload() }
@@ -136,7 +163,7 @@ fun PluginSetupWizard(onBack: () -> Unit) {
                                     busy = step.id
                                     scope.launch {
                                         var failure: com.lucent.app.harness.PluginOutcome? = null
-                                        val tools = PluginCatalog.forPlatform(HarnessRuntime.android).filter { it.id != "ubuntu" && it.id != "playwright" }
+                                        val tools = PluginCatalog.forPlatformEffective(HarnessRuntime.android).filter { it.id != "ubuntu" && it.id != "playwright" && it.required }
                                         for (tool in tools) {
                                             if (!HarnessRuntime.config().pluginInstalled(tool.id) && HarnessRuntime.pluginHost?.detect(tool) != true) {
                                                 val outcome = HarnessRuntime.pluginHost?.install(
@@ -170,6 +197,38 @@ fun PluginSetupWizard(onBack: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                 }
+
+            val baseToolsDone = steps.any { it.id == "base_tools" && it.passed }
+            val pendingOptionals = optionalPlugins.filter { !HarnessRuntime.config().pluginInstalled(it.id) }
+            if (baseToolsDone && pendingOptionals.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
+                    Text(S.setupOptionalTitle, color = onGradient, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(S.setupOptionalBody, color = onGradientMuted, fontSize = 13.sp)
+                }
+                pendingOptionals.forEach { plugin ->
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (plugin.id == "adb") {
+                        Text(S.pluginAdbWirelessHelp, color = onGradientMuted, fontSize = 12.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    PluginRow(
+                        plugin = plugin,
+                        installed = false,
+                        shellReady = HarnessRuntime.pluginHost?.isReady() == true,
+                        busy = busy == "optional:" + plugin.id,
+                        progress = progress,
+                        note = if (busy == "optional:" + plugin.id) statusMsg else "",
+                        logLines = if (busy == "optional:" + plugin.id) logLines else emptyList(),
+                        onGradient = onGradient,
+                        onGradientMuted = onGradientMuted,
+                        onAction = { installOptional(plugin) },
+                        onCancel = { busy = ""; statusMsg = "" },
+                        onClearLog = { logLines = emptyList() }
+                    )
+                }
+            }
         }
     }
 

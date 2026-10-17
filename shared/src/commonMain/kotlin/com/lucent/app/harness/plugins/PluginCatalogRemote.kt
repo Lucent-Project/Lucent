@@ -63,7 +63,8 @@ object PluginCatalogRemote {
                         needsShell = obj["needsShell"]?.jsonPrimitive?.booleanOrNull ?: true,
                         windowsDetect = obj["windowsDetect"]?.jsonPrimitive?.content ?: "",
                         windowsInstall = obj["windowsInstall"]?.jsonPrimitive?.content ?: "",
-                        windowsRemove = obj["windowsRemove"]?.jsonPrimitive?.content ?: ""
+                        windowsRemove = obj["windowsRemove"]?.jsonPrimitive?.content ?: "",
+                        required = obj["required"]?.jsonPrimitive?.booleanOrNull ?: false
                     )
                 )
             }

@@ -117,7 +117,8 @@ object PluginCatalog {
             windowsInstall = "winget install --id Python.Python.3.12 -e --accept-package-agreements " +
                 "--accept-source-agreements && py -m pip install --no-warn-script-location " +
                 "python-docx openpyxl XlsxWriter python-pptx pymupdf pandas",
-            windowsRemove = "py -m pip uninstall -y python-docx openpyxl XlsxWriter python-pptx pymupdf pandas"
+            windowsRemove = "py -m pip uninstall -y python-docx openpyxl XlsxWriter python-pptx pymupdf pandas",
+            required = true
         ),
         PluginSpec(
             id = "libreoffice",
@@ -137,7 +138,8 @@ object PluginCatalog {
             windowsDetect = "if exist \"%ProgramFiles%\\LibreOffice\\program\\soffice.exe\" (exit 0) else (exit 1)",
             windowsInstall = "winget install --id TheDocumentFoundation.LibreOffice -e " +
                 "--accept-package-agreements --accept-source-agreements",
-            windowsRemove = "winget uninstall --id TheDocumentFoundation.LibreOffice -e"
+            windowsRemove = "winget uninstall --id TheDocumentFoundation.LibreOffice -e",
+            required = true
         ),
         PluginSpec(
             id = "nodejs",
@@ -155,7 +157,22 @@ object PluginCatalog {
             windowsDetect = "where node",
             windowsInstall = "winget install --id OpenJS.NodeJS.LTS -e " +
                 "--accept-package-agreements --accept-source-agreements",
-            windowsRemove = "winget uninstall --id OpenJS.NodeJS.LTS -e"
+            windowsRemove = "winget uninstall --id OpenJS.NodeJS.LTS -e",
+            required = true
+        ),
+        PluginSpec(
+            id = "adb",
+            name = "ADB (Android Debug Bridge)",
+            summary = "Control Android devices and emulators from the shell",
+            android = true,
+            desktop = false,
+            bytes = 0L,
+            sources = emptyList(),
+            detectCommand = "command -v adb",
+            installScript = APT_SETUP + "lucent_apt apt-get install -y --no-install-recommends android-tools-adb",
+            removeScript = "apt-get remove -y android-tools-adb",
+            licence = "Apache-2.0",
+            homepage = "https://developer.android.com/tools/adb"
         ),
         desktopTool("git", "Git", "git", "Git.Git", "Version control for the workspace", "GPL-2.0", "https://git-scm.com"),
         desktopTool("pandoc", "Pandoc", "pandoc", "JohnMacFarlane.Pandoc", "Converts between document formats", "GPL-2.0-or-later", "https://pandoc.org"),
