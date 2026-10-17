@@ -14,6 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -54,8 +58,13 @@ fun TrashNotesScreen(onBack: () -> Unit) {
     val onGradient = LocalOnGradient.current
     val onGradientMuted = LocalOnGradientMuted.current
     val hazeState = LocalHazeState.current
+    val focusManager = LocalFocusManager.current
 
     var searchQuery by remember { mutableStateOf("") }
+    LucentBackHandler(enabled = searchQuery.isNotBlank()) {
+        searchQuery = ""
+        focusManager.clearFocus()
+    }
     var noteToPurge by remember { mutableStateOf<Note?>(null) }
     var noteToRestore by remember { mutableStateOf<Note?>(null) }
 
@@ -116,7 +125,7 @@ fun TrashNotesScreen(onBack: () -> Unit) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().clearFocusOnTap(focusManager).padding(16.dp)) {
         Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = com.lucent.app.i18n.S.actionBack, tint = onGradient)
@@ -140,6 +149,8 @@ fun TrashNotesScreen(onBack: () -> Unit) {
             label = { Text(com.lucent.app.i18n.S.searchTrash) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -156,7 +167,7 @@ fun TrashNotesScreen(onBack: () -> Unit) {
 
         LazyColumn(
             state = rememberRestoredListState("TrashNotesScreen#1"),
-            modifier = Modifier.hazeSource(state = hazeState),
+            modifier = Modifier.clearFocusOnTap(focusManager).hazeSource(state = hazeState),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(bottom = LocalBottomBarInset.current)
         ) {

@@ -26,6 +26,10 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items as listItems
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Delete
@@ -91,6 +95,7 @@ fun NotebooksScreen(
     val notebooks by db.notebookDao.getAll().collectAsState(initial = emptyList())
     val onGradient = LocalOnGradient.current
     val onGradientMuted = LocalOnGradientMuted.current
+    val focusManager = LocalFocusManager.current
 
     val sortKey by settingsRepo.notebooksSort.collectAsState(initial = com.lucent.app.data.SettingsCache.notebooksSort ?: "recent")
     val sortOption = NotebookSort.fromKey(sortKey)
@@ -168,7 +173,7 @@ fun NotebooksScreen(
     val placementSpec = rememberReorderPlacementSpec()
     val reorderEnabled = true
 
-    BackClaim(active && (selectionMode || (!showBack && (openNotebookId != null || showTrash))))
+    BackClaim(active && (selectionMode || (!showBack && (openNotebookId != null || showTrash)) || (openNotebookId == null && !showTrash && searchText.isNotBlank())))
     LucentBackHandler(enabled = active && (selectionMode || (!showBack && (openNotebookId != null || showTrash)))) {
         when {
             selectionMode -> {
@@ -178,6 +183,10 @@ fun NotebooksScreen(
             showTrash -> showTrash = false
             else -> openNotebookId = null
         }
+    }
+    LucentBackHandler(enabled = active && !selectionMode && openNotebookId == null && !showTrash && searchText.isNotBlank()) {
+        searchText = ""
+        focusManager.clearFocus()
     }
 
     val open = openNotebookId
@@ -368,7 +377,7 @@ fun NotebooksScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().clearFocusOnTap(focusManager).padding(16.dp)) {
         if (showBack) {
             BackHeader(onBack = onBack)
         }
@@ -437,6 +446,8 @@ fun NotebooksScreen(
                             leadingIcon = { Icon(Icons.Default.Search, contentDescription = com.lucent.app.i18n.S.a11ySearchNotebooks) },
                             trailingIcon = { SearchHelpButton() },
                             singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                             modifier = Modifier.fillMaxWidth()
                         )
                     },
@@ -494,7 +505,7 @@ fun NotebooksScreen(
         LazyVerticalGrid(
             state = gridState,
             columns = GridCells.Adaptive(minSize = 104.dp),
-            modifier = Modifier.fillMaxSize().hazeSource(state = LocalHazeState.current),
+            modifier = Modifier.fillMaxSize().clearFocusOnTap(focusManager).hazeSource(state = LocalHazeState.current),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
             contentPadding = PaddingValues(bottom = LocalBottomBarInset.current + 12.dp)
@@ -524,6 +535,7 @@ fun NotebooksScreen(
                         if (notebook.id !in selectedIds) selectedIds = selectedIds + notebook.id
                     },
                     onOpen = {
+                        focusManager.clearFocus()
                         if (selectionMode) {
                             selectedIds = if (notebook.id in selectedIds) selectedIds - notebook.id else selectedIds + notebook.id
                         } else {

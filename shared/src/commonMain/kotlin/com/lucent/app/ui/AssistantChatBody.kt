@@ -40,6 +40,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -113,6 +115,9 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import com.lucent.app.BackClaim
 import com.lucent.app.platform.LocalPlatformContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -258,6 +263,12 @@ fun AssistantChatBody(
     var showClearConfirm by remember { mutableStateOf(false) }
     var conversationMenuOpen by remember { mutableStateOf(false) }
     var conversationSearch by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
+    BackClaim(active && conversationSearch.isNotBlank())
+    LucentBackHandler(enabled = active && conversationSearch.isNotBlank()) {
+        conversationSearch = ""
+        focusManager.clearFocus()
+    }
     var renameTarget by remember { mutableStateOf<com.lucent.app.data.ChatConversation?>(null) }
     var renameText by remember { mutableStateOf("") }
     var convoActions by remember { mutableStateOf<com.lucent.app.data.ChatConversation?>(null) }
@@ -274,6 +285,7 @@ fun AssistantChatBody(
         if (!active) {
             conversationMenuOpen = false
             conversationSearch = ""
+            focusManager.clearFocus()
             renameTarget = null
             convoActions = null
             convoToDelete = null
@@ -578,11 +590,15 @@ fun AssistantChatBody(
                 }
                 LucentGlassDropdownMenu(
                     expanded = conversationMenuOpen,
-                    onDismissRequest = { conversationMenuOpen = false },
+                    onDismissRequest = {
+                        conversationMenuOpen = false
+                        conversationSearch = ""
+                        focusManager.clearFocus()
+                    },
                     backgroundAlpha = 0.95f
                 ) {
                     val convos = AssistantController.conversations
-                    Column(modifier = Modifier.width(210.dp)) {
+                    Column(modifier = Modifier.width(210.dp).clearFocusOnTap(focusManager)) {
                         OutlinedTextField(
                             value = conversationSearch,
                             onValueChange = { conversationSearch  = com.lucent.app.collapseExcessBlankLines(it) },
@@ -590,6 +606,8 @@ fun AssistantChatBody(
                                 Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp))
                             },
                             singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                             textStyle = LocalTextStyle.current.copy(fontSize = 13.sp),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -616,6 +634,7 @@ fun AssistantChatBody(
                                                     .clickable {
                                                         conversationMenuOpen = false
                                                         conversationSearch = ""
+                                                        focusManager.clearFocus()
                                                         autoScroll = false
                                                         pendingJump = match
                                                         if (AssistantController.currentConversationId != match.conversationId) {
@@ -678,6 +697,8 @@ fun AssistantChatBody(
                                                 .weight(1f)
                                                 .clickable {
                                                     conversationMenuOpen = false
+                                                    conversationSearch = ""
+                                                    focusManager.clearFocus()
                                                     AssistantController.switchConversation(context.applicationContext, convo.id)
                                                 }
                                                 .padding(start = 14.dp, top = 12.dp, bottom = 12.dp, end = 4.dp)
@@ -692,6 +713,8 @@ fun AssistantChatBody(
                                         IconButton(
                                             onClick = {
                                                 conversationMenuOpen = false
+                                                conversationSearch = ""
+                                                focusManager.clearFocus()
                                                 convoActions = convo
                                             },
                                             modifier = Modifier.size(40.dp)

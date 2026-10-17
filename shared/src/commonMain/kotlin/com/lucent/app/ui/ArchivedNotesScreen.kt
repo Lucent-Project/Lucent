@@ -15,6 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Unarchive
@@ -63,8 +67,13 @@ fun ArchivedNotesScreen(
     val onGradient = LocalOnGradient.current
     val onGradientMuted = LocalOnGradientMuted.current
     val hazeState = LocalHazeState.current
+    val focusManager = LocalFocusManager.current
 
     var searchQuery by remember { mutableStateOf("") }
+    LucentBackHandler(enabled = searchQuery.isNotBlank()) {
+        searchQuery = ""
+        focusManager.clearFocus()
+    }
     var grouping by remember { mutableStateOf(ArchiveGrouping.TIME) }
     var noteToRestore by remember { mutableStateOf<Note?>(null) }
 
@@ -95,7 +104,7 @@ fun ArchivedNotesScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().clearFocusOnTap(focusManager).padding(16.dp)) {
         Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = com.lucent.app.i18n.S.actionBack, tint = onGradient)
@@ -108,6 +117,9 @@ fun ArchivedNotesScreen(
             onValueChange = { searchQuery  = com.lucent.app.collapseExcessBlankLines(it) },
             label = { Text(com.lucent.app.i18n.S.searchArchive) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -148,14 +160,14 @@ fun ArchivedNotesScreen(
             ArchiveGrouping.TIME -> {
                 LazyColumn(
                     state = rememberRestoredListState("ArchivedNotesScreen#1"),
-                    modifier = Modifier.hazeSource(state = hazeState),
+                    modifier = Modifier.clearFocusOnTap(focusManager).hazeSource(state = hazeState),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = LocalBottomBarInset.current)
                 ) {
                     items(filtered, key = { it.id }) { note ->
                         ArchivedNoteCard(
                             note = note,
-                            onOpen = { onOpen(note) },
+                            onOpen = { focusManager.clearFocus(); onOpen(note) },
                             onRestore = { restore(note) },
                             onDelete = { onDeleteRequest(note) },
                             onGradient = onGradient,
@@ -168,7 +180,7 @@ fun ArchivedNotesScreen(
                 val groups = remember(filtered) { buildTagGroups(filtered) }
                 LazyColumn(
                     state = rememberRestoredListState("ArchivedNotesScreen#2"),
-                    modifier = Modifier.hazeSource(state = hazeState),
+                    modifier = Modifier.clearFocusOnTap(focusManager).hazeSource(state = hazeState),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = LocalBottomBarInset.current)
                 ) {
@@ -184,7 +196,7 @@ fun ArchivedNotesScreen(
                         items(notesForTag, key = { "${tag}_${it.id}" }) { note ->
                             ArchivedNoteCard(
                                 note = note,
-                                onOpen = { onOpen(note) },
+                                onOpen = { focusManager.clearFocus(); onOpen(note) },
                                 onRestore = { restore(note) },
                                 onDelete = { onDeleteRequest(note) },
                                 onGradient = onGradient,

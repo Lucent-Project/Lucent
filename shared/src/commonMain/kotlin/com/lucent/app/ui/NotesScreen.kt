@@ -56,6 +56,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -157,6 +161,7 @@ fun NotesScreen(active: Boolean = true) {
     val hiddenNotes by remember { db.noteDao.getHidden() }.collectAsState(initial = emptyList())
     val onGradient = LocalOnGradient.current
     val onGradientMuted = LocalOnGradientMuted.current
+    val focusManager = LocalFocusManager.current
 
     val sortKey by settingsRepo.notesSort
         .collectAsState(initial = com.lucent.app.data.SettingsCache.notesSort ?: "recent")
@@ -297,6 +302,7 @@ fun NotesScreen(active: Boolean = true) {
     }
 
     fun startCreate(prefillTitle: String = "") {
+        focusManager.clearFocus()
         resetComposer()
         newTitle = prefillTitle
         composing = true
@@ -469,6 +475,7 @@ fun NotesScreen(active: Boolean = true) {
     }
 
     fun openDetail(note: Note) {
+        focusManager.clearFocus()
         viewingId = note.id
         returnToOnClose = null
         AppScope.io.launch {
@@ -662,7 +669,7 @@ fun NotesScreen(active: Boolean = true) {
         if (noteDirty) showUnsavedDialog = true else discardComposer()
     }
 
-    BackClaim(active && (composing || viewingId != null || historyForId != null || showArchive || showTrash || showSearch || showDrafts || showHidden || selectionMode))
+    BackClaim(active && (composing || viewingId != null || historyForId != null || showArchive || showTrash || showSearch || showDrafts || showHidden || selectionMode || searchText.isNotBlank()))
     LucentBackHandler(enabled = composing) { leaveComposer() }
     LucentBackHandler(enabled = !composing && historyForId != null) { historyForId = null }
     LucentBackHandler(enabled = !composing && historyForId == null && viewingId != null) { closeDetail() }
@@ -673,6 +680,10 @@ fun NotesScreen(active: Boolean = true) {
         if (showDrafts) showDrafts = false else showHidden = false
     }
     LucentBackHandler(enabled = selectionMode && !composing && historyForId == null && viewingId == null && !showArchive && !showTrash && !showSearch && !showDrafts && !showHidden) { exitSelection() }
+    LucentBackHandler(enabled = active && !composing && historyForId == null && viewingId == null && !showArchive && !showTrash && !showSearch && !showDrafts && !showHidden && !selectionMode && searchText.isNotBlank()) {
+        searchText = ""
+        focusManager.clearFocus()
+    }
 
     LaunchedEffect(AppNavigation.requestedPanel, active) {
         if (!active) return@LaunchedEffect
@@ -1903,7 +1914,7 @@ fun NotesScreen(active: Boolean = true) {
         }
 
         else -> {
-            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            Column(modifier = Modifier.fillMaxSize().clearFocusOnTap(focusManager).padding(16.dp)) {
                 Box(
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     contentAlignment = Alignment.Center
@@ -1970,6 +1981,8 @@ fun NotesScreen(active: Boolean = true) {
                                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = com.lucent.app.i18n.S.a11ySearchNotes) },
                                     trailingIcon = { SearchHelpButton() },
                                     singleLine = true,
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             },
@@ -2009,7 +2022,7 @@ fun NotesScreen(active: Boolean = true) {
                 LazyVerticalGrid(
                     state = gridState,
                     columns = GridCells.Fixed(notesGridColumns),
-                    modifier = Modifier.fillMaxSize().hazeSource(state = LocalHazeState.current),
+                    modifier = Modifier.fillMaxSize().clearFocusOnTap(focusManager).hazeSource(state = LocalHazeState.current),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = LocalBottomBarInset.current)

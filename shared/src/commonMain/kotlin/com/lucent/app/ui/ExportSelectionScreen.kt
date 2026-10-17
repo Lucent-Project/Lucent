@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
@@ -38,6 +40,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,6 +65,11 @@ fun <T> ExportSelectionScreen(
     val onGradientMuted = LocalOnGradientMuted.current
 
     var query by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
+    LucentBackHandler(enabled = query.isNotBlank()) {
+        query = ""
+        focusManager.clearFocus()
+    }
     var selectedIds by remember { mutableStateOf(setOf<Long>()) }
     var selectedAttachmentKeys by remember { mutableStateOf(setOf<String>()) }
     var selectedFormat by remember { mutableStateOf(com.lucent.app.data.ExportFormat.MARKDOWN) }
@@ -99,9 +108,16 @@ fun <T> ExportSelectionScreen(
         if (itemId in selectedIds) deselectItem(itemId) else selectedIds = selectedIds + itemId
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().clearFocusOnTap(focusManager).padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-            IconButton(onClick = onBack) {
+            IconButton(onClick = {
+                if (query.isNotBlank()) {
+                    query = ""
+                    focusManager.clearFocus()
+                } else {
+                    onBack()
+                }
+            }) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = com.lucent.app.i18n.S.actionBack, tint = onGradient)
             }
             Text(title, color = onGradient, fontSize = 20.sp, modifier = Modifier.weight(1f))
@@ -128,6 +144,8 @@ fun <T> ExportSelectionScreen(
             onValueChange = { query  = com.lucent.app.collapseExcessBlankLines(it) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -190,7 +208,7 @@ fun <T> ExportSelectionScreen(
         }
 
         LazyColumn(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
+            modifier = Modifier.weight(1f).fillMaxWidth().clearFocusOnTap(focusManager),
             contentPadding = PaddingValues(bottom = LocalBottomBarInset.current)
         ) {
             items(visible, key = { id(it) }) { item ->
@@ -198,11 +216,17 @@ fun <T> ExportSelectionScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { toggleItem(id(item)) }
+                        .clickable {
+                            focusManager.clearFocus()
+                            toggleItem(id(item))
+                        }
                         .padding(vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Checkbox(checked = checked, onCheckedChange = { toggleItem(id(item)) })
+                    Checkbox(checked = checked, onCheckedChange = {
+                        focusManager.clearFocus()
+                        toggleItem(id(item))
+                    })
                     Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                         Text(label(item).ifBlank { com.lucent.app.i18n.S.untitled }, color = onGradient, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         val sub = subtitle(item)

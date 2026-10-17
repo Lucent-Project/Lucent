@@ -45,6 +45,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -144,6 +148,7 @@ fun TasksScreen(active: Boolean = true) {
     val onGradient = LocalOnGradient.current
     val onGradientMuted = LocalOnGradientMuted.current
     val hazeState = LocalHazeState.current
+    val focusManager = LocalFocusManager.current
 
     val sortKey by settingsRepo.tasksSort
         .collectAsState(initial = com.lucent.app.data.SettingsCache.tasksSort ?: "recent")
@@ -269,6 +274,7 @@ fun TasksScreen(active: Boolean = true) {
     }
 
     fun startCreate() {
+        focusManager.clearFocus()
         resetComposer()
         composing = true
     }
@@ -293,6 +299,7 @@ fun TasksScreen(active: Boolean = true) {
     }
 
     fun openDetail(task: Task) {
+        focusManager.clearFocus()
         viewingId = task.id
         returnToOnClose = null
         AppScope.io.launch {
@@ -467,7 +474,7 @@ fun TasksScreen(active: Boolean = true) {
         if (taskDirty) showUnsavedDialog = true else discardComposer()
     }
 
-    BackClaim(active && (composing || viewingId != null || showingHistory || showTrash || showSearch || showDrafts || showHidden || selectionMode))
+    BackClaim(active && (composing || viewingId != null || showingHistory || showTrash || showSearch || showDrafts || showHidden || selectionMode || searchText.isNotBlank()))
     LucentBackHandler(enabled = composing) { leaveComposer() }
     LucentBackHandler(enabled = !composing && viewingId != null) { closeDetail() }
     LucentBackHandler(enabled = !composing && viewingId == null && showingHistory) { showingHistory = false }
@@ -477,6 +484,10 @@ fun TasksScreen(active: Boolean = true) {
         if (showDrafts) showDrafts = false else showHidden = false
     }
     LucentBackHandler(enabled = selectionMode && !composing && viewingId == null && !showingHistory && !showTrash && !showSearch && !showDrafts && !showHidden) { exitSelection() }
+    LucentBackHandler(enabled = active && !composing && viewingId == null && !showingHistory && !showTrash && !showSearch && !showDrafts && !showHidden && !selectionMode && searchText.isNotBlank()) {
+        searchText = ""
+        focusManager.clearFocus()
+    }
 
     LaunchedEffect(AppNavigation.requestedPanel, active) {
         if (!active) return@LaunchedEffect
@@ -1416,7 +1427,7 @@ fun TasksScreen(active: Boolean = true) {
         }
 
         else -> {
-            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            Column(modifier = Modifier.fillMaxSize().clearFocusOnTap(focusManager).padding(16.dp)) {
                 Box(
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     contentAlignment = Alignment.Center
@@ -1483,6 +1494,8 @@ fun TasksScreen(active: Boolean = true) {
                                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = com.lucent.app.i18n.S.a11ySearchTasks) },
                                     trailingIcon = { SearchHelpButton() },
                                     singleLine = true,
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             },
@@ -1521,7 +1534,7 @@ fun TasksScreen(active: Boolean = true) {
                 Box(modifier = Modifier.fillMaxSize()) {
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize().hazeSource(state = hazeState),
+                    modifier = Modifier.fillMaxSize().clearFocusOnTap(focusManager).hazeSource(state = hazeState),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = LocalBottomBarInset.current)
                 ) {

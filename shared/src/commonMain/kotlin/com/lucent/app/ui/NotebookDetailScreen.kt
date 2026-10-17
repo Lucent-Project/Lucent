@@ -18,6 +18,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
@@ -65,7 +69,16 @@ fun NotebookDetailScreen(
     onOpenTask: (Task) -> Unit,
     onPickPhoto: (((String?) -> Unit) -> Unit)? = null
 ) {
-    LucentBackHandler { onBack() }
+    val focusManager = LocalFocusManager.current
+    var searchText by remember { mutableStateOf("") }
+    LucentBackHandler {
+        if (searchText.isNotBlank()) {
+            searchText = ""
+            focusManager.clearFocus()
+        } else {
+            onBack()
+        }
+    }
     val context = LocalPlatformContext.current
     val db = remember { createAppDatabase(context) }
     val scope = rememberCoroutineScope()
@@ -96,7 +109,6 @@ fun NotebookDetailScreen(
     var renaming by remember { mutableStateOf(false) }
     var recolouring by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
-    var searchText by remember { mutableStateOf("") }
     var addMenuOpen by remember { mutableStateOf(false) }
     var composingNote by remember { mutableStateOf(false) }
     var composingTask by remember { mutableStateOf(false) }
@@ -258,7 +270,7 @@ fun NotebookDetailScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().clearFocusOnTap(focusManager).padding(16.dp)) {
         BackHeader(onBack = onBack)
 
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -301,6 +313,8 @@ fun NotebookDetailScreen(
             onValueChange = { searchText  = com.lucent.app.collapseExcessBlankLines(it) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = com.lucent.app.i18n.S.a11ySearchNotebooks) },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -317,7 +331,7 @@ fun NotebookDetailScreen(
 
         LazyColumn(
             state = rememberRestoredListState("NotebookDetailScreen#1"),
-            modifier = Modifier.hazeSource(state = LocalHazeState.current),
+            modifier = Modifier.clearFocusOnTap(focusManager).hazeSource(state = LocalHazeState.current),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(bottom = LocalBottomBarInset.current)
         ) {
@@ -325,6 +339,7 @@ fun NotebookDetailScreen(
                 NotebookMemberRow(
                     row = row,
                     onOpen = {
+                        focusManager.clearFocus()
                         when (row) {
                             is NotebookRowData.NoteRow -> onOpenNote(row.note)
                             is NotebookRowData.TaskRow -> onOpenTask(row.task)

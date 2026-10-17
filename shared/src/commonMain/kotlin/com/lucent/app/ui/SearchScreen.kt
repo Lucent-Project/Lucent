@@ -20,6 +20,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Notes
@@ -76,6 +80,7 @@ fun SearchScreen(
     val onGradient = LocalOnGradient.current
     val onGradientMuted = LocalOnGradientMuted.current
     val hazeState = LocalHazeState.current
+    val focusManager = LocalFocusManager.current
 
     var raw by remember { mutableStateOf("") }
     val repo = remember { createSettingsRepository(context) }
@@ -88,7 +93,14 @@ fun SearchScreen(
     var taskResults by remember { mutableStateOf<List<Task>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
 
-    LucentBackHandler(enabled = true) { onBack() }
+    LucentBackHandler(enabled = true) {
+        if (raw.isNotBlank()) {
+            raw = ""
+            focusManager.clearFocus()
+        } else {
+            onBack()
+        }
+    }
 
     val query = remember(raw) { SearchQuery.parse(raw) }
 
@@ -144,7 +156,7 @@ fun SearchScreen(
         searching = false
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier.fillMaxSize().clearFocusOnTap(focusManager).padding(16.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = com.lucent.app.i18n.S.actionBack, tint = onGradient)
@@ -172,6 +184,8 @@ fun SearchScreen(
             placeholder = { Text(com.lucent.app.i18n.S.searchPlaceholder) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = onGradientMuted) },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(10.dp))
@@ -251,7 +265,7 @@ fun SearchScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyColumn(
-                    modifier = Modifier.hazeSource(state = hazeState),
+                    modifier = Modifier.clearFocusOnTap(focusManager).hazeSource(state = hazeState),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(bottom = LocalBottomBarInset.current)
                 ) {
@@ -260,7 +274,7 @@ fun SearchScreen(
                             SectionHeader(com.lucent.app.i18n.S.tabNotes, noteResults.size, Icons.AutoMirrored.Filled.Notes)
                         }
                         items(noteResults, key = { "n${it.id}" }) { note ->
-                            NoteResultRow(note = note, onOpen = { onOpenNote(note) })
+                            NoteResultRow(note = note, onOpen = { focusManager.clearFocus(); onOpenNote(note) })
                         }
                     }
                     if (taskResults.isNotEmpty()) {
@@ -268,7 +282,7 @@ fun SearchScreen(
                             SectionHeader(com.lucent.app.i18n.S.tabTasks, taskResults.size, Icons.Default.CheckCircle)
                         }
                         items(taskResults, key = { "t${it.id}" }) { task ->
-                            TaskResultRow(task = task, onOpen = { onOpenTask(task) })
+                            TaskResultRow(task = task, onOpen = { focusManager.clearFocus(); onOpenTask(task) })
                         }
                     }
                 }
