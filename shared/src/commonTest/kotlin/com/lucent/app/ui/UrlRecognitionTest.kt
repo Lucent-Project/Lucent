@@ -20,12 +20,12 @@ class UrlRecognitionTest {
 
     @Test
     fun testBuildAnnotatedStringWithUrlsIgnoresTrailingPunctuation() {
-        val text = "Check out https://github.com/Yuan0-o/Lucent, and https://kotlinlang.org."
+        val text = "Check out https://github.com/Lucent-Project/Lucent, and https://kotlinlang.org."
         val annotated = buildAnnotatedStringWithUrls(text)
         val links = annotated.getLinkAnnotations(0, annotated.length)
         assertEquals(2, links.size)
         val urls = links.map { (it.item as LinkAnnotation.Url).url }
-        assertEquals("https://github.com/Yuan0-o/Lucent", urls[0])
+        assertEquals("https://github.com/Lucent-Project/Lucent", urls[0])
         assertEquals("https://kotlinlang.org", urls[1])
     }
 

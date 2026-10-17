@@ -214,8 +214,8 @@ private fun AboutFooter(
         Text(S.aboutRights, color = onGradientMuted, fontSize = 11.sp)
         Spacer(modifier = Modifier.height(8.dp))
         Text("${S.aboutDeveloper} ${LucentBuild.DEVELOPER}", color = onGradientMuted, fontSize = 11.sp)
-        AboutLink("${S.aboutHomepage} yuan0-o.github.io/lucentapp", onGradient) {
-            onOpenUrl?.invoke("https://yuan0-o.github.io/lucentapp/")
+        AboutLink("${S.aboutHomepage} lucent-project.github.io/lucentapp", onGradient) {
+            onOpenUrl?.invoke("https://lucent-project.github.io/lucentapp/")
         }
         AboutLink("${S.aboutContact} ${LucentBuild.SUPPORT_EMAIL}", onGradient) {
             onOpenUrl?.invoke("mailto:${LucentBuild.SUPPORT_EMAIL}")
@@ -227,7 +227,7 @@ private fun AboutFooter(
             onOpenUrl?.invoke(LucentBuild.privacyPage(com.lucent.app.i18n.currentLanguageKey()))
         }
         AboutLink("${S.aboutDonate}", onGradient) {
-            onOpenUrl?.invoke("https://yuan0-o.github.io/lucentapp/#donate")
+            onOpenUrl?.invoke("https://lucent-project.github.io/lucentapp/#donate")
         }
     }
 }

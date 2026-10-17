@@ -183,4 +183,4 @@ Android 버전은 arm64-v8a, armeabi-v7a, x86_64를 지원하는 단일 유니�
 - Android APK: 58.73 MiB
 - Windows installer: 165.37 MiB
 - Built from commit `ba4dfd072069b4f7d95978063c327da79dead64e`
-- Build log: https://github.com/Yuan0-o/Lucent/actions/runs/36127855604
+- Build log: https://github.com/Lucent-Project/Lucent/actions/runs/36127855604

@@ -24,15 +24,15 @@ object LucentBuild {
 
     const val SUPPORT_EMAIL = "yuan47578@gmail.com"
 
-    const val HOMEPAGE = "https://github.com/Yuan0-o/Lucent"
+    const val HOMEPAGE = "https://github.com/Lucent-Project/Lucent"
 
-    const val LICENSES_PAGE = "https://github.com/Yuan0-o/Lucent/blob/main/docs/THIRD-PARTY-NOTICES.md"
+    const val LICENSES_PAGE = "https://github.com/Lucent-Project/Lucent/blob/main/docs/THIRD-PARTY-NOTICES.md"
 
-    const val RELEASES_API = "https://api.github.com/repos/Yuan0-o/Lucent/releases/latest"
+    const val RELEASES_API = "https://api.github.com/repos/Lucent-Project/Lucent/releases/latest"
 
-    const val REPO_API = "https://api.github.com/repos/Yuan0-o/Lucent"
+    const val REPO_API = "https://api.github.com/repos/Lucent-Project/Lucent"
 
-    private const val PRIVACY_PAGE = "https://yuan0-o.github.io/lucentapp"
+    private const val PRIVACY_PAGE = "https://lucent-project.github.io/lucentapp"
 
     fun privacyPage(languageKey: String): String = when (languageKey) {
         "zh" -> "$PRIVACY_PAGE/zh/privacy.html"

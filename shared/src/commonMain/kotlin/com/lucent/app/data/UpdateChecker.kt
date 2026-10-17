@@ -47,8 +47,8 @@ data class ReleaseInfo(
 
 object UpdateChecker {
 
-    const val MIRROR_MANIFEST_URL = "https://yuan0-o.github.io/lucentapp/downloads/version.json"
-    const val GITHUB_LATEST_URL = "https://api.github.com/repos/Yuan0-o/Lucent/releases/latest"
+    const val MIRROR_MANIFEST_URL = "https://lucent-project.github.io/lucentapp/downloads/version.json"
+    const val GITHUB_LATEST_URL = "https://api.github.com/repos/Lucent-Project/Lucent/releases/latest"
 
     internal val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
@@ -143,7 +143,7 @@ object UpdateChecker {
             val url = item["browser_download_url"]?.jsonPrimitive?.content ?: ""
             if (name.isBlank() || url.isBlank()) continue
             val fallbackUrl = item["fallback_download_url"]?.jsonPrimitive?.content?.ifBlank { null }
-                ?: if (tagName.isNotBlank()) "https://github.com/Yuan0-o/Lucent/releases/download/$tagName/$name" else null
+                ?: if (tagName.isNotBlank()) "https://github.com/Lucent-Project/Lucent/releases/download/$tagName/$name" else null
             val asset = ReleaseAsset(name, url, item["size"]?.jsonPrimitive?.longOrNull ?: 0L, fallbackUrl)
             when {
                 name.endsWith(".apk", ignoreCase = true) && apk == null -> apk = asset
