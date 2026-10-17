@@ -102,6 +102,7 @@ actual object LucentBrowser {
 
         warmup(ctx, pkg)
 
+        val activity = ActivityProvider.currentActivity
         try {
             val toolbarColor = 0xFF1B2340.toInt()
             val colorSchemeParams = CustomTabColorSchemeParams.Builder()
@@ -120,10 +121,12 @@ actual object LucentBrowser {
 
             val customTabsIntent = builder.build()
             customTabsIntent.intent.setPackage(pkg)
-            if (ctx !is Activity) {
+            if (activity != null) {
+                customTabsIntent.launchUrl(activity, uri)
+            } else {
                 customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                customTabsIntent.launchUrl(ctx, uri)
             }
-            customTabsIntent.launchUrl(ctx, uri)
         } catch (_: Throwable) {
             plainActionView(ctx, uri)
         }
