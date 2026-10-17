@@ -50,6 +50,7 @@ import com.lucent.app.platform.LocalPlatformContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.DpOffset
 import com.lucent.app.ui.LucentBackHandler
 import com.lucent.app.harness.SubAgent
 import com.lucent.app.harness.SubAgentReports
@@ -207,6 +208,7 @@ fun SubAgentTreePopup(
     LucentGlassDropdownMenu(
         expanded = true,
         onDismissRequest = onDismiss,
+        offset = DpOffset((-48).dp, 0.dp),
         modifier = modifier.widthIn(min = 220.dp, max = 340.dp)
     ) {
         LucentGlassDropdownMenuItem(
