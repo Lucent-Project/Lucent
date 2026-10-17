@@ -832,7 +832,7 @@ fun LucentApp(paletteColors: List<Color>, backdropColor: Color, backgroundAnimat
                         title = {
                             val homeMode = HomeMode.of(currentScreen)
                             if (homeMode != null) {
-                                Text("Lucent", color = onGradient, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                Text("Lucent", color = onGradient, fontSize = 30.sp)
                             } else if (currentScreen == Screen.Settings) {
                                 com.lucent.app.ui.SettingsBreadcrumb(
                                     route = AppNavigation.settingsRoute,
