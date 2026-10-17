@@ -37,12 +37,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,6 +79,7 @@ fun TerminalScreen(onBack: () -> Unit) {
     val context = LocalPlatformContext.current
     val scope = rememberCoroutineScope()
     val repo = remember { createSettingsRepository(context) }
+    val globalTextSelectionEnabled by repo.globalTextSelectionEnabled.collectAsState(initial = SettingsCache.globalTextSelectionEnabled)
 
     BackClaim(active = true)
     LucentBackHandler { onBack() }
@@ -196,16 +199,23 @@ fun TerminalScreen(onBack: () -> Unit) {
                 val transcript = remember(currentTab, tick) {
                     currentTab?.value?.transcript()?.let { stripAnsi(it) } ?: ""
                 }
+                val transcriptRef = rememberUpdatedState(transcript)
                 val scrollState = rememberScrollState()
                 LaunchedEffect(transcript) {
                     scrollState.animateScrollTo(scrollState.maxValue)
+                }
+                val copyModifier = if (!globalTextSelectionEnabled) {
+                    Modifier.fillMaxWidth().longPressCopy(context, currentTab?.id) { transcriptRef.value }
+                } else {
+                    Modifier.fillMaxWidth()
                 }
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState).padding(8.dp)) {
                     Text(
                         text = transcript,
                         color = Color.Green,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = fontSize.sp
+                        fontSize = fontSize.sp,
+                        modifier = copyModifier
                     )
                 }
             }

@@ -11,3 +11,10 @@ fun Modifier.longPressCopy(context: PlatformContext, text: String): Modifier =
     }.onSecondaryClick {
         copyToClipboard(context, text)
     }
+
+fun Modifier.longPressCopy(context: PlatformContext, key: Any?, text: () -> String): Modifier =
+    pointerInput(key) {
+        detectTapGestures(onLongPress = { copyToClipboard(context, text()) })
+    }.onSecondaryClick {
+        copyToClipboard(context, text())
+    }
