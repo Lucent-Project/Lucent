@@ -38,13 +38,14 @@ fun AssistantReasoningBlock(
     modifier: Modifier = Modifier
 ) {
     if (reasoning.isBlank()) return
-    var expanded by remember(reasoning) { mutableStateOf(false) }
+    var userExpanded by remember { mutableStateOf<Boolean?>(null) }
+    val expanded = userExpanded ?: false
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = !expanded }
+                .clickable { userExpanded = !(userExpanded ?: false) }
                 .padding(vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

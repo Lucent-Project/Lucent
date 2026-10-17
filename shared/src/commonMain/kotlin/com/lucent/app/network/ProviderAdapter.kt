@@ -177,16 +177,15 @@ private fun thinkTailLength(text: String): Int {
 private fun reasoningChannel(delta: JsonObject?): String {
     if (delta == null) return ""
     for (key in arrayOf("reasoning_content", "reasoning")) {
-        if (!delta.containsKey(key)) continue
-        val value = delta[key]?.jsonPrimitive?.content ?: ""
+        val value = (delta[key] as? JsonPrimitive)?.contentOrNull ?: continue
         if (value.isNotEmpty()) return value
     }
     val details = (delta["reasoning_details"] as? JsonArray) ?: return ""
     val sb = StringBuilder()
     for (i in 0 until details.size) {
         val part = details[i].jsonObject
-        if (!part.containsKey("text")) continue
-        sb.append(part["text"]?.jsonPrimitive?.content ?: "")
+        val text = (part["text"] as? JsonPrimitive)?.contentOrNull ?: continue
+        sb.append(text)
     }
     return sb.toString()
 }
