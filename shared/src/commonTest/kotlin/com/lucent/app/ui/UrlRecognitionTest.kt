@@ -3,7 +3,6 @@ package com.lucent.app.ui
 import androidx.compose.ui.text.LinkAnnotation
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class UrlRecognitionTest {
 
@@ -31,8 +30,13 @@ class UrlRecognitionTest {
     }
 
     @Test
-    fun testMarkdownInlineRecognizesBareUrlsAndMarkdownLinks() {
-        val doc = parseMarkdown("See [Lucent](https://lucent.app) and bare https://lucent.app/docs!")
-        assertTrue(doc.blocks.isNotEmpty())
+    fun testBuildAnnotatedStringWithUrlsRecognizesMarkdownLinksAndBareUrls() {
+        val text = "See [Lucent](https://lucent.app) and bare https://lucent.app/docs!"
+        val annotated = buildAnnotatedStringWithUrls(text)
+        val links = annotated.getLinkAnnotations(0, annotated.length)
+        assertEquals(2, links.size)
+        val urls = links.map { (it.item as LinkAnnotation.Url).url }
+        assertEquals("https://lucent.app", urls[0])
+        assertEquals("https://lucent.app/docs", urls[1])
     }
 }
