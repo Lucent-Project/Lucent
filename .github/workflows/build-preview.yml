@@ -54,7 +54,7 @@ jobs:
         run: |
           BID="${{ inputs.build_id }}"
           if [ -z "$BID" ]; then
-            BID="P$(date -u +%Y%m%d%H%M)"
+            BID="P$(date -u +%Y%m%d%H%M%S)"
           fi
           echo "build_id=$BID" >> "$GITHUB_OUTPUT"
           echo "Build ID: $BID"
