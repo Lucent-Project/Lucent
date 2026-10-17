@@ -1865,6 +1865,7 @@ ENTRIES = [
     ("setupOptionalTitle", "Optional tools", "可选工具", "オプションのツール", "선택적 도구"),
     ("setupOptionalBody", "Not required for setup. Install only what you need.", "并非设置所必需，按需安装即可。", "セットアップに必須ではありません。必要なものだけインストールしてください。", "설정에 필수는 아닙니다. 필요한 것만 설치하세요。"),
     ("pluginAdbWirelessHelp", "USB debugging is unavailable inside the container. On the phone, enable Wireless debugging, then run: adb pair <ip:port> and adb connect <ip:port>.", "容器内无法使用 USB 调试。请在手机上开启「无线调试」，然后执行：adb pair <ip:port> 和 adb connect <ip:port>。", "コンテナ内では USB デバッグは使えません。端末で「ワイヤレスデバッグ」を有効にし、adb pair <ip:port> と adb connect <ip:port> を実行してください。", "컨테이너에서는 USB 디버깅을 사용할 수 없습니다. 휴대전화에서 '무선 디버깅'을 켠 뒤 adb pair <ip:port>와 adb connect <ip:port>를 실행하세요."),
+    ("setupConfigureExit(code: String)", "System package repair exit code: {code}", "系统包修复退出码：{code}", "システムパッケージ修復の終了コード: {code}", "시스템 패키지 복구 종료 코드: {code}"),
     ("setupUbuntuTitle", "Ubuntu Base", "Ubuntu 基础环境", "Ubuntu ベース", "Ubuntu 기본 환경"),
     ("setupUbuntuBody", "Installs the Ubuntu userland required by heavy tools.", "安装重型工具所需的 Ubuntu 基础环境。", "重いツールに必要な Ubuntu ユーザーランドをインストールします。", "무거운 도구에 필요한 Ubuntu 사용자 환경을 설치합니다."),
     ("setupUbuntuAction", "Install Ubuntu", "安装 Ubuntu", "Ubuntu をインストール", "Ubuntu 설치"),

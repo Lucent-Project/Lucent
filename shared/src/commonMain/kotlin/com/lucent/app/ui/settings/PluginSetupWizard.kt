@@ -164,22 +164,36 @@ fun PluginSetupWizard(onBack: () -> Unit) {
                                     scope.launch {
                                         var failure: com.lucent.app.harness.PluginOutcome? = null
                                         val tools = PluginCatalog.forPlatformEffective(HarnessRuntime.android).filter { it.id != "ubuntu" && it.id != "playwright" && it.required }
-                                        for (tool in tools) {
-                                            if (!HarnessRuntime.config().pluginInstalled(tool.id) && HarnessRuntime.pluginHost?.detect(tool) != true) {
-                                                val outcome = HarnessRuntime.pluginHost?.install(
-                                                    tool,
-                                                    PluginSource("", "", ""),
-                                                    onProgress = { p, t ->
-                                                        progress = p
-                                                        statusMsg = "${tool.name}: $t"
-                                                    },
-                                                    onOutput = { line ->
-                                                        logLines = (logLines + line).takeLast(300)
+                                        var preflightOk = true
+                                        if (HarnessRuntime.android && tools.isNotEmpty()) {
+                                            val region = PluginCatalog.effectiveRegion(HarnessRuntime.config().pluginMirrorRegion)
+                                            val mirrorHost = PluginCatalog.aptMirror(region).removePrefix("http://").removePrefix("https://").substringBefore("/").substringBefore(":")
+                                            val probeHost = HarnessRuntime.pluginHost
+                                            preflightOk = if (probeHost != null) {
+                                                val probe = probeHost.runPluginCommand(tools.first(), "timeout 10 bash -c 'exec 3<>/dev/tcp/$mirrorHost/80' && exec 3>&-", 15)
+                                                if (!probe.ok) logLines = (logLines + "[preflight] apt mirror unreachable: $mirrorHost").takeLast(300)
+                                                probe.ok
+                                            } else true
+                                            if (!preflightOk) failure = com.lucent.app.harness.PluginOutcome(false, "apt mirror unreachable: $mirrorHost", failure = com.lucent.app.harness.PluginFailure.DOWNLOAD)
+                                        }
+                                        if (preflightOk) {
+                                            for (tool in tools) {
+                                                if (!HarnessRuntime.config().pluginInstalled(tool.id) && HarnessRuntime.pluginHost?.detect(tool) != true) {
+                                                    val outcome = HarnessRuntime.pluginHost?.install(
+                                                        tool,
+                                                        PluginSource("", "", ""),
+                                                        onProgress = { p, t ->
+                                                            progress = p
+                                                            statusMsg = "${tool.name}: $t"
+                                                        },
+                                                        onOutput = { line ->
+                                                            logLines = (logLines + line).takeLast(300)
+                                                        }
+                                                    )
+                                                    if (outcome?.ok != true) {
+                                                        failure = outcome
+                                                        break
                                                     }
-                                                )
-                                                if (outcome?.ok != true) {
-                                                    failure = outcome
-                                                    break
                                                 }
                                             }
                                         }
@@ -260,6 +274,10 @@ private fun SetupStepCard(
     onReload: () -> Unit
 ) {
     val alpha = if (step.state == SetupStepState.WAITING) 0.5f else 1f
+    val configureExit = logLines.indexOfFirst { it.contains("[FIX-M] configure exit:") }
+        .takeIf { it >= 0 }
+        ?.let { i -> logLines.getOrNull(i + 1)?.trim().orEmpty() }
+        ?.takeIf { it.isNotEmpty() }
     Column(modifier = Modifier.fillMaxWidth().alpha(alpha).frostedGlass().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             val icon = when (step.state) {
@@ -280,6 +298,10 @@ private fun SetupStepCard(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(S.setupInstallFailedTitle, color = androidx.compose.ui.graphics.Color(0xFFFF8A80), fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     Spacer(modifier = Modifier.height(4.dp))
+                    if (configureExit != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(S.setupConfigureExit(configureExit), color = onGradient, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    }
                     Text(reason, color = onGradientMuted, fontSize = 12.sp)
                     steps.forEach { s -> Spacer(modifier = Modifier.height(4.dp)); Text("\u2022 $s", color = onGradientMuted, fontSize = 12.sp) }
                     Spacer(modifier = Modifier.height(8.dp))
