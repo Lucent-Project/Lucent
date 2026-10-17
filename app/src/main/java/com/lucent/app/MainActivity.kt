@@ -814,7 +814,7 @@ fun LucentApp(paletteColors: List<Color>, backdropColor: Color, backgroundAnimat
                 drawerContent = {
                     HomeDrawerSheet(
                         mode = HomeMode.of(currentScreen) ?: LastScreen.homeMode,
-                        onSelectMode = { mode -> selectHomeMode(mode) },
+                        onSelectMode = { mode -> selectHomeMode(mode); closeDrawer() },
                         onOpenPanel = { panel ->
                             closeDrawer()
                             runOrConfirm {
