@@ -31,6 +31,15 @@ on:
       exe_version:
         description: "Version of EXE"
         value: ${{ jobs.build-exe.outputs.version }}
+    secrets:
+      LUCENT_KEYSTORE_BASE64:
+        required: false
+      LUCENT_KEYSTORE_PASSWORD:
+        required: false
+      LUCENT_SIGN_PFX_BASE64:
+        required: false
+      LUCENT_SIGN_PFX_PASSWORD:
+        required: false
 
 permissions:
   contents: read
