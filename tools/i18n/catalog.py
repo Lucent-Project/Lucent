@@ -1861,6 +1861,7 @@ ENTRIES = [
     ("setupDiskSpaceTitle", "Disk Space", "磁盘空间", "ディスク容量", "디스크 공간"),
     ("setupDiskSpaceBody(free: String, needed: String)", "You need {needed} of free space (currently {free}).", "你需要 {needed} 的可用空间（当前为 {free}）。", "{needed} の空き容量が必要です (現在は {free})。", "{needed}의 여유 공간이 필요합니다 (현재 {free})."),
     ("setupDiskSpaceAction", "Check Again", "重新检查", "再確認", "다시 확인"),
+    ("unknown", "unknown", "未知", "不明", "알 수 없음"),
     ("setupUbuntuTitle", "Ubuntu Base", "Ubuntu 基础环境", "Ubuntu ベース", "Ubuntu 기본 환경"),
     ("setupUbuntuBody", "Installs the Ubuntu userland required by heavy tools.", "安装重型工具所需的 Ubuntu 基础环境。", "重いツールに必要な Ubuntu ユーザーランドをインストールします。", "무거운 도구에 필요한 Ubuntu 사용자 환경을 설치합니다."),
     ("setupUbuntuAction", "Install Ubuntu", "安装 Ubuntu", "Ubuntu をインストール", "Ubuntu 설치"),
