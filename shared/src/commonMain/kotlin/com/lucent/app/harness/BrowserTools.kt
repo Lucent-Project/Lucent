@@ -10,6 +10,7 @@ import okio.Path
 import okio.Path.Companion.toPath
 import okio.buffer
 import okio.use
+import com.lucent.app.platform.applicationContext
 
 
 object HtmlText {
@@ -258,7 +259,9 @@ object BrowserTools : HarnessGroupTools {
     private suspend fun search(ctx: HarnessCtx, args: JsonObject): ToolExecResult {
         val queries = searchQueries(args)
         if (queries.isEmpty()) return ToolExecResult("What should I look up?", success = false)
-        val engine = com.lucent.app.data.WebSearchEngine.AUTO.key
+        val engine = runCatching {
+            com.lucent.app.data.createSettingsRepository(ctx.context.applicationContext).webSearchEngineOnce()
+        }.getOrDefault(com.lucent.app.data.WebSearchEngine.AUTO.key)
         val results = queries.map { query ->
             query to com.lucent.app.network.WebSearchClient.search(query, engine)
         }

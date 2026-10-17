@@ -3,6 +3,9 @@ package com.lucent.app.network
 import com.lucent.app.data.WebSearchEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.Cookie
+import okhttp3.CookieJar
+import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import kotlinx.serialization.Serializable
@@ -33,10 +36,28 @@ private val webJson = Json { ignoreUnknownKeys = true }
 
 object WebSearchClient {
 
+    private val cookieJar = object : CookieJar {
+        private val cookieStore = java.util.concurrent.CopyOnWriteArrayList<Cookie>()
+
+        override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+            for (cookie in cookies) {
+                cookieStore.removeAll { it.name == cookie.name && it.matches(url) }
+                cookieStore.add(cookie)
+            }
+        }
+
+        override fun loadForRequest(url: HttpUrl): List<Cookie> {
+            val now = System.currentTimeMillis()
+            cookieStore.removeAll { it.expiresAt < now }
+            return cookieStore.filter { it.matches(url) }
+        }
+    }
+
     private val client = OkHttpClient.Builder()
         .connectTimeout(java.time.Duration.ofSeconds(12))
         .readTimeout(java.time.Duration.ofSeconds(16))
         .retryOnConnectionFailure(true)
+        .cookieJar(cookieJar)
         .build()
 
     private const val INSTANT_ENDPOINT = "https://api.duckduckgo.com/"
@@ -49,7 +70,7 @@ object WebSearchClient {
     private const val MAX_RESULTS = 6
     private const val MIN_USEFUL_RESULTS = 2
 
-    private data class SearchResult(val title: String, val url: String, val snippet: String)
+    internal data class SearchResult(val title: String, val url: String, val snippet: String)
 
     private data class EngineAttempt(val engine: WebSearchEngine, val results: List<SearchResult>)
 
@@ -98,6 +119,22 @@ object WebSearchClient {
                 if (wiki != null) used = EngineAttempt(WebSearchEngine.WIKIPEDIA, wiki)
             }
 
+            if (requested != WebSearchEngine.AUTO && used == null && instant.isNullOrBlank()) {
+                for (fallbackEngine in autoChain(trimmed)) {
+                    if (fallbackEngine == requested || fallbackEngine == WebSearchEngine.AUTO || fallbackEngine == WebSearchEngine.WIKIPEDIA) continue
+                    val hits = try {
+                        fetchFrom(fallbackEngine, trimmed)
+                    } catch (e: Exception) {
+                        note(e)
+                        emptyList()
+                    }
+                    if (hits.isNotEmpty()) {
+                        used = EngineAttempt(fallbackEngine, hits)
+                        break
+                    }
+                }
+            }
+
             val results = used?.results.orEmpty()
             val hasInstant = !instant.isNullOrBlank()
             if (!hasInstant && results.isEmpty()) {
@@ -133,7 +170,7 @@ object WebSearchClient {
             Result.success(sb.toString().trim())
         }
 
-    private fun autoChain(query: String): List<WebSearchEngine> {
+    internal fun autoChain(query: String): List<WebSearchEngine> {
         val cjk = query.any { it.code > 0x2E80 }
         return if (cjk) {
             listOf(
@@ -178,6 +215,7 @@ object WebSearchClient {
             .build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) return null
+            if (response.request.url.toString().contains("showcaptcha")) return null
             val body = response.body?.string().orEmpty()
             return body.ifBlank { null }
         }
@@ -240,8 +278,8 @@ object WebSearchClient {
     private fun q(value: String): String = urlEncode(value)
 
     private val BLOCKED = listOf(
-        "anomaly-modal", "captcha", "unusual traffic", "are you a robot",
-        "verify you are human", "enable javascript and cookies to continue"
+        "anomaly-modal", "anomaly", "captcha", "unusual traffic", "are you a robot",
+        "verify you are human", "enable javascript and cookies to continue", "enablejs"
     )
 
     private fun looksBlocked(html: String): Boolean =
@@ -284,10 +322,7 @@ object WebSearchClient {
         )
     }
 
-    private fun fetchGoogle(query: String): List<SearchResult> {
-        val html = get("https://www.google.com/search?q=${q(query)}&num=10&hl=en", "en-US,en;q=0.9")
-            ?: return emptyList()
-        if (looksBlocked(html)) return emptyList()
+    private fun parseGoogle(html: String): List<SearchResult> {
         val primary = parsePairs(
             html,
             Regex(
@@ -313,6 +348,18 @@ object WebSearchClient {
                 setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
             )
         )
+    }
+
+    private fun fetchGoogle(query: String): List<SearchResult> {
+        val gbvHtml = get("https://www.google.com/search?q=${q(query)}&num=10&hl=en&gbv=1", "en-US,en;q=0.9")
+        if (gbvHtml != null && !looksBlocked(gbvHtml)) {
+            val results = parseGoogle(gbvHtml)
+            if (results.isNotEmpty()) return results
+        }
+        val html = get("https://www.google.com/search?q=${q(query)}&num=10&hl=en", "en-US,en;q=0.9")
+            ?: return emptyList()
+        if (looksBlocked(html)) return emptyList()
+        return parseGoogle(html)
     }
 
     private fun fetchBing(query: String): List<SearchResult> {
@@ -391,24 +438,31 @@ object WebSearchClient {
         )
     }
 
-    private fun fetchBaidu(query: String): List<SearchResult> {
-        val html = get("https://www.baidu.com/s?wd=${q(query)}&rn=10", "zh-CN,zh;q=0.9,en;q=0.8")
-            ?: return emptyList()
-        if (looksBlocked(html)) return emptyList()
-        val primary = parsePairs(
-            html,
-            Regex(
-                """<h3[^>]*\bclass=['"][^'"]*t[^'"]*['"][^>]*>\s*<a[^>]*\bhref="([^"]+)"[^>]*>(.*?)</a>""",
-                setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
-            ),
-            Regex(
-                """<div[^>]*\bclass=['"][^'"]*(?:c-abstract|c-span-last)[^'"]*['"][^>]*>(.*?)</div>""",
-                setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
-            ),
-            hrefGroup = 1,
-            titleGroup = 2
+    internal fun parseBaidu(html: String): List<SearchResult> {
+        val dataUrlRe = Regex("""&quot;dataUrl&quot;:&quot;(https?://[^&\\]+?)&quot;""")
+        val h3Re = Regex(
+            """<h3[^>]*\bclass=['"][^'"]*cosc-title[^'"]*['"][^>]*>(.*?)</h3>""",
+            setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
         )
-        if (primary.isNotEmpty()) return resolveBaiduLinks(primary)
+        val coscMatches = dataUrlRe.findAll(html).toList()
+        if (coscMatches.isNotEmpty()) {
+            val out = mutableListOf<SearchResult>()
+            val seen = HashSet<String>()
+            for (m in coscMatches) {
+                val rawUrl = m.groupValues[1]
+                val h3Match = h3Re.find(html, m.range.last + 1)
+                if (h3Match != null && h3Match.range.first - m.range.last < 3000) {
+                    val title = cleanText(h3Match.groupValues[1])
+                    if (title.length < 3) continue
+                    val url = resolveRedirect(rawUrl)
+                    if (url.isBlank() || url.startsWith("javascript")) continue
+                    if (!seen.add(url)) continue
+                    out += SearchResult(title, url, "")
+                    if (out.size >= MAX_RESULTS) break
+                }
+            }
+            if (out.isNotEmpty()) return resolveBaiduLinks(out)
+        }
         val fallback = parsePairs(
             html,
             Regex(
@@ -425,10 +479,33 @@ object WebSearchClient {
         return resolveBaiduLinks(fallback)
     }
 
-    private fun fetchSogou(query: String): List<SearchResult> {
-        val html = get("https://www.sogou.com/web?query=${q(query)}", "zh-CN,zh;q=0.9,en;q=0.8")
+    private fun fetchBaidu(query: String): List<SearchResult> {
+        val html = get("https://www.baidu.com/s?wd=${q(query)}&rn=10", "zh-CN,zh;q=0.9,en;q=0.8")
             ?: return emptyList()
         if (looksBlocked(html)) return emptyList()
+        return parseBaidu(html)
+    }
+
+    internal fun parseSogou(html: String): List<SearchResult> {
+        val mobileMatches = Regex(
+            """<a\b(?=[^>]*\bclass=['"][^'"]*resultLink[^'"]*['"])(?=[^>]*\bhref=['"]([^'"]+)['"])[^>]*>(.*?)</a>""",
+            setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
+        ).findAll(html).toList()
+        if (mobileMatches.isNotEmpty()) {
+            val out = mutableListOf<SearchResult>()
+            val seen = HashSet<String>()
+            for (m in mobileMatches) {
+                val title = cleanText(m.groupValues[2])
+                if (title.length < 3) continue
+                val rawHref = m.groupValues[1]
+                val url = resolveRedirect(rawHref)
+                if (url.isBlank() || url.startsWith("javascript")) continue
+                if (!seen.add(url)) continue
+                out += SearchResult(title, url, "")
+                if (out.size >= MAX_RESULTS) return out
+            }
+            if (out.isNotEmpty()) return out
+        }
         return parsePairs(
             html,
             Regex(
@@ -442,6 +519,13 @@ object WebSearchClient {
             hrefGroup = 1,
             titleGroup = 2
         )
+    }
+
+    private fun fetchSogou(query: String): List<SearchResult> {
+        val html = get("https://www.sogou.com/web?query=${q(query)}", "zh-CN,zh;q=0.9,en;q=0.8")
+            ?: return emptyList()
+        if (looksBlocked(html)) return emptyList()
+        return parseSogou(html)
     }
 
     private fun fetchSo360(query: String): List<SearchResult> {
@@ -514,7 +598,7 @@ object WebSearchClient {
         return out
     }
 
-    private fun resolveRedirect(href: String): String {
+    internal fun resolveRedirect(href: String): String {
         val h = href.replace("&amp;", "&").trim()
         val marker = "uddg="
         val idx = h.indexOf(marker)
@@ -523,6 +607,16 @@ object WebSearchClient {
             val end = h.indexOf('&', start).let { if (it < 0) h.length else it }
             val enc = h.substring(start, end)
             return try { urlDecode(enc) } catch (e: Exception) { enc }
+        }
+        val urlMarker = listOf("?url=", "&url=").firstNotNullOfOrNull { m ->
+            val pos = h.indexOf(m)
+            if (pos >= 0) pos + m.length else null
+        }
+        if (urlMarker != null) {
+            val end = h.indexOf('&', urlMarker).let { if (it < 0) h.length else it }
+            val enc = h.substring(urlMarker, end)
+            val decoded = try { urlDecode(enc) } catch (e: Exception) { enc }
+            if (decoded.startsWith("http://") || decoded.startsWith("https://")) return decoded
         }
         return when {
             h.startsWith("http") -> h
