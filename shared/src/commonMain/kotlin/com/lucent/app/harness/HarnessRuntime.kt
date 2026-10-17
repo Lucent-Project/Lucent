@@ -75,6 +75,7 @@ interface HarnessHost {
     fun defaultWorkspacePath(): String
     fun filesDirPath(): String
     fun cacheDirPath(): String
+    fun freeDiskBytes(): Long = -1L
     suspend fun probeShell(): ShellOutcome = ShellOutcome(true, "", "", 0)
     fun capabilities(): Set<String> = emptySet()
     fun openUrl(url: String): Boolean = false

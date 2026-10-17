@@ -60,6 +60,10 @@ class AndroidHarnessHost(private val context: Context) : HarnessHost {
 
     override fun cacheDirPath(): String = context.cacheDir.path
 
+    override fun freeDiskBytes(): Long = try {
+        StatFs(Environment.getDataDirectory().path).availableBytes
+    } catch (_: Exception) { -1L }
+
     override fun defaultWorkspacePath(): String {
         val documents = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
         val base = if (documents != null && (documents.isDirectory || documents.mkdirs())) documents

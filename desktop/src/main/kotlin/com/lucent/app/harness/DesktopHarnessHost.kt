@@ -136,6 +136,8 @@ object DesktopHarnessHost : HarnessHost {
 
     override fun cacheDirPath(): String = File(filesDirPath(), "cache").apply { mkdirs() }.path
 
+    override fun freeDiskBytes(): Long = try { File(filesDirPath()).usableSpace } catch (_: Exception) { -1L }
+
     override fun defaultWorkspacePath(): String {
         val home = File(System.getProperty("user.home") ?: ".")
         val documents = File(home, "Documents")

@@ -48,7 +48,7 @@ object PluginSetup {
         val dir = HarnessRuntime.workspacePath().toPath()
         val workspaceShared = PluginPreflight.sharedStorage(dir)
         val largestDownload = PluginCatalog.effective().maxOfOrNull { it.bytes } ?: 0L
-        val diskSpaceBytes = Long.MAX_VALUE
+        val diskSpaceBytes = HarnessRuntime.host?.freeDiskBytes() ?: -1L
         var diskSpaceNeeded = largestDownload * 2L
         if (android) {
             diskSpaceNeeded = max(diskSpaceNeeded, BUILTIN_ENV_DISK_BYTES)
@@ -80,12 +80,13 @@ object PluginSetup {
     fun evaluate(snapshot: WizardSnapshot): List<SetupStep> {
         val steps = mutableListOf<SetupStep>()
         if (snapshot.android) {
-            val diskPassed = snapshot.diskSpaceNeeded <= 0L || snapshot.diskSpaceBytes >= snapshot.diskSpaceNeeded
+            val diskPassed = snapshot.diskSpaceNeeded <= 0L || snapshot.diskSpaceBytes < 0L || snapshot.diskSpaceBytes >= snapshot.diskSpaceNeeded
+            val freeText = if (snapshot.diskSpaceBytes < 0L) S.unknown else Workspace.humanSize(snapshot.diskSpaceBytes)
             steps.add(
                 SetupStep(
                     id = "disk_space",
                     title = S.setupDiskSpaceTitle,
-                    body = S.setupDiskSpaceBody(Workspace.humanSize(snapshot.diskSpaceBytes), Workspace.humanSize(snapshot.diskSpaceNeeded)),
+                    body = S.setupDiskSpaceBody(freeText, Workspace.humanSize(snapshot.diskSpaceNeeded)),
                     action = S.setupDiskSpaceAction,
                     passed = diskPassed,
                     blocks = true
@@ -135,7 +136,7 @@ object PluginSetup {
                         title = S.setupDiskSpaceTitle,
                         body = S.setupDiskSpaceBody(Workspace.humanSize(snapshot.diskSpaceBytes), Workspace.humanSize(snapshot.diskSpaceNeeded)),
                         action = S.setupDiskSpaceAction,
-                        passed = snapshot.diskSpaceBytes >= snapshot.diskSpaceNeeded,
+                        passed = snapshot.diskSpaceBytes < 0L || snapshot.diskSpaceBytes >= snapshot.diskSpaceNeeded,
                         blocks = true
                     )
                 )
