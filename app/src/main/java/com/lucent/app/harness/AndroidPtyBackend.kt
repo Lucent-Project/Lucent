@@ -24,6 +24,7 @@ class AndroidPtyBackend(private val context: Context) : PtyBackend {
     }
 
     override fun start(request: PtyStartRequest): PtyProcess {
+        TerminalProvisioner.ensureProvisioned(context)
         check(isReady()) { describe() }
 
         val rootfs = BuiltinShell.rootfsDir(context)
