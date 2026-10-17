@@ -870,7 +870,7 @@ fun AssistantChatBody(
                             } else null
                             val reasoning = if (!isUser) msg.reasoningText.orEmpty() else ""
                             val hasProcessContent = savedTrace != null || reasoning.isNotBlank()
-                            var processVisible by remember(msg.id) { mutableStateOf(true) }
+                            var processVisible by remember(msg.id) { mutableStateOf<Boolean?>(null) }
 
                             if (!isUser && (assistantName.isNotBlank() || hasProcessContent)) {
                                 Row(
@@ -887,11 +887,11 @@ fun AssistantChatBody(
                                     Spacer(modifier = Modifier.weight(1f))
                                     if (hasProcessContent) {
                                         IconButton(
-                                            onClick = { processVisible = !processVisible },
+                                            onClick = { processVisible = !(processVisible ?: false) },
                                             modifier = Modifier.size(24.dp)
                                         ) {
                                             Icon(
-                                                if (processVisible) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                                if (processVisible ?: false) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                                                 contentDescription = null,
                                                 tint = onGradientMuted,
                                                 modifier = Modifier.size(16.dp)
@@ -945,7 +945,7 @@ fun AssistantChatBody(
                                 }
                             }
 
-                            if (!isUser && processVisible) {
+                            if (!isUser && (processVisible ?: false)) {
                                 if (agentModeOn && savedTrace != null) {
                                     AgentTracePanel(
                                         trace = savedTrace,
