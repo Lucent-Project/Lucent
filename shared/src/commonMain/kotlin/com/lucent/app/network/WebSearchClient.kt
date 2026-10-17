@@ -70,7 +70,7 @@ object WebSearchClient {
     private const val MAX_RESULTS = 6
     private const val MIN_USEFUL_RESULTS = 2
 
-    internal data class SearchResult(val title: String, val url: String, val snippet: String)
+    data class SearchResult(val title: String, val url: String, val snippet: String)
 
     private data class EngineAttempt(val engine: WebSearchEngine, val results: List<SearchResult>)
 
@@ -170,7 +170,7 @@ object WebSearchClient {
             Result.success(sb.toString().trim())
         }
 
-    internal fun autoChain(query: String): List<WebSearchEngine> {
+    fun autoChain(query: String): List<WebSearchEngine> {
         val cjk = query.any { it.code > 0x2E80 }
         return if (cjk) {
             listOf(
@@ -438,7 +438,7 @@ object WebSearchClient {
         )
     }
 
-    internal fun parseBaidu(html: String): List<SearchResult> {
+    fun parseBaidu(html: String): List<SearchResult> {
         val dataUrlRe = Regex("""&quot;dataUrl&quot;:&quot;(https?://[^&\\]+?)&quot;""")
         val h3Re = Regex(
             """<h3[^>]*\bclass=['"][^'"]*cosc-title[^'"]*['"][^>]*>(.*?)</h3>""",
@@ -486,7 +486,7 @@ object WebSearchClient {
         return parseBaidu(html)
     }
 
-    internal fun parseSogou(html: String): List<SearchResult> {
+    fun parseSogou(html: String): List<SearchResult> {
         val mobileMatches = Regex(
             """<a\b(?=[^>]*\bclass=['"][^'"]*resultLink[^'"]*['"])(?=[^>]*\bhref=['"]([^'"]+)['"])[^>]*>(.*?)</a>""",
             setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
@@ -598,7 +598,7 @@ object WebSearchClient {
         return out
     }
 
-    internal fun resolveRedirect(href: String): String {
+    fun resolveRedirect(href: String): String {
         val h = href.replace("&amp;", "&").trim()
         val marker = "uddg="
         val idx = h.indexOf(marker)
