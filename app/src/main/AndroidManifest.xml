@@ -101,6 +101,11 @@
             android:exported="false" />
 
         <receiver
+            android:name=".ui.BrowserMenuReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <receiver
             android:name=".reminders.BootReceiver"
             android:enabled="true"
             android:exported="true">

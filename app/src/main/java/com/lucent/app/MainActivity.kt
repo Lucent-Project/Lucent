@@ -193,6 +193,7 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        com.lucent.app.ui.LucentBrowser.init(applicationContext)
         com.lucent.app.ui.ActivityProvider.currentActivity = this
 
         if (intent?.getBooleanExtra(UpdateDownloadService.EXTRA_SHOW_UPDATE, false) == true) {
@@ -970,16 +971,7 @@ fun LucentApp(paletteColors: List<Color>, backdropColor: Color, backgroundAnimat
             AutoUpdateDialog(
                 repo = updateRepo,
                 onOpenUrl = { url ->
-                    runCatching {
-                        var owner: android.content.Context = context
-                        while (owner is android.content.ContextWrapper && owner !is Activity) owner = owner.baseContext
-                        (owner as? Activity)?.startActivity(
-                            android.content.Intent(
-                                android.content.Intent.ACTION_VIEW,
-                                url.toUri()
-                            )
-                        )
-                    }
+                    com.lucent.app.ui.LucentBrowser.openUrl(url)
                 }
             )
             ShizukuNoticeDialog()

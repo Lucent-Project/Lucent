@@ -2598,20 +2598,14 @@ fun SettingsScreen(active: Boolean = true) {
             SettingsRoute.About -> AboutSettingsPage(
                 repo = repo,
                 onRoute = { navigate(it) },
-                onOpenUrl = { url ->
-                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, url.toUri())
-                    context.startActivity(intent)
-                },
+                onOpenUrl = { url -> com.lucent.app.ui.LucentBrowser.openUrl(url) },
                 versionName = com.lucent.app.LucentBuild.DISPLAY_VERSION,
                 buildNumber = appBuildNumber
             )
 
             SettingsRoute.Licences -> LicenceSettingsPage(
                 onRoute = { navigate(it) },
-                onOpenUrl = { url ->
-                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, url.toUri())
-                    context.startActivity(intent)
-                }
+                onOpenUrl = { url -> com.lucent.app.ui.LucentBrowser.openUrl(url) }
             )
 
             SettingsRoute.Agent -> AgentSettingsPage(onRoute = { navigate(it) })
@@ -2639,13 +2633,7 @@ fun SettingsScreen(active: Boolean = true) {
             SettingsRoute.PluginSetup -> com.lucent.app.ui.settings.PluginSetupWizard(onBack = { navigate(SettingsRoute.Plugins) })
             SettingsRoute.Plugins -> PluginSettingsPage(
                 onRoute = { navigate(it) },
-                onOpenUrl = { url ->
-                    runCatching {
-                        context.startActivity(
-                            android.content.Intent(android.content.Intent.ACTION_VIEW, url.toUri())
-                        )
-                    }
-                },
+                onOpenUrl = { url -> com.lucent.app.ui.LucentBrowser.openUrl(url) },
                 storageGranted = com.lucent.app.harness.AndroidWorkspacePicker.storageGranted(),
                 onGrantStorage = { grantAllFiles() }
             )

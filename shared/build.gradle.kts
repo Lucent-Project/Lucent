@@ -96,6 +96,7 @@ kotlin {
                 implementation(libs.fragment.ktx)
                 implementation("androidx.compose.material3:material3:1.4.0")
                 implementation("androidx.compose.material:material-icons-extended:1.7.8")
+                implementation("androidx.browser:browser:1.8.0")
             }
         }
         val desktopMain = getByName("desktopMain") {

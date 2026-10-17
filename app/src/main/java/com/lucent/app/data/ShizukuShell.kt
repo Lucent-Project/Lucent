@@ -128,11 +128,9 @@ object ShizukuShell : PrivilegedShell.PrivilegedShellProvider {
     fun openDownloadPage(context: Context?): Boolean {
         if (context == null) return false
         return try {
-            val intent = Intent(Intent.ACTION_VIEW, DOWNLOAD_PAGE.toUri())
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
+            com.lucent.app.ui.LucentBrowser.openUrl(DOWNLOAD_PAGE)
             true
-        } catch (t: Throwable) {
+        } catch (_: Throwable) {
             false
         }
     }

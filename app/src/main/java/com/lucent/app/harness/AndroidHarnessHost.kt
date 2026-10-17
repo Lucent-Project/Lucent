@@ -100,11 +100,9 @@ class AndroidHarnessHost(private val context: Context) : HarnessHost {
         if (LucentAccessibilityService.isRunning()) "" else "Turn the Lucent accessibility service on to read the screen and tap."
 
     override fun openUrl(url: String): Boolean = try {
-        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(intent)
+        com.lucent.app.ui.LucentBrowser.openUrl(url)
         true
-    } catch (t: Throwable) {
+    } catch (_: Throwable) {
         false
     }
 
