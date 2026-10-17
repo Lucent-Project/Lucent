@@ -209,7 +209,7 @@ fun SubAgentTreePopup(
     LucentGlassDropdownMenu(
         expanded = true,
         onDismissRequest = onDismiss,
-        offset = DpOffset((-48).dp, 0.dp),
+        offset = DpOffset((-96).dp, 0.dp),
         modifier = modifier.widthIn(min = 220.dp, max = 340.dp)
     ) {
         LucentGlassDropdownMenuItem(
@@ -479,7 +479,7 @@ fun SubAgentChatPage(agentId: String, tint: Color, mutedTint: Color, onBack: () 
         }
         return
     }
-    Column(Modifier.fillMaxSize().padding(12.dp)) {
+    Column(Modifier.fillMaxSize().padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 32.dp)) {
         SubAgentBreadcrumb(currentAgentId = agentId, tint = tint, mutedTint = mutedTint)
         Spacer(modifier = Modifier.height(8.dp))
         Row(
