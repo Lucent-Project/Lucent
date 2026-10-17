@@ -7,12 +7,13 @@ import kotlin.test.assertEquals
 class SettingsTrailTest {
 
     @Test
-    fun theCapabilitiesPageSitsBetweenWorkspaceAndPermissions() {
+    fun thePluginsPageSitsBetweenWorkspaceAndCapabilities() {
         val routes = toolkitPages().map { it.route }
         val workspace = routes.indexOf(SettingsRoute.Workspace)
+        val plugins = routes.indexOf(SettingsRoute.Plugins)
         val capabilities = routes.indexOf(SettingsRoute.Capabilities)
         val permissions = routes.indexOf(SettingsRoute.Permissions)
-        assertEquals(true, workspace >= 0 && capabilities == workspace + 1 && permissions == capabilities + 1)
+        assertEquals(true, workspace >= 0 && plugins == workspace + 1 && capabilities == plugins + 1 && permissions == capabilities + 1)
     }
 
     @Test
