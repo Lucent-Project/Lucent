@@ -5,11 +5,11 @@ import com.lucent.app.i18n.Ja
 import com.lucent.app.i18n.Ko
 import com.lucent.app.i18n.S
 import com.lucent.app.i18n.Tr
-import com.lucent.app.i18n.Zh
+import com.lucent.app.i18n.ZhHans
 
 object NoteTags {
 
-    private val TABLES: List<Tr> = listOf(En, Zh, Ja, Ko)
+    private val TABLES: List<Tr> = listOf(En, ZhHans, Ja, Ko)
 
     private val BUILT_IN: List<Pair<String, (Tr) -> String>> = listOf(
         En.tagStudy to { t: Tr -> t.tagStudy },
