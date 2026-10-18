@@ -80,7 +80,7 @@ object UpdateChecker {
     }
 
     fun parseBuildId(id: String): Pair<Char, Long>? {
-        if (id.length != 13) return null
+        if (id.length != 13 && id.length != 15) return null
         val prefix = id[0]
         if (prefix != 'R' && prefix != 'P') return null
         val timestamp = id.substring(1).toLongOrNull() ?: return null
