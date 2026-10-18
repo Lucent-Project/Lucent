@@ -511,8 +511,6 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
-    permissions:
-      contents: write
       actions: read
 
     steps:
