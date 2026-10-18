@@ -503,7 +503,8 @@ class MainActivity : FragmentActivity() {
                     LocalOnGradient provides onGradient,
                     LocalOnGradientMuted provides onGradientMuted,
                     LocalBackgroundEnvironment provides backgroundEnvironment,
-                    androidx.compose.ui.platform.LocalUriHandler provides com.lucent.app.ui.rememberLucentUriHandler()
+                    androidx.compose.ui.platform.LocalUriHandler provides com.lucent.app.ui.rememberLucentUriHandler(),
+                    androidx.compose.ui.platform.LocalLayoutDirection provides if (com.lucent.app.i18n.rtlForLanguageKey(languageKey)) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr
                 ) {
                     val appLockOn by settingsRepo.appLockEnabled.collectAsState(initial = lockEnabled)
                     LaunchedEffect(appLockOn) { AppLockController.enabled = appLockOn }

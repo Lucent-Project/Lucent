@@ -1,0 +1,27 @@
+<resources>
+    <string name="widget_ask">Vragen</string>
+    <string name="widget_new_note">Nieuwe notitie</string>
+    <string name="widget_new_task">Nieuwe taak</string>
+    <string name="widget_note">Notitie</string>
+    <string name="widget_task">Taak</string>
+    <string name="widget_tasks_title">Taken</string>
+    <string name="widget_today_empty">Niets te doen. Tik op + om een taak toe te voegen.</string>
+    <string name="widget_open_tasks">openstaande taken</string>
+    <string name="widget_open_task_one">openstaande taak</string>
+    <string name="widget_no_pinned_note">Geen vastgezette notitie</string>
+    <string name="widget_untitled">Naamloos</string>
+    <string name="widget_untitled_task">Naamloze taak</string>
+
+    <string name="widget_label_new_task">Nieuwe taak</string>
+    <string name="widget_label_new_note">Nieuwe notitie</string>
+    <string name="widget_label_assistant">Assistent</string>
+    <string name="widget_label_progress">Taakvoortgang</string>
+    <string name="widget_label_quick">Snelle acties</string>
+    <string name="widget_label_today">Takenlijst</string>
+    <string name="widget_label_pinned">Vastgezette notitie</string>
+    <string name="widget_ask_hint">Vraag iets…</string>
+    <string name="widget_all_done">Alles voltooid ✨</string>
+    <string name="widget_next_fmt">Volgende: %1$s</string>
+    <string name="widget_a11y_mark_done">Markeren als voltooid</string>
+    <string name="widget_a11y_reopen">Markeren als niet voltooid</string>
+</resources>

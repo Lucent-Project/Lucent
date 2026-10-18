@@ -1,0 +1,27 @@
+<resources>
+    <string name="widget_ask">提問</string>
+    <string name="widget_new_note">新增筆記</string>
+    <string name="widget_new_task">新增任務</string>
+    <string name="widget_note">筆記</string>
+    <string name="widget_task">任務</string>
+    <string name="widget_tasks_title">任務</string>
+    <string name="widget_today_empty">暫無待辦。點按 + 新增任務。</string>
+    <string name="widget_open_tasks">個未完成任務</string>
+    <string name="widget_open_task_one">個未完成任務</string>
+    <string name="widget_no_pinned_note">沒有置頂筆記</string>
+    <string name="widget_untitled">無標題</string>
+    <string name="widget_untitled_task">無標題任務</string>
+
+    <string name="widget_label_new_task">新增任務</string>
+    <string name="widget_label_new_note">新增筆記</string>
+    <string name="widget_label_assistant">助理聊天</string>
+    <string name="widget_label_progress">任務進度</string>
+    <string name="widget_label_quick">快捷操作</string>
+    <string name="widget_label_today">任務清單</string>
+    <string name="widget_label_pinned">置頂筆記</string>
+    <string name="widget_ask_hint">問點甚麼…</string>
+    <string name="widget_all_done">全部完成 ✨</string>
+    <string name="widget_next_fmt">下一項：%1$s</string>
+    <string name="widget_a11y_mark_done">標記為完成</string>
+    <string name="widget_a11y_reopen">標記為未完成</string>
+</resources>

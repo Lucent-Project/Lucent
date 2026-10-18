@@ -1,0 +1,27 @@
+<resources>
+    <string name="widget_ask">Chiedi</string>
+    <string name="widget_new_note">Nuova nota</string>
+    <string name="widget_new_task">Nuova attività</string>
+    <string name="widget_note">Nota</string>
+    <string name="widget_task">Attività</string>
+    <string name="widget_tasks_title">Attività</string>
+    <string name="widget_today_empty">Niente da fare. Tocca + per aggiungere un\'attività.</string>
+    <string name="widget_open_tasks">attività aperte</string>
+    <string name="widget_open_task_one">attività aperta</string>
+    <string name="widget_no_pinned_note">Nessuna nota fissata</string>
+    <string name="widget_untitled">Senza titolo</string>
+    <string name="widget_untitled_task">Attività senza titolo</string>
+
+    <string name="widget_label_new_task">Nuova attività</string>
+    <string name="widget_label_new_note">Nuova nota</string>
+    <string name="widget_label_assistant">Assistente</string>
+    <string name="widget_label_progress">Avanzamento attività</string>
+    <string name="widget_label_quick">Azioni rapide</string>
+    <string name="widget_label_today">Elenco attività</string>
+    <string name="widget_label_pinned">Nota fissata</string>
+    <string name="widget_ask_hint">Chiedi qualsiasi cosa…</string>
+    <string name="widget_all_done">Tutto completato ✨</string>
+    <string name="widget_next_fmt">Successivo: %1$s</string>
+    <string name="widget_a11y_mark_done">Segna come completata</string>
+    <string name="widget_a11y_reopen">Segna come non completata</string>
+</resources>

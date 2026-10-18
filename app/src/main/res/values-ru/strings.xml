@@ -1,0 +1,27 @@
+<resources>
+    <string name="widget_ask">Спросить</string>
+    <string name="widget_new_note">Новая заметка</string>
+    <string name="widget_new_task">Новая задача</string>
+    <string name="widget_note">Заметка</string>
+    <string name="widget_task">Задача</string>
+    <string name="widget_tasks_title">Задачи</string>
+    <string name="widget_today_empty">Дел нет. Нажмите +, чтобы добавить задачу.</string>
+    <string name="widget_open_tasks">незавершенных задач</string>
+    <string name="widget_open_task_one">незавершенная задача</string>
+    <string name="widget_no_pinned_note">Нет закрепленных заметок</string>
+    <string name="widget_untitled">Без названия</string>
+    <string name="widget_untitled_task">Задача без названия</string>
+
+    <string name="widget_label_new_task">Новая задача</string>
+    <string name="widget_label_new_note">Новая заметка</string>
+    <string name="widget_label_assistant">Ассистент</string>
+    <string name="widget_label_progress">Прогресс задач</string>
+    <string name="widget_label_quick">Быстрые действия</string>
+    <string name="widget_label_today">Список задач</string>
+    <string name="widget_label_pinned">Закрепленная заметка</string>
+    <string name="widget_ask_hint">Спросите о чем угодно…</string>
+    <string name="widget_all_done">Все выполнено ✨</string>
+    <string name="widget_next_fmt">Далее: %1$s</string>
+    <string name="widget_a11y_mark_done">Отметить как выполненную</string>
+    <string name="widget_a11y_reopen">Отметить как невыполненную</string>
+</resources>

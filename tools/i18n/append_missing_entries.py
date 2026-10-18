@@ -2,7 +2,9 @@ import re, sys, os, importlib.util
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _REPO = os.path.abspath(os.path.join(_HERE, "..", ".."))
-KT = os.path.join(_REPO, "shared", "src", "main", "kotlin", "com", "lucent", "app", "i18n", "I18n.kt")
+KT = os.path.join(_REPO, "shared", "src", "commonMain", "kotlin", "com", "lucent", "app", "i18n", "I18n.kt")
+if not os.path.exists(KT):
+    KT = os.path.join(_REPO, "shared", "src", "main", "kotlin", "com", "lucent", "app", "i18n", "I18n.kt")
 CATALOG = os.path.join(_HERE, "catalog.py")
 
 DESKTOP_KEYS = {
@@ -53,13 +55,15 @@ def main():
     tr_end = next(i for i,l in enumerate(lines) if l.strip() == "object En : Tr()")
     tr_lines = lines[tr_start+1:tr_end]
 
+    zh_name = "ZhHans" if any(l.strip() == "object ZhHans : Tr() {" for l in lines) else "Zh"
+
     def parse_overrides(l_obj_name):
         d = {}
         for l in obj_lines(l_obj_name):
             m = re.match(r'\s*override (?:val|fun)\s+(\w+)(\([^)]*\))?\s*:\s*String\s*=\s*"((?:[^"\\]|\\.)*)"\s*$', l)
             if m: d[m.group(1)+(m.group(2) or "")] = decode_kt(m.group(3))
         return d
-    zh = parse_overrides("Zh")
+    zh = parse_overrides(zh_name)
     ja = parse_overrides("Ja")
     ko = parse_overrides("Ko")
 
@@ -81,7 +85,7 @@ def main():
             m = re.match(r'\s*override fun\s+(\w+)(\([^)]*\))?\s*:\s*String\s*=\s*(if\s.*)$', l)
             if m: d[m.group(1)+(m.group(2) or "")] = m.group(3)
         return d
-    zh_if = if_expressions("Zh")
+    zh_if = if_expressions(zh_name)
     ja_if = if_expressions("Ja")
     ko_if = if_expressions("Ko")
 
@@ -107,14 +111,14 @@ def main():
         if sig in DESKTOP_KEYS:
             continue
         if sig in tr_if or sig in zh_if or sig in ja_if or sig in ko_if:
-            conditional[sig] = [tr_if.get(sig), zh_if.get(sig), ja_if.get(sig), ko_if.get(sig)]
-            missing.append((sig, None, None, None, None))
+            conditional[sig] = [tr_if.get(sig), zh_if.get(sig), None, None, None, None, None, None, None, ja_if.get(sig), None, ko_if.get(sig), None, None]
+            missing.append((sig, None, None, None, None, None, None, None, None, None, None, None, None, None, None))
             continue
         en = to_catalog_template(tr_sigs.get(sig, ""))
         z = to_catalog_template(zh.get(sig)) if sig in zh else None
         j = to_catalog_template(ja.get(sig)) if sig in ja else None
         k = to_catalog_template(ko.get(sig)) if sig in ko else None
-        missing.append((sig, en, z, j, k))
+        missing.append((sig, en, z, None, None, None, None, None, None, None, j, None, k, None, None))
 
     print(f"existing: {len(existing)}, missing found: {len(missing)}, conditional: {len(conditional)}")
     if not missing and not conditional:
@@ -135,14 +139,13 @@ def main():
 
     new_entries = []
     for m in missing:
-        new_entries.append(f"    ({q(m[0])}, {q(m[1])}, {q(m[2])}, {q(m[3])}, {q(m[4])}),")
+        items = ", ".join(q(x) for x in m)
+        new_entries.append(f"    ({items}),")
     cat_text = cat_text[:last_close] + "\n" + "\n".join(new_entries) + "\n" + cat_text[last_close:]
 
     if conditional:
         cond_block = [
             "",
-            "# ---- Conditional (if/else) entries --------------------------------",
-            "# sig -> [en, zh, ja, ko] raw Kotlin expressions.",
             "CONDITIONAL_ENTRIES = {",
         ]
         for sig in sorted(conditional):

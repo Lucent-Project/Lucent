@@ -1,0 +1,27 @@
+<resources>
+    <string name="widget_ask">Demander</string>
+    <string name="widget_new_note">Nouvelle note</string>
+    <string name="widget_new_task">Nouvelle tâche</string>
+    <string name="widget_note">Note</string>
+    <string name="widget_task">Tâche</string>
+    <string name="widget_tasks_title">Tâches</string>
+    <string name="widget_today_empty">Rien à faire. Appuyez sur + pour ajouter une tâche.</string>
+    <string name="widget_open_tasks">tâches en cours</string>
+    <string name="widget_open_task_one">tâche en cours</string>
+    <string name="widget_no_pinned_note">Aucune note épinglée</string>
+    <string name="widget_untitled">Sans titre</string>
+    <string name="widget_untitled_task">Tâche sans titre</string>
+
+    <string name="widget_label_new_task">Nouvelle tâche</string>
+    <string name="widget_label_new_note">Nouvelle note</string>
+    <string name="widget_label_assistant">Assistant</string>
+    <string name="widget_label_progress">Progression des tâches</string>
+    <string name="widget_label_quick">Actions rapides</string>
+    <string name="widget_label_today">Liste de tâches</string>
+    <string name="widget_label_pinned">Note épinglée</string>
+    <string name="widget_ask_hint">Demandez n\'importe quoi…</string>
+    <string name="widget_all_done">Tout est terminé ✨</string>
+    <string name="widget_next_fmt">Suivant : %1$s</string>
+    <string name="widget_a11y_mark_done">Marquer comme terminée</string>
+    <string name="widget_a11y_reopen">Marquer comme non terminée</string>
+</resources>

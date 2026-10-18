@@ -1,0 +1,27 @@
+<resources>
+    <string name="widget_ask">Perguntar</string>
+    <string name="widget_new_note">Nova nota</string>
+    <string name="widget_new_task">Nova tarefa</string>
+    <string name="widget_note">Nota</string>
+    <string name="widget_task">Tarefa</string>
+    <string name="widget_tasks_title">Tarefas</string>
+    <string name="widget_today_empty">Nada a fazer. Toque em + para adicionar uma tarefa.</string>
+    <string name="widget_open_tasks">tarefas pendentes</string>
+    <string name="widget_open_task_one">tarefa pendente</string>
+    <string name="widget_no_pinned_note">Nenhuma nota fixada</string>
+    <string name="widget_untitled">Sem título</string>
+    <string name="widget_untitled_task">Tarefa sem título</string>
+
+    <string name="widget_label_new_task">Nova tarefa</string>
+    <string name="widget_label_new_note">Nova nota</string>
+    <string name="widget_label_assistant">Assistente</string>
+    <string name="widget_label_progress">Progresso das tarefas</string>
+    <string name="widget_label_quick">Ações rápidas</string>
+    <string name="widget_label_today">Lista de tarefas</string>
+    <string name="widget_label_pinned">Nota fixada</string>
+    <string name="widget_ask_hint">Pergunte qualquer coisa…</string>
+    <string name="widget_all_done">Tudo pronto ✨</string>
+    <string name="widget_next_fmt">Próximo: %1$s</string>
+    <string name="widget_a11y_mark_done">Marcar como concluída</string>
+    <string name="widget_a11y_reopen">Marcar como não concluída</string>
+</resources>

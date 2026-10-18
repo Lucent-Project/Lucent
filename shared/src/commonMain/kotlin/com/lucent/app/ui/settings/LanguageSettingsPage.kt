@@ -8,8 +8,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -19,18 +22,22 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.lucent.app.platform.LocalPlatformContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.lucent.app.AppScope
 import com.lucent.app.data.FontStore
 import com.lucent.app.data.SettingsCache
 import com.lucent.app.data.SettingsRepository
 import com.lucent.app.i18n.AppLanguage
 import com.lucent.app.i18n.S
+import com.lucent.app.platform.LocalPlatformContext
 import com.lucent.app.ui.BackHeader
 import com.lucent.app.ui.GlassButton
 import com.lucent.app.ui.LocalOnGradient
@@ -57,44 +64,10 @@ fun LanguageSettingsPage(
     val onGradientMuted = LocalOnGradientMuted.current
     val savedLanguage by repo.appLanguage.collectAsState(initial = SettingsCache.appLanguage)
     val savedFont by repo.font.collectAsState(initial = SettingsCache.font)
+    var showPicker by remember { mutableStateOf(false) }
 
     BackHeader(onBack = { onRoute(SettingsRoute.Root) })
 
-
-    Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { AppScope.io.launch { repo.setAppLanguage(AppLanguage.SYSTEM.key) } }
-                .padding(vertical = 2.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            RadioButton(
-                selected = savedLanguage == AppLanguage.SYSTEM.key,
-                onClick = { AppScope.io.launch { repo.setAppLanguage(AppLanguage.SYSTEM.key) } }
-            )
-            Column(modifier = Modifier.padding(start = 4.dp)) {
-                Text(S.langSystem, color = onGradient)
-            }
-        }
-
-        listOf(AppLanguage.EN, AppLanguage.ZH, AppLanguage.JA, AppLanguage.KO).forEach { lang ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { AppScope.io.launch { repo.setAppLanguage(lang.key) } }
-                    .padding(vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(
-                    selected = savedLanguage == lang.key,
-                    onClick = { AppScope.io.launch { repo.setAppLanguage(lang.key) } }
-                )
-                Text(lang.label, color = onGradient, modifier = Modifier.padding(start = 4.dp))
-            }
-        }
-    }
-    Spacer(modifier = Modifier.height(12.dp))
     Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
         Text(S.settingsFontTitle, color = onGradient, fontSize = 16.sp)
         Spacer(modifier = Modifier.height(2.dp))
@@ -166,6 +139,68 @@ fun LanguageSettingsPage(
         if (fontError.isNotBlank()) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(fontError, color = Color(0xFFFFC1C1), fontSize = 13.sp)
+        }
+    }
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
+        Text(S.settingsLanguageTitle, color = onGradient, fontSize = 16.sp)
+        Spacer(modifier = Modifier.height(8.dp))
+        val displayName = if (savedLanguage == AppLanguage.SYSTEM.key) {
+            S.langSystem
+        } else {
+            AppLanguage.fromKey(savedLanguage).label
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showPicker = true }
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(displayName, color = onGradient, fontSize = 16.sp, modifier = Modifier.weight(1f))
+            Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = onGradientMuted)
+        }
+    }
+
+    if (showPicker) {
+        Dialog(onDismissRequest = { showPicker = false }) {
+            Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
+                Text(
+                    S.settingsLanguageTitle,
+                    color = onGradient,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                LazyColumn(modifier = Modifier.height(224.dp)) {
+                    items(listOf(AppLanguage.SYSTEM) + AppLanguage.uiOrder) { lang ->
+                        val name = if (lang == AppLanguage.SYSTEM) S.langSystem else lang.label
+                        val select = {
+                            AppScope.io.launch { repo.setAppLanguage(lang.key) }
+                            showPicker = false
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .clickable { select() },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = savedLanguage == lang.key,
+                                onClick = { select() }
+                            )
+                            Text(
+                                name,
+                                color = onGradient,
+                                fontSize = 16.sp,
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

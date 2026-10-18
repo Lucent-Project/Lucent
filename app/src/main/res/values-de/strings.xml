@@ -1,0 +1,27 @@
+<resources>
+    <string name="widget_ask">Fragen</string>
+    <string name="widget_new_note">Neue Notiz</string>
+    <string name="widget_new_task">Neue Aufgabe</string>
+    <string name="widget_note">Notiz</string>
+    <string name="widget_task">Aufgabe</string>
+    <string name="widget_tasks_title">Aufgaben</string>
+    <string name="widget_today_empty">Nichts zu tun. Tippe auf +, um eine Aufgabe hinzuzufügen.</string>
+    <string name="widget_open_tasks">offene Aufgaben</string>
+    <string name="widget_open_task_one">offene Aufgabe</string>
+    <string name="widget_no_pinned_note">Keine angeheftete Notiz</string>
+    <string name="widget_untitled">Ohne Titel</string>
+    <string name="widget_untitled_task">Aufgabe ohne Titel</string>
+
+    <string name="widget_label_new_task">Neue Aufgabe</string>
+    <string name="widget_label_new_note">Neue Notiz</string>
+    <string name="widget_label_assistant">Assistent</string>
+    <string name="widget_label_progress">Aufgabenfortschritt</string>
+    <string name="widget_label_quick">Schnellaktionen</string>
+    <string name="widget_label_today">Aufgabenliste</string>
+    <string name="widget_label_pinned">Angeheftete Notiz</string>
+    <string name="widget_ask_hint">Frag etwas…</string>
+    <string name="widget_all_done">Alles erledigt ✨</string>
+    <string name="widget_next_fmt">Als Nächstes: %1$s</string>
+    <string name="widget_a11y_mark_done">Als erledigt markieren</string>
+    <string name="widget_a11y_reopen">Als nicht erledigt markieren</string>
+</resources>

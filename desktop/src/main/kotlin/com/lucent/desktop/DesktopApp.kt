@@ -182,7 +182,8 @@ fun DesktopApp(startup: SettingsRepository.StartupPrefs, active: Boolean) {
             LocalOnGradient provides onGradient,
             LocalOnGradientMuted provides onGradientMuted,
             LocalBackgroundEnvironment provides backgroundEnvironment,
-            androidx.compose.ui.platform.LocalUriHandler provides com.lucent.app.ui.rememberLucentUriHandler()
+            androidx.compose.ui.platform.LocalUriHandler provides com.lucent.app.ui.rememberLucentUriHandler(),
+            androidx.compose.ui.platform.LocalLayoutDirection provides if (com.lucent.app.i18n.rtlForLanguageKey(languageKey)) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr
         ) {
             val globalTextSelectionOn by repo.globalTextSelectionEnabled.collectAsState(
                 initial = startup.globalTextSelectionEnabled

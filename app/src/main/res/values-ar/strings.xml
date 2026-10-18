@@ -1,0 +1,27 @@
+<resources>
+    <string name="widget_ask">اسأل</string>
+    <string name="widget_new_note">ملاحظة جديدة</string>
+    <string name="widget_new_task">مهمة جديدة</string>
+    <string name="widget_note">ملاحظة</string>
+    <string name="widget_task">مهمة</string>
+    <string name="widget_tasks_title">المهام</string>
+    <string name="widget_today_empty">لا يوجد مهام. اضغط على + لإضافة مهمة.</string>
+    <string name="widget_open_tasks">مهام غير مكتملة</string>
+    <string name="widget_open_task_one">مهمة غير مكتملة</string>
+    <string name="widget_no_pinned_note">لا توجد ملاحظة مثبتة</string>
+    <string name="widget_untitled">بلا عنوان</string>
+    <string name="widget_untitled_task">مهمة بلا عنوان</string>
+
+    <string name="widget_label_new_task">مهمة جديدة</string>
+    <string name="widget_label_new_note">ملاحظة جديدة</string>
+    <string name="widget_label_assistant">المساعد</string>
+    <string name="widget_label_progress">تقدم المهام</string>
+    <string name="widget_label_quick">إجراءات سريعة</string>
+    <string name="widget_label_today">قائمة المهام</string>
+    <string name="widget_label_pinned">ملاحظة مثبتة</string>
+    <string name="widget_ask_hint">اسأل عن أي شيء…</string>
+    <string name="widget_all_done">اكتمل كل شيء ✨</string>
+    <string name="widget_next_fmt">التالي: %1$s</string>
+    <string name="widget_a11y_mark_done">تحديد كمكتملة</string>
+    <string name="widget_a11y_reopen">تحديد كغير مكتملة</string>
+</resources>
