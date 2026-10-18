@@ -40,4 +40,11 @@ object LucentBuild {
         "ko" -> "$PRIVACY_PAGE/ko/privacy.html"
         else -> "$PRIVACY_PAGE/privacy.html"
     }
+
+    fun supportPage(languageKey: String): String = when (languageKey) {
+        "zh" -> "$PRIVACY_PAGE/zh/support.html"
+        "ja" -> "$PRIVACY_PAGE/ja/support.html"
+        "ko" -> "$PRIVACY_PAGE/ko/support.html"
+        else -> "$PRIVACY_PAGE/support.html"
+    }
 }

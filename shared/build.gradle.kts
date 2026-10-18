@@ -13,7 +13,7 @@ val buildIdDir = layout.buildDirectory.dir("generated/buildId")
 
 val generateBuildId = tasks.register("generateBuildId") {
     val buildIdProp = (project.findProperty("buildId") as String?).orEmpty()
-    val buildId = if (buildIdProp.matches(Regex("^[RP]\\d{12}\$"))) buildIdProp else "R000000000000"
+    val buildId = if (buildIdProp.matches(Regex("^[RP]\\d{14}$"))) buildIdProp else "R000000000000"
     val outDir = buildIdDir.get().asFile.resolve("com/lucent/app")
     outputs.dir(buildIdDir)
     doLast {

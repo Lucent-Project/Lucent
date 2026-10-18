@@ -227,7 +227,7 @@ private fun AboutFooter(
             onOpenUrl?.invoke(LucentBuild.privacyPage(com.lucent.app.i18n.currentLanguageKey()))
         }
         AboutLink("${S.aboutDonate}", onGradient) {
-            onOpenUrl?.invoke("https://lucent-project.github.io/lucentapp/#donate")
+            onOpenUrl?.invoke(LucentBuild.supportPage(com.lucent.app.i18n.currentLanguageKey()))
         }
     }
 }
