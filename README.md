@@ -1,6 +1,6 @@
 <div align="center">
 
-[🇨🇳 简体中文](./docs/README.zh-CN.md) · [🇯🇵 日本語](./docs/README.ja.md) · [🇰🇷 한국어](./docs/README.ko.md)
+[🇨🇳 简体中文](./docs/README.zh-CN.md) · [🇭🇰 繁體中文](./docs/README.zh-Hant.md) · [🇪🇸 Español](./docs/README.es.md) · [🇸🇦 العربية](./docs/README.ar.md) · [🇵🇹 Português](./docs/README.pt.md) · [🇫🇷 Français](./docs/README.fr.md) · [🇷🇺 Русский](./docs/README.ru.md) · [🇩🇪 Deutsch](./docs/README.de.md) · [🇯🇵 日本語](./docs/README.ja.md) · [🇹🇷 Türkçe](./docs/README.tr.md) · [🇰🇷 한국어](./docs/README.ko.md) · [🇮🇹 Italiano](./docs/README.it.md) · [🇳🇱 Nederlands](./docs/README.nl.md)
 
 </div>
 
