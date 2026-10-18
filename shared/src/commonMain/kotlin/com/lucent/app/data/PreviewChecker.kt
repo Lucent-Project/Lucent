@@ -103,11 +103,6 @@ object PreviewChecker {
     }
 
     suspend fun getPreviewCandidate(client: OkHttpClient): ReleaseInfo? {
-        fetch(LucentBuild.PREVIEW_MIRROR_URL, client)?.let { root ->
-            if (root["prerelease"]?.jsonPrimitive?.booleanOrNull == true) {
-                parsePrerelease(root)?.let { return it }
-            }
-        }
         val releases = fetchArray(LucentBuild.REPO_API + "/releases?per_page=20", client) ?: return null
         var firstPrerelease: JsonObject? = null
         for (i in 0 until releases.size) {

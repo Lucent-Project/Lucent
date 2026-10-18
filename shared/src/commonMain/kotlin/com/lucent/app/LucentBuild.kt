@@ -32,8 +32,6 @@ object LucentBuild {
 
     const val REPO_API = "https://api.github.com/repos/Lucent-Project/Lucent"
 
-    const val PREVIEW_MIRROR_URL = "https://lucent-project.github.io/lucentapp/downloads/preview-version.json"
-
     private const val PRIVACY_PAGE = "https://lucent-project.github.io/lucentapp"
 
     fun privacyPage(languageKey: String): String = when (languageKey) {
