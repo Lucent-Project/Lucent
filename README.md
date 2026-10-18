@@ -11,7 +11,7 @@
 ### Modern · Minimalist · Quietly Overqualified
 
 **A notes-and-tasks application whose assistant can genuinely touch your data — sealed inside an
-encrypted database on your own device, conversant in four languages, and assembled from first line
+encrypted database on your own device, conversant in fourteen languages, and assembled from first line
 to last by pressing a single button on GitHub. It arrives in pocket and desk editions alike — an
 Android APK and a Windows installer — sharing one heartbeat, ready to roam further.**
 
@@ -42,7 +42,7 @@ inhabit every platform it ships to. Your pocket and your desk speak precisely th
   JDBC, llama.cpp compiled as a DLL). Built by `.github/workflows/build-windows.yml` into a
   double-click `.exe` installer.
 - **`:shared`** — the single source tree both platforms compile: business logic, data, most of the
-  interface, one translation catalogue in four languages. Edit once; both machines change.
+  interface, one translation catalogue in fourteen languages. Edit once; both machines change.
 
 Everything that can be shared lives in `shared/`; the few things that cannot — `SettingsRepository`,
 `Daos`/`Db`, `DocumentExport` and the largest screens — remain once per platform because their seams
