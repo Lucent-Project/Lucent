@@ -76,10 +76,11 @@ jobs:
         if: ${{ inputs.release_notes != '' }}
         env:
           NOTES: ${{ inputs.release_notes }}
+          TAG: ${{ steps.resolve.outputs.tag }}
         run: |
           set -eu
           printf '%s\n' "$NOTES" > /tmp/notes.md
-          python3 tools/release_notes_check.py /tmp/notes.md
+          python3 tools/release_notes_check.py /tmp/notes.md "$TAG"
 
       - name: Check no screen would die on a nested scrolling container
         run: |
@@ -146,11 +147,19 @@ jobs:
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
           BUILD_ID: ${{ needs.prepare.outputs.build_id }}
+          TAG: ${{ needs.prepare.outputs.tag }}
           NOTES_INPUT: ${{ inputs.release_notes }}
         run: |
           set -eu
           if [ -n "$NOTES_INPUT" ]; then
-            printf '%s\n' "$NOTES_INPUT" > /tmp/notes.md
+            {
+              printf '<div align="center">\n\n'
+              printf '[🇨🇳 简体中文](https://github.com/%s/blob/main/docs/releases/%s.zh-CN.md) · ' "${{ github.repository }}" "$TAG"
+              printf '[🇯🇵 日本語](https://github.com/%s/blob/main/docs/releases/%s.ja.md) · ' "${{ github.repository }}" "$TAG"
+              printf '[🇰🇷 한국어](https://github.com/%s/blob/main/docs/releases/%s.ko.md)\n\n' "${{ github.repository }}" "$TAG"
+              printf '</div>\n\n'
+              printf '%s\n' "$NOTES_INPUT"
+            } > /tmp/notes.md
           else
             printf 'Lucent %s\n' "$VERSION" > /tmp/notes.md
           fi
