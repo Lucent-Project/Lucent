@@ -1,3 +1,9 @@
+import java.net.HttpURLConnection
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -58,6 +64,7 @@ android {
     sourceSets {
         getByName("main") {
             jniLibs.directories += layout.buildDirectory.dir("rustJniLibs").get().asFile.path
+            assets.directories += layout.buildDirectory.dir("generated/lucentAssets").get().asFile.path
         }
         getByName("test") {
             kotlin.directories += rootProject.file("shared/src/commonTest/kotlin").path
@@ -169,6 +176,96 @@ if (cargoNdkReady) {
             "Kotlin implementations (irrelevant to :desktop tasks). To enable the Rust fast paths: " +
             "install rustup, run `cargo install cargo-ndk`, and add the Android targets."
     )
+}
+
+val downloadUbuntuRootfs = tasks.register("downloadUbuntuRootfs") {
+    val rootfsUrl = "https://github.com/Lucent-Project/lucent-assets/releases/download/assets-v1/ubuntu-rootfs-arm64.tar.xz"
+    val expectedSha256 = "981e34f621738f39bfbf187d9c2b2b2316bc7519af46c8f9adc4373b328c29dc"
+    val cacheDir = layout.buildDirectory.dir("lucent-assets-cache").get().asFile
+    val cachedFile = cacheDir.resolve("ubuntu-rootfs-arm64.tar.xz")
+    val outputDir = layout.buildDirectory.dir("generated/lucentAssets/runtime").get().asFile
+    val outputFile = outputDir.resolve("ubuntu-rootfs-arm64.tar.xz")
+
+    inputs.property("url", rootfsUrl)
+    inputs.property("sha256", expectedSha256)
+    outputs.file(outputFile)
+
+    doLast {
+        fun calcSha256(file: File): String {
+            val digest = MessageDigest.getInstance("SHA-256")
+            file.inputStream().use { input ->
+                val buffer = ByteArray(65536)
+                var bytesRead = input.read(buffer)
+                while (bytesRead != -1) {
+                    digest.update(buffer, 0, bytesRead)
+                    bytesRead = input.read(buffer)
+                }
+            }
+            return digest.digest().joinToString("") { b -> "%02x".format(b) }
+        }
+
+        val cacheValid = cachedFile.exists() && calcSha256(cachedFile).equals(expectedSha256, ignoreCase = true)
+        if (!cacheValid) {
+            cacheDir.mkdirs()
+            val tempFile = File.createTempFile("ubuntu-rootfs-", ".tmp", cacheDir)
+            try {
+                var currentUrl = rootfsUrl
+                var connection = URI(currentUrl).toURL().openConnection() as HttpURLConnection
+                connection.instanceFollowRedirects = true
+                while (connection.responseCode in listOf(301, 302, 303, 307, 308)) {
+                    val location = connection.getHeaderField("Location")
+                        ?: throw GradleException("Redirect without Location header from $currentUrl")
+                    currentUrl = if (location.startsWith("http://") || location.startsWith("https://")) {
+                        location
+                    } else {
+                        URI(currentUrl).resolve(location).toString()
+                    }
+                    connection.disconnect()
+                    connection = URI(currentUrl).toURL().openConnection() as HttpURLConnection
+                    connection.instanceFollowRedirects = true
+                }
+                if (connection.responseCode != 200) {
+                    throw GradleException("Failed to download $currentUrl: HTTP ${connection.responseCode}")
+                }
+                connection.inputStream.use { input ->
+                    tempFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                connection.disconnect()
+
+                val downloadedSha256 = calcSha256(tempFile)
+                if (!downloadedSha256.equals(expectedSha256, ignoreCase = true)) {
+                    tempFile.delete()
+                    throw GradleException("SHA-256 mismatch for ubuntu-rootfs-arm64.tar.xz: expected $expectedSha256, got $downloadedSha256")
+                }
+                Files.move(
+                    tempFile.toPath(),
+                    cachedFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING
+                )
+            } finally {
+                if (tempFile.exists()) {
+                    tempFile.delete()
+                }
+            }
+        }
+
+        outputDir.mkdirs()
+        Files.copy(
+            cachedFile.toPath(),
+            outputFile.toPath(),
+            StandardCopyOption.REPLACE_EXISTING
+        )
+    }
+}
+
+tasks.named("preBuild") {
+    dependsOn(downloadUbuntuRootfs)
+}
+
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    dependsOn(downloadUbuntuRootfs)
 }
 
 dependencies {
