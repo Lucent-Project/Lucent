@@ -119,7 +119,7 @@ object WebSearchClient {
                 if (wiki != null) used = EngineAttempt(WebSearchEngine.WIKIPEDIA, wiki)
             }
 
-            if (requested != WebSearchEngine.AUTO && used == null && instant.isNullOrBlank()) {
+            if (requested != WebSearchEngine.AUTO && used == null) {
                 for (fallbackEngine in autoChain(trimmed)) {
                     if (fallbackEngine == requested || fallbackEngine == WebSearchEngine.AUTO || fallbackEngine == WebSearchEngine.WIKIPEDIA) continue
                     val hits = try {
