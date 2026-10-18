@@ -1,6 +1,9 @@
 <div align="center">
 
-[🇨🇳 简体中文](./docs/README.zh-CN.md) · [🇭🇰 繁體中文](./docs/README.zh-Hant.md) · [🇪🇸 Español](./docs/README.es.md) · [🇸🇦 العربية](./docs/README.ar.md) · [🇵🇹 Português](./docs/README.pt.md) · [🇫🇷 Français](./docs/README.fr.md) · [🇷🇺 Русский](./docs/README.ru.md) · [🇩🇪 Deutsch](./docs/README.de.md) · [🇯🇵 日本語](./docs/README.ja.md) · [🇹🇷 Türkçe](./docs/README.tr.md) · [🇰🇷 한국어](./docs/README.ko.md) · [🇮🇹 Italiano](./docs/README.it.md) · [🇳🇱 Nederlands](./docs/README.nl.md)
+[🇨🇳 简体中文](./docs/README.zh-CN.md) · [🇭🇰 繁體中文](./docs/README.zh-Hant.md) · [🇪🇸 Español](./docs/README.es.md) · [🇸🇦 العربية](./docs/README.ar.md)<br>
+[🇵🇹 Português](./docs/README.pt.md) · [🇫🇷 Français](./docs/README.fr.md) · [🇷🇺 Русский](./docs/README.ru.md) · [🇩🇪 Deutsch](./docs/README.de.md)<br>
+[🇯🇵 日本語](./docs/README.ja.md) · [🇹🇷 Türkçe](./docs/README.tr.md) · [🇰🇷 한국어](./docs/README.ko.md) · [🇮🇹 Italiano](./docs/README.it.md)<br>
+[🇳🇱 Nederlands](./docs/README.nl.md)
 
 </div>
 
@@ -140,9 +143,9 @@ CPU always works, and a GPU that disagrees falls back gracefully. Vision is opti
 mmproj file and the assistant will study a photograph and discuss it like a mildly clairvoyant
 librarian.
 
-## Four languages, switched without ceremony
+## Fourteen languages, switched without ceremony
 
-English, 中文, 日本語, 한국어 — every screen, dialog, date format and template. Switch the language
+English, 简体中文， 繁體中文， Español, العربية, Português, Français, Русский, Deutsch, 日本語， Türkçe, 한국어, Italiano, Nederlands — every screen, dialog, date format and template. Switch the language
 and the whole app follows on the same frame, because there is one catalogue and it is what the
 interface reads: each word kept once, by construction rather than by care.
 

@@ -1,4 +1,11 @@
-[🇬🇧 English](../README.md) · [🇨🇳 简体中文](./README.zh-CN.md) · [🇯🇵 日本語](./README.ja.md)
+<div align="center">
+
+[🇬🇧 English](../README.md) · [🇨🇳 简体中文](./README.zh-CN.md) · [🇭🇰 繁體中文](./README.zh-Hant.md) · [🇪🇸 Español](./README.es.md)<br>
+[🇸🇦 العربية](./README.ar.md) · [🇵🇹 Português](./README.pt.md) · [🇫🇷 Français](./README.fr.md) · [🇷🇺 Русский](./README.ru.md)<br>
+[🇩🇪 Deutsch](./README.de.md) · [🇯🇵 日本語](./README.ja.md) · [🇹🇷 Türkçe](./README.tr.md) · [🇮🇹 Italiano](./README.it.md)<br>
+[🇳🇱 Nederlands](./README.nl.md)
+
+</div>
 
 <div align="center">
 
@@ -56,7 +63,7 @@ Lucent는 **하나의 제품, 하나의 공유된 심장**입니다. 모든 기�
 
 ## 열네 가지 언어, 의식 없이 전환
 
-English, 中文, 日本語, 한국어 — 모든 화면, 대화 상자, 날짜 형식, 템플릿. 언어를 전환하면 앱 전체가 같은 프레임 안에서 따라옵니다. 하나의 카탈로그가 존재하고 인터페이스가 그것을 읽기 때문입니다: 각 단어는 주의가 아닌 구조에 의해 단 한 번만 유지됩니다.
+English, 简体中文， 繁體中文， Español, العربية, Português, Français, Русский, Deutsch, 日本語， Türkçe, 한국어, Italiano, Nederlands — 모든 화면, 대화 상자, 날짜 형식, 템플릿. 언어를 전환하면 앱 전체가 같은 프레임 안에서 따라옵니다. 하나의 카탈로그가 존재하고 인터페이스가 그것을 읽기 때문입니다: 각 단어는 주의가 아닌 구조에 의해 단 한 번만 유지됩니다.
 
 ## 비주얼: 유리로 빚어진, 부끄럼 없이
 

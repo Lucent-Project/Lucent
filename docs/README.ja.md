@@ -1,4 +1,11 @@
-[🇬🇧 English](../README.md) · [🇨🇳 简体中文](./README.zh-CN.md) · [🇰🇷 한국어](./README.ko.md)
+<div align="center">
+
+[🇬🇧 English](../README.md) · [🇨🇳 简体中文](./README.zh-CN.md) · [🇭🇰 繁體中文](./README.zh-Hant.md) · [🇪🇸 Español](./README.es.md)<br>
+[🇸🇦 العربية](./README.ar.md) · [🇵🇹 Português](./README.pt.md) · [🇫🇷 Français](./README.fr.md) · [🇷🇺 Русский](./README.ru.md)<br>
+[🇩🇪 Deutsch](./README.de.md) · [🇹🇷 Türkçe](./README.tr.md) · [🇰🇷 한국어](./README.ko.md) · [🇮🇹 Italiano](./README.it.md)<br>
+[🇳🇱 Nederlands](./README.nl.md)
+
+</div>
 
 <div align="center">
 
@@ -52,7 +59,7 @@ Lucent は **ひとつの製品にひとつの共有された心臓** を宿し�
 
 ## 十四の言語、儀式なき切り替え
 
-英語、中文、日本語、한국어——すべての画面、ダイアログ、日付書式、テンプレート。言語を切り替えれば、アプリ全体が同じフレームの中で寄り添うように追従します。ひとつのカタログがあり、インターフェースはそこから読み取るだけ——各語句は、注意深さではなく設計によって、ただ一度だけ保持されています。
+英語、簡体中文、繁体中文、Español、العربية、Português、Français、Русский、Deutsch、日本語、Türkçe、한국어、Italiano、Nederlands——すべての画面、ダイアログ、日付書式、テンプレート。言語を切り替えれば、アプリ全体が同じフレームの中で寄り添うように追従します。ひとつのカタログがあり、インターフェースはそこから読み取るだけ——各語句は、注意深さではなく設計によって、ただ一度だけ保持されています。
 
 ## 意匠——恥じることなく、硝子のように
 

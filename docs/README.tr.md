@@ -1,6 +1,9 @@
 <div align="center">
 
-[🇨🇳 简体中文](./docs/README.zh-CN.md) · [🇯🇵 日本語](./docs/README.ja.md) · [🇰🇷 한국어](./docs/README.ko.md)
+[🇬🇧 English](../README.md) · [🇨🇳 简体中文](./README.zh-CN.md) · [🇭🇰 繁體中文](./README.zh-Hant.md) · [🇪🇸 Español](./README.es.md)<br>
+[🇸🇦 العربية](./README.ar.md) · [🇵🇹 Português](./README.pt.md) · [🇫🇷 Français](./README.fr.md) · [🇷🇺 Русский](./README.ru.md)<br>
+[🇩🇪 Deutsch](./README.de.md) · [🇯🇵 日本語](./README.ja.md) · [🇰🇷 한국어](./README.ko.md) · [🇮🇹 Italiano](./README.it.md)<br>
+[🇳🇱 Nederlands](./README.nl.md)
 
 </div>
 
@@ -12,7 +15,7 @@
 
 **Asistanı verilerinize sahiden dokunabilen bir not ve görev uygulaması — kendi cihazınızda şifrelenmiş bir veritabanına mühürlenmiş, on dört dil konuşabilen ve GitHub'da tek bir düğmeye basılarak ilk satırından sonuncusuna kadar derlenen. Tek bir kalp atışını paylaşan, daha da uzaklara uzanmaya hazır, hem cep hem de masaüstü sürümleriyle (bir Android APK'sı ve bir Windows yükleyicisi) karşınızda.**
 
-![Lucent — Platform, Derleme, Arayüz, Asistan, Gizlilik, Lisans](badges/badges.svg)
+![Lucent — Platform, Derleme, Arayüz, Asistan, Gizlilik, Lisans](../badges/badges.svg)
 
 </div>
 
@@ -64,9 +67,9 @@ Yeniden başlatmaya meydan okuyan alt görevler, öncelikler, yineleme çizelgel
 
 Bir `.gguf` dosyasını (veya içinde bu dosyanın bulunduğu bir `.zip` arşivini) içe aktarın; asistan doğrudan cihaz üzerinde çalışan llama.cpp aracılığıyla yanıt versin — hesap yok, API anahtarı yok, ağ yok ve uygulamadan çıktığınız anda model bellekten boşaltılır. Yaklaşık 1–4 GB boyutundaki Q4 modelleri telefonda ideal dengeyi yakalar; bir masaüstü ise çok daha büyük hedefleri kaldırabilir. Araçlar yerelde tercihe bağlıdır ve GPU hızlandırması açık bir uyarının ardından yapılan bir seçimdir: CPU her zaman çalışır, itiraz eden bir GPU ise zarafetle geri çekilir. Görme yeteneği de isteğe bağlıdır — bir mmproj dosyası içe aktarın, asistan bir fotoğrafı inceleyip onu hafif müneccim bir kütüphaneci edasıyla tartışsın.
 
-## Tören gerektirmeksizin değiştirilen dört dil
+## Tören gerektirmeksizin değiştirilen on dört dil
 
-English, 中文, 日本語, 한국어 — her ekran, iletişim kutusu, tarih biçimi ve şablon. Dili değiştirin, tüm uygulama aynı karede onu takip etsin; çünkü ortada tek bir katalog vardır ve arayüzün okuduğu şey de tam olarak odur: her kelime özenden ziyade mimari gereği tek bir kez tutulur.
+English, 简体中文， 繁體中文， Español, العربية, Português, Français, Русский, Deutsch, 日本語， Türkçe, 한국어, Italiano, Nederlands — her ekran, iletişim kutusu, tarih biçimi ve şablon. Dili değiştirin, tüm uygulama aynı karede onu takip etsin; çünkü ortada tek bir katalog vardır ve arayüzün okuduğu şey de tam olarak odur: her kelime özenden ziyade mimari gereği tek bir kez tutulur.
 
 ## Dış görünüşü: Utanıp sıkılmadan, tamamen camdan
 

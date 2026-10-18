@@ -1,6 +1,9 @@
 <div align="center">
 
-[🇨🇳 简体中文](./docs/README.zh-CN.md) · [🇯🇵 日本語](./docs/README.ja.md) · [🇰🇷 한국어](./docs/README.ko.md)
+[🇬🇧 English](../README.md) · [🇨🇳 简体中文](./README.zh-CN.md) · [🇭🇰 繁體中文](./README.zh-Hant.md) · [🇪🇸 Español](./README.es.md)<br>
+[🇸🇦 العربية](./README.ar.md) · [🇵🇹 Português](./README.pt.md) · [🇫🇷 Français](./README.fr.md) · [🇷🇺 Русский](./README.ru.md)<br>
+[🇩🇪 Deutsch](./README.de.md) · [🇯🇵 日本語](./README.ja.md) · [🇹🇷 Türkçe](./README.tr.md) · [🇰🇷 한국어](./README.ko.md)<br>
+[🇳🇱 Nederlands](./README.nl.md)
 
 </div>
 
@@ -12,7 +15,7 @@
 
 **Un'applicazione per note e attività il cui assistente può davvero mettere le mani sui tuoi dati — sigillati all'interno di un database crittografato sul tuo dispositivo, capace di esprimersi in quattordici lingue e assemblato dalla prima all'ultima riga premendo un singolo pulsante su GitHub. Giunge tanto in edizione tascabile quanto da scrivania — un APK per Android e un programma di installazione per Windows — condividendo un unico battito, pronto a spingersi ancora più lontano.**
 
-![Lucent — Piattaforma, Compilazione, Interfaccia, Assistente, Riservatezza, Licenza](badges/badges.svg)
+![Lucent — Piattaforma, Compilazione, Interfaccia, Assistente, Riservatezza, Licenza](../badges/badges.svg)
 
 </div>
 
@@ -64,9 +67,9 @@ Sotto-attività, priorità, pianificazioni di ripetizione e promemoria che resis
 
 Importate un file `.gguf` (o un archivio `.zip` che ne custodisce uno) e l'assistente risponderà grazie a llama.cpp in esecuzione diretta sul dispositivo — niente account, niente chiave API, niente rete, e il modello viene scaricato nell'istante esatto in cui uscite dall'applicazione. I modelli Q4 da circa 1–4 GB rappresentano la quadratura del cerchio su un telefono; una postazione desktop può permettersi ambizioni superiori. Gli strumenti sono attivabili a piacimento in locale e l'accelerazione GPU è una scelta compiuta dopo un avvertimento schietto: la CPU funziona sempre, e una GPU recalcitrante ripiega con grazia. Anche la visione è facoltativa — importate un file mmproj e l'assistente studierà una fotografia per poi discuterne come un bibliotecario vagamente chiaroveggente.
 
-## Quattro lingue, senza cerimonie
+## Quattordici lingue, senza cerimonie
 
-English, 中文, 日本語, 한국어 — ogni schermata, finestra di dialogo, formato di data e modello. Cambiate la lingua e l'intera applicazione la segue nello stesso fotogramma, perché esiste un unico catalogo ed è quello che l'interfaccia consulta: ogni parola custodita una sola volta, per grazia di architettura e non per semplice scrupolo.
+English, 简体中文， 繁體中文， Español, العربية, Português, Français, Русский, Deutsch, 日本語， Türkçe, 한국어, Italiano, Nederlands — ogni schermata, finestra di dialogo, formato di data e modello. Cambiate la lingua e l'intera applicazione la segue nello stesso fotogramma, perché esiste un unico catalogo ed è quello che l'interfaccia consulta: ogni parola custodita una sola volta, per grazia di architettura e non per semplice scrupolo.
 
 ## Il suo aspetto: fatto, sfacciatamente, di vetro
 

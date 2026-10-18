@@ -1,6 +1,9 @@
 <div align="center">
 
-[🇨🇳 简体中文](./docs/README.zh-CN.md) · [🇯🇵 日本語](./docs/README.ja.md) · [🇰🇷 한국어](./docs/README.ko.md)
+[🇬🇧 English](../README.md) · [🇨🇳 简体中文](./README.zh-CN.md) · [🇭🇰 繁體中文](./README.zh-Hant.md) · [🇪🇸 Español](./README.es.md)<br>
+[🇸🇦 العربية](./README.ar.md) · [🇵🇹 Português](./README.pt.md) · [🇫🇷 Français](./README.fr.md) · [🇷🇺 Русский](./README.ru.md)<br>
+[🇯🇵 日本語](./README.ja.md) · [🇹🇷 Türkçe](./README.tr.md) · [🇰🇷 한국어](./README.ko.md) · [🇮🇹 Italiano](./README.it.md)<br>
+[🇳🇱 Nederlands](./README.nl.md)
 
 </div>
 
@@ -16,7 +19,7 @@ letzten Zeile auf einen einzigen Knopfdruck bei GitHub gebaut. Sie erscheint gle
 Schreibtischformat – als Android-APK und Windows-Installer –, beseelt von einem gemeinsamen Herzschlag und
 bereit für weitere Streifzüge.**
 
-![Lucent — Plattform, Build, Benutzeroberfläche, Assistent, Privatsphäre, Lizenz](badges/badges.svg)
+![Lucent — Plattform, Build, Benutzeroberfläche, Assistent, Privatsphäre, Lizenz](../badges/badges.svg)
 
 </div>
 
@@ -141,9 +144,9 @@ CPU funktioniert immer, und eine widerspenstige GPU weicht anstandslos auf sie z
 mmproj-Datei, und der Assistent wird ein Foto studieren und darüber sprechen wie ein leise hellsichtiger
 Bibliothekar.
 
-## Vier Sprachen, ohne Umstände gewechselt
+## Vierzehn Sprachen, ohne Umstände gewechselt
 
-English, 中文, 日本語, 한국어 — jeder Bildschirm, jeder Dialog, jedes Datumsformat und jede Vorlage. Wechseln Sie die Sprache,
+English, 简体中文， 繁體中文， Español, العربية, Português, Français, Русский, Deutsch, 日本語， Türkçe, 한국어, Italiano, Nederlands — jeder Bildschirm, jeder Dialog, jedes Datumsformat und jede Vorlage. Wechseln Sie die Sprache,
 und die gesamte App folgt noch im selben Frame, denn es gibt nur einen Katalog, und genau den liest die
 Benutzeroberfläche: jedes Wort nur einmal hinterlegt, aus Prinzip der Konstruktion und nicht bloß aus Sorgfalt.
 

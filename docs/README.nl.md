@@ -1,6 +1,9 @@
 <div align="center">
 
-[🇨🇳 简体中文](./docs/README.zh-CN.md) · [🇯🇵 日本語](./docs/README.ja.md) · [🇰🇷 한국어](./docs/README.ko.md)
+[🇬🇧 English](../README.md) · [🇨🇳 简体中文](./README.zh-CN.md) · [🇭🇰 繁體中文](./README.zh-Hant.md) · [🇪🇸 Español](./README.es.md)<br>
+[🇸🇦 العربية](./README.ar.md) · [🇵🇹 Português](./README.pt.md) · [🇫🇷 Français](./README.fr.md) · [🇷🇺 Русский](./README.ru.md)<br>
+[🇩🇪 Deutsch](./README.de.md) · [🇯🇵 日本語](./README.ja.md) · [🇹🇷 Türkçe](./README.tr.md) · [🇰🇷 한국어](./README.ko.md)<br>
+[🇮🇹 Italiano](./README.it.md)
 
 </div>
 
@@ -16,7 +19,7 @@ laatste regel geassembleerd met één druk op de knop op GitHub. Hij verschijnt 
 bureau-editie — een Android-APK en een Windows-installatieprogramma — met één kloppend hart, klaar om
 verder te zwerven.**
 
-![Lucent — Platform, Build, Interface, Assistent, Privacy, Licentie](badges/badges.svg)
+![Lucent — Platform, Build, Interface, Assistent, Privacy, Licentie](../badges/badges.svg)
 
 </div>
 
@@ -141,9 +144,9 @@ CPU werkt altijd, en een GPU die tegensputtert valt daar gracieus op terug. Beel
 mmproj-bestand en de assistent bestudeert een foto en bespreekt deze als een lichtelijk helderziende
 bibliothecaris.
 
-## Vier talen, gewisseld zonder plichtplegingen
+## Veertien talen, gewisseld zonder plichtplegingen
 
-English, 中文, 日本語, 한국어 — elk scherm, elk dialoogvenster, elke datumnotatie en elk sjabloon. Schakel over naar een andere taal
+English, 简体中文， 繁體中文， Español, العربية, Português, Français, Русский, Deutsch, 日本語， Türkçe, 한국어, Italiano, Nederlands — elk scherm, elk dialoogvenster, elke datumnotatie en elk sjabloon. Schakel over naar een andere taal
 en de hele app volgt binnen hetzelfde beeldframe, want er is één catalogus en dat is wat de
 interface leest: elk woord één keer vastgelegd, uit architectonisch principe in plaats van uit louter zorgvuldigheid.
 

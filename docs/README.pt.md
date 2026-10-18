@@ -1,6 +1,9 @@
 <div align="center">
 
-[🇨🇳 简体中文](./docs/README.zh-CN.md) · [🇯🇵 日本語](./docs/README.ja.md) · [🇰🇷 한국어](./docs/README.ko.md)
+[🇬🇧 English](../README.md) · [🇨🇳 简体中文](./README.zh-CN.md) · [🇭🇰 繁體中文](./README.zh-Hant.md) · [🇪🇸 Español](./README.es.md)<br>
+[🇸🇦 العربية](./README.ar.md) · [🇫🇷 Français](./README.fr.md) · [🇷🇺 Русский](./README.ru.md) · [🇩🇪 Deutsch](./README.de.md)<br>
+[🇯🇵 日本語](./README.ja.md) · [🇹🇷 Türkçe](./README.tr.md) · [🇰🇷 한국어](./README.ko.md) · [🇮🇹 Italiano](./README.it.md)<br>
+[🇳🇱 Nederlands](./README.nl.md)
 
 </div>
 
@@ -15,7 +18,7 @@ uma base de dados encriptada no seu próprio dispositivo, versado em catorze idi
 à última linha ao carregar num único botão no GitHub. Chega tanto em edição de bolso como de secretária — um
 APK para Android e um instalador para Windows —, partilhando o mesmo bater de coração, pronto para ir ainda mais longe.**
 
-![Lucent — Plataforma, Compilação, Interface, Assistente, Privacidade, Licença](badges/badges.svg)
+![Lucent — Plataforma, Compilação, Interface, Assistente, Privacidade, Licença](../badges/badges.svg)
 
 </div>
 
@@ -139,9 +142,9 @@ ambições. As ferramentas são de adesão voluntária a nível local e a aceler
 CPU funciona sempre, e uma GPU que discorde recua graciosamente. A visão também é opcional — importe um
 ficheiro mmproj e o assistente estudará uma fotografia e debaterá sobre ela como um bibliotecário suavemente clarividente.
 
-## Quatro idiomas, alternados sem cerimónia
+## Catorze idiomas, alternados sem cerimónia
 
-English, 中文, 日本語, 한국어 — cada ecrã, diálogo, formato de data e modelo. Mude de idioma
+English, 简体中文， 繁體中文， Español, العربية, Português, Français, Русский, Deutsch, 日本語， Türkçe, 한국어, Italiano, Nederlands — cada ecrã, diálogo, formato de data e modelo. Mude de idioma
 e a aplicação inteira acompanha-o no mesmo fotograma, porque existe um único catálogo e é isso que a
 interface lê: cada palavra guardada uma só vez, por conceção e não por mero cuidado.
 

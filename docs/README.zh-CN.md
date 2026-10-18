@@ -1,4 +1,11 @@
-[🇬🇧 English](../README.md) · [🇯🇵 日本語](./README.ja.md) · [🇰🇷 한국어](./README.ko.md)
+<div align="center">
+
+[🇬🇧 English](../README.md) · [🇭🇰 繁體中文](./README.zh-Hant.md) · [🇪🇸 Español](./README.es.md) · [🇸🇦 العربية](./README.ar.md)<br>
+[🇵🇹 Português](./README.pt.md) · [🇫🇷 Français](./README.fr.md) · [🇷🇺 Русский](./README.ru.md) · [🇩🇪 Deutsch](./README.de.md)<br>
+[🇯🇵 日本語](./README.ja.md) · [🇹🇷 Türkçe](./README.tr.md) · [🇰🇷 한국어](./README.ko.md) · [🇮🇹 Italiano](./README.it.md)<br>
+[🇳🇱 Nederlands](./README.nl.md)
+
+</div>
 
 <div align="center">
 
@@ -52,7 +59,7 @@ Lucent 是**一件产品、一颗共享的心脏**：铁律如此——凡有功
 
 ## 十四种语言，无缝切换
 
-英语、简体中文、日本語、한국어——覆盖每一个屏幕、对话框、日期格式与模板。切换语言，整个应用在同一帧内随之流转，因为只有一份翻译目录，界面所读即是它所取：每个词条仅存一次，此乃架构的必然，而非细心的偶得。
+英语、简体中文、繁體中文、Español、العربية、Português、Français、Русский、Deutsch、日本語、Türkçe、한국어、Italiano、Nederlands——覆盖每一个屏幕、对话框、日期格式与模板。切换语言，整个应用在同一帧内随之流转，因为只有一份翻译目录，界面所读即是它所取：每个词条仅存一次，此乃架构的必然，而非细心的偶得。
 
 ## 它的样子：坦荡磊落，玻璃质感
 

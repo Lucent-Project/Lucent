@@ -1,6 +1,9 @@
 <div align="center">
 
-[🇨🇳 简体中文](./docs/README.zh-CN.md) · [🇯🇵 日本語](./docs/README.ja.md) · [🇰🇷 한국어](./docs/README.ko.md)
+[🇬🇧 English](../README.md) · [🇨🇳 简体中文](./README.zh-CN.md) · [🇭🇰 繁體中文](./README.zh-Hant.md) · [🇸🇦 العربية](./README.ar.md)<br>
+[🇵🇹 Português](./README.pt.md) · [🇫🇷 Français](./README.fr.md) · [🇷🇺 Русский](./README.ru.md) · [🇩🇪 Deutsch](./README.de.md)<br>
+[🇯🇵 日本語](./README.ja.md) · [🇹🇷 Türkçe](./README.tr.md) · [🇰🇷 한국어](./README.ko.md) · [🇮🇹 Italiano](./README.it.md)<br>
+[🇳🇱 Nederlands](./README.nl.md)
 
 </div>
 
@@ -15,7 +18,7 @@ base de datos cifrada en tu propio dispositivo, versado en catorce idiomas y ens
 a la última línea con solo pulsar un botón en GitHub. Llega tanto en edición de bolsillo como de escritorio —un
 APK de Android y un instalador de Windows—, compartiendo un mismo latido y listo para aventurarse aún más lejos.**
 
-![Lucent — Plataforma, Compilación, Interfaz, Asistente, Privacidad, Licencia](badges/badges.svg)
+![Lucent — Plataforma, Compilación, Interfaz, Asistente, Privacidad, Licencia](../badges/badges.svg)
 
 </div>
 
@@ -139,9 +142,9 @@ ambición. Las herramientas son opcionales en local y la aceleración por GPU es
 CPU siempre funciona, y una GPU que discrepe se retira con elegancia a un segundo plano. La visión también es opcional: importa un
 archivo mmproj y el asistente examinará una fotografía y conversará sobre ella como un bibliotecario discretamente clarividente.
 
-## Cuatro idiomas, cambiados sin ceremonia
+## Catorce idiomas, cambiados sin ceremonia
 
-English, 中文, 日本語, 한국어: cada pantalla, cuadro de diálogo, formato de fecha y plantilla. Cambia el idioma
+English, 简体中文， 繁體中文， Español, العربية, Português, Français, Русский, Deutsch, 日本語， Türkçe, 한국어, Italiano, Nederlands: cada pantalla, cuadro de diálogo, formato de fecha y plantilla. Cambia el idioma
 y toda la aplicación lo sigue en el mismo fotograma, porque hay un único catálogo y es lo que la
 interfaz lee: cada palabra guardada una sola vez, por construcción antes que por mero esmero.
 

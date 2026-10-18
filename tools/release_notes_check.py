@@ -5,7 +5,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, ".."))
 
-LANG_FILES = {"zh-CN": "简体中文", "ja": "日本語", "ko": "한국어"}
+LANG_FILES = {"zh-CN": "简体中文", "zh-Hant": "繁體中文", "es": "Español", "ar": "العربية", "pt": "Português", "fr": "Français", "ru": "Русский", "de": "Deutsch", "ja": "日本語", "tr": "Türkçe", "ko": "한국어", "it": "Italiano", "nl": "Nederlands"}
 MIN_WORDS = 300
 MAX_WORDS = 700
 
