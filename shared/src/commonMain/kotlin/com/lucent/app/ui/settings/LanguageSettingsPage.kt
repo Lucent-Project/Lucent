@@ -173,7 +173,7 @@ fun LanguageSettingsPage(
                     fontSize = 16.sp,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-                LazyColumn(modifier = Modifier.height(224.dp)) {
+                LazyColumn(modifier = Modifier.height(252.dp)) {
                     items(listOf(AppLanguage.SYSTEM) + AppLanguage.uiOrder) { lang ->
                         val name = if (lang == AppLanguage.SYSTEM) S.langSystem else lang.label
                         val select = {
