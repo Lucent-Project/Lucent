@@ -172,22 +172,37 @@ fun LanguageSettingsPage(
     }
 
     if (showPicker) {
-        Popup(
-            alignment = Alignment.Center,
-            onDismissRequest = { showPicker = false },
-            properties = PopupProperties(
-                focusable = true,
-                dismissOnBackPress = true,
-                dismissOnClickOutside = true
-            )
-        ) {
+        LanguagePickerPopup(
+            savedLanguage = savedLanguage,
+            onLanguageSelected = { key -> AppScope.io.launch { repo.setAppLanguage(key) } },
+            onDismiss = { showPicker = false }
+        )
+    }
+}
+
+@Composable
+private fun LanguagePickerPopup(
+    savedLanguage: String,
+    onLanguageSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val onGradient = LocalOnGradient.current
+    Popup(
+        alignment = Alignment.Center,
+        onDismissRequest = onDismiss,
+        properties = PopupProperties(
+            focusable = true,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .clickable(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() }
-                    ) { showPicker = false },
+                    ) { onDismiss() },
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -211,8 +226,8 @@ fun LanguageSettingsPage(
                     items(listOf(AppLanguage.SYSTEM) + AppLanguage.uiOrder) { lang ->
                         val name = if (lang == AppLanguage.SYSTEM) S.langSystem else lang.label
                         val select = {
-                            AppScope.io.launch { repo.setAppLanguage(lang.key) }
-                            showPicker = false
+                            onLanguageSelected(lang.key)
+                            onDismiss()
                         }
                         Row(
                             modifier = Modifier
@@ -237,5 +252,4 @@ fun LanguageSettingsPage(
             }
         }
     }
-}
 }
