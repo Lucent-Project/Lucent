@@ -1080,6 +1080,13 @@ fun AssistantChatBody(
                             }
                         ) {
                             LucentGlassDropdownMenuItem(
+                                text = { Text(com.lucent.app.i18n.S.msgCopyWhole) },
+                                onClick = {
+                                    contextMenuMessage = null
+                                    copyToClipboard(context, msg.content)
+                                }
+                            )
+                            LucentGlassDropdownMenuItem(
                                 text = { Text(com.lucent.app.i18n.S.actionSelectText) },
                                 onClick = {
                                     contextMenuMessage = null
@@ -1095,13 +1102,6 @@ fun AssistantChatBody(
                                     }
                                 )
                             }
-                            LucentGlassDropdownMenuItem(
-                                text = { Text(com.lucent.app.i18n.S.msgCopyWhole) },
-                                onClick = {
-                                    contextMenuMessage = null
-                                    copyToClipboard(context, msg.content)
-                                }
-                            )
                             LucentGlassDropdownMenuItem(
                                 text = { Text(com.lucent.app.i18n.S.a11yExportChat) },
                                 onClick = {
