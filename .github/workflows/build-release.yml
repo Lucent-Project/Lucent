@@ -68,7 +68,7 @@ jobs:
         id: gen-build-id
         run: |
           set -eu
-          BUILD_ID="R$(date -u +%Y%m%d%H%M)"
+          BUILD_ID="R$(date -u +%Y%m%d%H%M%S)"
           echo "build_id=$BUILD_ID" >> "$GITHUB_OUTPUT"
           echo "Generated build ID: $BUILD_ID"
 
