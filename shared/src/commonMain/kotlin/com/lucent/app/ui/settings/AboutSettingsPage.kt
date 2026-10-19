@@ -220,10 +220,10 @@ private fun AboutFooter(
         AboutLink("${S.aboutContact} ${LucentBuild.SUPPORT_EMAIL}", onGradient) {
             onOpenUrl?.invoke("mailto:${LucentBuild.SUPPORT_EMAIL}")
         }
-        AboutLink("${S.aboutLicense}: ${S.aboutLicensesOpen}", onGradient) {
+        AboutLink("${S.aboutLicense} ${S.aboutLicensesOpen}", onGradient) {
             onLicences()
         }
-        AboutLink("${S.aboutPrivacy}: ${S.aboutPrivacyOpen}", onGradient) {
+        AboutLink("${S.aboutPrivacy} ${S.aboutPrivacyOpen}", onGradient) {
             onOpenUrl?.invoke(LucentBuild.privacyPage(com.lucent.app.i18n.currentLanguageKey()))
         }
         AboutLink("${S.aboutDonate}", onGradient) {
