@@ -27,10 +27,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import com.lucent.app.AppScope
 import com.lucent.app.data.FontStore
 import com.lucent.app.data.SettingsCache
@@ -165,8 +165,14 @@ fun LanguageSettingsPage(
     }
 
     if (showPicker) {
-        Dialog(
-            onDismissRequest = { showPicker = false }
+        Popup(
+            alignment = Alignment.Center,
+            onDismissRequest = { showPicker = false },
+            properties = PopupProperties(
+                focusable = true,
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true
+            )
         ) {
             Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
                 Text(
