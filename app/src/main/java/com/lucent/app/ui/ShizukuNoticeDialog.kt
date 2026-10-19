@@ -92,6 +92,29 @@ fun ShizukuNoticeDialog() {
             }
         )
 
+        ShizukuState.RE_ENABLED -> ModalBottomSheet(
+            onDismissRequest = { ShizukuWatcher.acknowledge() },
+            sheetState = rememberModalBottomSheetState()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 24.dp, vertical = 20.dp)
+            ) {
+                Text(S.shizukuReenabledTitle, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(S.shizukuReenabledBody, fontSize = 14.sp)
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    GlassButton(
+                        text = S.actionDismiss,
+                        onClick = { ShizukuWatcher.acknowledge() }
+                    )
+                }
+            }
+        }
+
         ShizukuState.READY -> Unit
     }
 }

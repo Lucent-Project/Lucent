@@ -10,17 +10,20 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-enum class ShizukuState { NOT_INSTALLED, NOT_RUNNING, NO_PERMISSION, READY }
+enum class ShizukuState { NOT_INSTALLED, NOT_RUNNING, NO_PERMISSION, READY, RE_ENABLED }
 
 object ShizukuWatcher {
 
     private const val FIRST_CHECK_DELAY_MS = 6_000L
     private const val CHECK_INTERVAL_MS = 60_000L
+    private const val REENABLE_CHECK_INTERVAL_MS = 5_000L
+    private const val REENABLE_TIMEOUT_MS = 30 * 60_000L
 
     var notice by mutableStateOf<ShizukuState?>(null)
         private set
 
     private var loop: Job? = null
+    private var reenableLoop: Job? = null
 
     fun stateOf(context: Context): ShizukuState = when {
         !ShizukuShell.isInstalled(context) -> ShizukuState.NOT_INSTALLED
@@ -54,6 +57,8 @@ object ShizukuWatcher {
     fun stop() {
         loop?.cancel()
         loop = null
+        reenableLoop?.cancel()
+        reenableLoop = null
     }
 
     fun acknowledge() {
@@ -66,6 +71,24 @@ object ShizukuWatcher {
         createSettingsRepository(context).setPrivilegedEnabled(false)
         StartupLog.event(context, "shizuku: ${state.name.lowercase()} - the advanced switch was turned off")
         notice = state
+        startReenablePoll(context)
         return true
+    }
+
+    private fun startReenablePoll(context: Context) {
+        if (reenableLoop?.isActive == true) return
+        val deadline = System.currentTimeMillis() + REENABLE_TIMEOUT_MS
+        reenableLoop = AppScope.io.launch {
+            while (System.currentTimeMillis() < deadline) {
+                delay(REENABLE_CHECK_INTERVAL_MS)
+                if (stateOf(context) == ShizukuState.READY) {
+                    createSettingsRepository(context).setPrivilegedEnabled(true)
+                    StartupLog.event(context, "shizuku: ready - the advanced switch was turned back on")
+                    notice = ShizukuState.RE_ENABLED
+                    break
+                }
+            }
+            reenableLoop = null
+        }
     }
 }
