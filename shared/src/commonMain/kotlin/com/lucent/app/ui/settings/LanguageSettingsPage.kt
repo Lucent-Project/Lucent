@@ -1,6 +1,7 @@
 package com.lucent.app.ui.settings
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -181,12 +182,21 @@ fun LanguageSettingsPage(
             )
         ) {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) { showPicker = false },
                 contentAlignment = Alignment.Center
             ) {
                 Column(
                     modifier = Modifier
                         .width(300.dp)
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) {}
                         .jellyPopInAnimation()
                         .glassJellySurface(GlassJellyTokens.DialogShape)
                         .padding(12.dp)
