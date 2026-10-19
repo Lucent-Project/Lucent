@@ -1,9 +1,11 @@
 package com.lucent.app.ui.settings
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -41,9 +43,12 @@ import com.lucent.app.i18n.S
 import com.lucent.app.platform.LocalPlatformContext
 import com.lucent.app.ui.BackHeader
 import com.lucent.app.ui.GlassButton
+import com.lucent.app.ui.GlassJellyTokens
 import com.lucent.app.ui.LocalOnGradient
 import com.lucent.app.ui.LocalOnGradientMuted
 import com.lucent.app.ui.LucentFontResolver
+import com.lucent.app.ui.glassJellySurface
+import com.lucent.app.ui.jellyPopInAnimation
 import com.lucent.app.ui.SYSTEM_FONT_KEY
 import com.lucent.app.ui.SettingsRoute
 import com.lucent.app.ui.frostedGlass
@@ -175,7 +180,17 @@ fun LanguageSettingsPage(
                 dismissOnClickOutside = true
             )
         ) {
-            Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier
+                        .width(300.dp)
+                        .jellyPopInAnimation()
+                        .glassJellySurface(GlassJellyTokens.DialogShape)
+                        .padding(12.dp)
+                ) {
                 Text(
                     S.settingsLanguageTitle,
                     color = onGradient,
