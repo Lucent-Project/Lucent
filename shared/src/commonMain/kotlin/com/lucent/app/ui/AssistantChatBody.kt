@@ -261,6 +261,7 @@ fun AssistantChatBody(
 
     var contextMenuMessage by remember { mutableStateOf<ChatMessage?>(null) }
     var contextMenuOffset by remember { mutableStateOf(Offset.Zero) }
+    var selectingMessageId by remember { mutableStateOf<Long?>(null) }
     var messageToDelete by remember { mutableStateOf<ChatMessage?>(null) }
     var showClearConfirm by remember { mutableStateOf(false) }
     var conversationMenuOpen by remember { mutableStateOf(false) }
@@ -859,6 +860,18 @@ fun AssistantChatBody(
                                     contextMenuOffset = Offset.Zero
                                     contextMenuMessage = msg
                                 }
+                                .pointerInput(msg.id) {
+                                    detectTapGestures(
+                                        onLongPress = {
+                                            Haptics.tick(context)
+                                            contextMenuOffset = Offset.Zero
+                                            contextMenuMessage = msg
+                                        },
+                                        onTap = {
+                                            if (selectingMessageId == msg.id) selectingMessageId = null
+                                        }
+                                    )
+                                }
                                 .padding(12.dp)
                         ) {
                             val savedTrace = if (!isUser) remember(msg.id, msg.agentTrace) {
@@ -994,7 +1007,7 @@ fun AssistantChatBody(
                                     Spacer(modifier = Modifier.height(4.dp))
                                 }
                             }
-                            SelectionContainer {
+                            val messageContent: @Composable () -> Unit = {
                                 val plainContent = isUser ||
                                     (isHighlighted && highlightLen > 0)
                                 if (!plainContent) {
@@ -1015,6 +1028,11 @@ fun AssistantChatBody(
                                     }
                                     Text(contentText, color = onGradient)
                                 }
+                            }
+                            if (selectingMessageId == msg.id) {
+                                SelectionContainer { messageContent() }
+                            } else {
+                                messageContent()
                             }
                             if (!isUser) {
                                 val siblings = variantGroups[msg.replyToId]
@@ -1061,6 +1079,13 @@ fun AssistantChatBody(
                                 )
                             }
                         ) {
+                            LucentGlassDropdownMenuItem(
+                                text = { Text(com.lucent.app.i18n.S.actionSelectText) },
+                                onClick = {
+                                    contextMenuMessage = null
+                                    selectingMessageId = msg.id
+                                }
+                            )
                             if (canReply) {
                                 LucentGlassDropdownMenuItem(
                                     text = { Text(com.lucent.app.i18n.S.actionReply) },
