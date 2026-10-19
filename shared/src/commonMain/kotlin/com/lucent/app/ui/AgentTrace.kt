@@ -20,7 +20,11 @@ data class AgentStep(
     val variant: String = "",
     val text: String = "",
     val errorText: String = "",
-    val millis: Long = 0L
+    val millis: Long = 0L,
+    val noteKey: String = "",
+    val noteArg1: String = "",
+    val noteArg2: Int = 0,
+    val errorKey: String = ""
 ) {
     fun label(): String =
         if (kind == AgentStepKind.TOOL) AgentTraceLabels.labelFor(toolName, variant) else text
@@ -30,10 +34,13 @@ data class AgentTrace(
     val steps: List<AgentStep> = emptyList(),
     val reasoning: String = "",
     val status: AgentStepStatus = AgentStepStatus.RUNNING,
-    val budgetLabel: String = ""
+    val budgetLabel: String = "",
+    val budgetTokensLabel: String = "",
+    val budgetTurnsDropped: Int = 0,
+    val budgetToolsTrimmed: Int = 0
 ) {
 
-    val hasContent: Boolean get() = steps.isNotEmpty() || reasoning.isNotBlank() || budgetLabel.isNotBlank()
+    val hasContent: Boolean get() = steps.isNotEmpty() || reasoning.isNotBlank() || budgetLabel.isNotBlank() || budgetTokensLabel.isNotBlank()
 
     val isTerminal: Boolean get() = status != AgentStepStatus.RUNNING
 }
@@ -137,7 +144,7 @@ object AgentTraceCodec {
 
     const val MAX_REASONING_CHARS = 6000
 
-    private const val VERSION = 1
+    private const val VERSION = 2
 
     fun encode(trace: AgentTrace?): String? {
         if (trace == null || !trace.hasContent) return null
@@ -153,6 +160,10 @@ object AgentTraceCodec {
                         put("x", step.text)
                         put("e", step.errorText)
                         put("m", step.millis)
+                        put("nk", step.noteKey)
+                        put("n1", step.noteArg1)
+                        put("n2", step.noteArg2)
+                        put("ek", step.errorKey)
                     }
                 )
             }
@@ -162,6 +173,9 @@ object AgentTraceCodec {
             put("status", trace.status.name)
             put("reasoning", trace.reasoning.take(MAX_REASONING_CHARS))
             put("budget", trace.budgetLabel)
+            put("bt", trace.budgetTokensLabel)
+            put("bd", trace.budgetTurnsDropped)
+            put("br", trace.budgetToolsTrimmed)
             put("steps", steps)
         })
     }
@@ -182,7 +196,11 @@ object AgentTraceCodec {
                     variant = o["v"]?.jsonPrimitive?.content ?: "",
                     text = o["x"]?.jsonPrimitive?.content ?: "",
                     errorText = o["e"]?.jsonPrimitive?.content ?: "",
-                    millis = o["m"]?.jsonPrimitive?.longOrNull ?: 0L
+                    millis = o["m"]?.jsonPrimitive?.longOrNull ?: 0L,
+                    noteKey = o["nk"]?.jsonPrimitive?.content ?: "",
+                    noteArg1 = o["n1"]?.jsonPrimitive?.content ?: "",
+                    noteArg2 = o["n2"]?.jsonPrimitive?.intOrNull ?: 0,
+                    errorKey = o["ek"]?.jsonPrimitive?.content ?: ""
                 )
             )
         }
@@ -190,7 +208,10 @@ object AgentTraceCodec {
             steps = steps,
             reasoning = root["reasoning"]?.jsonPrimitive?.content ?: "",
             status = statusOf(root["status"]?.jsonPrimitive?.content ?: ""),
-            budgetLabel = root["budget"]?.jsonPrimitive?.content ?: ""
+            budgetLabel = root["budget"]?.jsonPrimitive?.content ?: "",
+            budgetTokensLabel = root["bt"]?.jsonPrimitive?.content ?: "",
+            budgetTurnsDropped = root["bd"]?.jsonPrimitive?.intOrNull ?: 0,
+            budgetToolsTrimmed = root["br"]?.jsonPrimitive?.intOrNull ?: 0
         )
         return if (trace.hasContent) trace else null
     }
@@ -218,7 +239,11 @@ class AgentTraceRecorder {
 
     private var statusValue by mutableStateOf(AgentStepStatus.RUNNING)
 
-    private var budgetValue by mutableStateOf("")
+    private var budgetTokensValue by mutableStateOf("")
+
+    private var budgetDroppedValue by mutableStateOf(0)
+
+    private var budgetTrimmedValue by mutableStateOf(0)
 
     private var reasoningStepsInBlock = 0
 
@@ -226,7 +251,11 @@ class AgentTraceRecorder {
 
     val status: AgentStepStatus get() = statusValue
 
-    val budgetLabel: String get() = budgetValue
+    val budgetTokensLabel: String get() = budgetTokensValue
+
+    val budgetTurnsDropped: Int get() = budgetDroppedValue
+
+    val budgetToolsTrimmed: Int get() = budgetTrimmedValue
 
     val reasoning: String
         get() {
@@ -238,11 +267,15 @@ class AgentTraceRecorder {
         steps = _steps.toList(),
         reasoning = reasoning,
         status = statusValue,
-        budgetLabel = budgetValue
+        budgetTokensLabel = budgetTokensValue,
+        budgetTurnsDropped = budgetDroppedValue,
+        budgetToolsTrimmed = budgetTrimmedValue
     )
 
-    fun setContextBudget(text: String) {
-        budgetValue = text
+    fun setContextBudgetStats(tokensLabel: String, turnsDropped: Int, toolsTrimmed: Int) {
+        budgetTokensValue = tokensLabel
+        budgetDroppedValue = turnsDropped
+        budgetTrimmedValue = toolsTrimmed
     }
 
     fun beginBlock() {
@@ -299,12 +332,23 @@ class AgentTraceRecorder {
     fun addPlanning(text: String) {
         val line = AgentTraceLabels.summarize(text, PLANNING_SUMMARY_MAX)
         if (line.isBlank()) return
-        addNote(S.agentTracePlanning, line)
+        addNoteKey("planning", detail = line)
     }
 
     fun addNote(text: String, detail: String = "", status: AgentStepStatus = AgentStepStatus.DONE) {
         if (_steps.size >= MAX_STEPS) return
         _steps.add(AgentStep(kind = AgentStepKind.NOTE, status = status, detail = detail, text = text))
+    }
+
+    fun addNoteKey(
+        key: String,
+        arg1: String = "",
+        arg2: Int = 0,
+        detail: String = "",
+        status: AgentStepStatus = AgentStepStatus.DONE
+    ) {
+        if (_steps.size >= MAX_STEPS) return
+        _steps.add(AgentStep(kind = AgentStepKind.NOTE, status = status, detail = detail, noteKey = key, noteArg1 = arg1, noteArg2 = arg2))
     }
 
     fun startTool(toolName: String, argumentsJson: String): Int {
@@ -351,10 +395,10 @@ class AgentTraceRecorder {
         }
     }
 
-    fun cancelTool(index: Int, reason: String = "") {
+    fun cancelTool(index: Int, reasonKey: String = "") {
         synchronized(lock) { toolStarted.remove(index) }
         update(index) {
-            it.copy(status = AgentStepStatus.CANCELLED, errorText = AgentTraceLabels.summarize(reason, ERROR_MAX))
+            it.copy(status = AgentStepStatus.CANCELLED, errorKey = reasonKey)
         }
     }
 

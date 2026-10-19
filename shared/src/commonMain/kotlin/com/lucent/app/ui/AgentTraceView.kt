@@ -99,9 +99,10 @@ fun AgentTracePanel(
         }
 
         if (expanded) {
-            if (trace.budgetLabel.isNotBlank()) {
+            val budgetText = trace.resolvedBudgetLabel()
+            if (budgetText.isNotBlank()) {
                 Text(
-                    trace.budgetLabel,
+                    budgetText,
                     color = mutedTint,
                     fontSize = 11.sp,
                     maxLines = 1,
@@ -185,7 +186,7 @@ private fun AgentStepRow(
             Text(
                 buildAnnotatedString {
                     withStyle(SpanStyle(color = if (step.status == AgentStepStatus.CANCELLED) mutedTint else tint)) {
-                        append(step.label())
+                        append(step.resolvedLabel())
                     }
                     if (step.millis > 0L) {
                         withStyle(SpanStyle(color = mutedTint)) {
@@ -193,10 +194,11 @@ private fun AgentStepRow(
                             append(durationLabel(step.millis))
                         }
                     }
-                    if (step.detail.isNotBlank()) {
+                    val detailText = step.resolvedDetail()
+                    if (detailText.isNotBlank()) {
                         withStyle(SpanStyle(color = mutedTint)) {
                             append(" \u00b7 ")
-                            append(step.detail)
+                            append(detailText)
                         }
                     }
                 },
@@ -205,9 +207,10 @@ private fun AgentStepRow(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            if (step.errorText.isNotBlank()) {
+            val errorText = step.resolvedErrorText()
+            if (errorText.isNotBlank()) {
                 Text(
-                    step.errorText,
+                    errorText,
                     color = errorTint,
                     fontSize = 11.sp,
                     lineHeight = 15.sp,
@@ -217,6 +220,42 @@ private fun AgentStepRow(
             }
         }
     }
+}
+
+@Composable
+private fun AgentTrace.resolvedBudgetLabel(): String =
+    if (budgetTokensLabel.isNotBlank()) {
+        val head = S.agentContextBudgetSent(budgetTokensLabel)
+        val dropped = if (budgetTurnsDropped > 0) " \u00b7 " + S.agentContextBudgetDropped(budgetTurnsDropped) else ""
+        val trimmed = if (budgetToolsTrimmed > 0) " \u00b7 " + S.agentContextBudgetTrimmed(budgetToolsTrimmed) else ""
+        head + dropped + trimmed
+    } else budgetLabel
+
+@Composable
+private fun AgentStep.resolvedLabel(): String {
+    if (kind == AgentStepKind.TOOL) return AgentTraceLabels.labelFor(toolName, variant)
+    return when (noteKey) {
+        "retrying" -> S.agentTraceRetrying(noteArg1.toIntOrNull() ?: 0)
+        "cacheUsed" -> S.agentTraceCacheUsed(noteArg1, noteArg2)
+        "unknownTool" -> S.ccRunGeneric(noteArg1)
+        "traceError" -> S.agentTraceError
+        "planning" -> S.agentTracePlanning
+        else -> text
+    }
+}
+
+@Composable
+private fun AgentStep.resolvedDetail(): String = when (noteKey) {
+    "unknownTool" -> S.agentTraceUnknownTool
+    "traceError" -> detail.ifBlank { S.noDetails }
+    else -> detail
+}
+
+@Composable
+private fun AgentStep.resolvedErrorText(): String = when (errorKey) {
+    "refining" -> S.agentTraceRefining
+    "cancelled" -> S.agentTraceCancelled
+    else -> errorText
 }
 
 @Composable

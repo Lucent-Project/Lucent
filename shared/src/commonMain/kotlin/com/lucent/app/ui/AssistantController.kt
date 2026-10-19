@@ -991,7 +991,7 @@ class AssistantControllerImpl(
                         systemPrompt, tools,
                         { delta -> turn.onDelta(roundEpoch, delta) },
                         { piece -> turn.recorder.appendReasoning(piece) },
-                        { attempt -> turn.recorder.addNote(com.lucent.app.i18n.S.agentTraceRetrying(attempt)) },
+                        { attempt -> turn.recorder.addNoteKey("retrying", attempt.toString()) },
                         reasoning = useReasoning,
                         cacheKey = conversationCacheKey,
                         context = promptContext
@@ -1034,13 +1034,13 @@ class AssistantControllerImpl(
                             val proposal = AppTools.describeToolCall(call.name, confirmed.argumentsJson)
                             refinementContext = proposal
                             declinedDetails = "refine\u0001" + proposal
-                            turn.recorder.cancelTool(stepIndex, com.lucent.app.i18n.S.agentTraceRefining)
+                            turn.recorder.cancelTool(stepIndex, "refining")
                             break
                         }
 
                         if (!confirmed.approved) {
                             declinedDetails = AppTools.describeToolCall(call.name, call.argumentsJson)
-                            turn.recorder.cancelTool(stepIndex, com.lucent.app.i18n.S.agentTraceCancelled)
+                            turn.recorder.cancelTool(stepIndex, "cancelled")
                             break
                         }
 
@@ -1127,7 +1127,7 @@ class AssistantControllerImpl(
                             systemPrompt, emptyList(),
                             { delta -> turn.onDelta(forcedEpoch, delta) },
                             { piece -> turn.recorder.appendReasoning(piece) },
-                            { attempt -> turn.recorder.addNote(com.lucent.app.i18n.S.agentTraceRetrying(attempt)) },
+                            { attempt -> turn.recorder.addNoteKey("retrying", attempt.toString()) },
                             reasoning = useReasoning,
                             cacheKey = conversationCacheKey,
                             context = promptContext
@@ -1557,10 +1557,10 @@ class AssistantControllerImpl(
             if (call == null) {
                 val attempted = LocalToolCallParser.attemptedToolCallName(raw)
                 if (attempted != null && round < MAX_LOCAL_TOOL_ROUNDS - 1) {
-                    turn.recorder.addNote(
-                        com.lucent.app.i18n.S.ccRunGeneric(attempted),
-                        com.lucent.app.i18n.S.agentTraceUnknownTool,
-                        AgentStepStatus.FAILED
+                    turn.recorder.addNoteKey(
+                        "unknownTool",
+                        attempted,
+                        status = AgentStepStatus.FAILED
                     )
                     messages.add("assistant" to raw.trim().take(600))
                     messages.add(
@@ -1592,7 +1592,7 @@ class AssistantControllerImpl(
                     turn.thinking = false
                     turn.resetStream(reveal = true)
                     turn.finishTyping(content)
-                    turn.recorder.cancelTool(stepIndex, com.lucent.app.i18n.S.agentTraceRefining)
+                    turn.recorder.cancelTool(stepIndex, "refining")
                     turn.recorder.finish(AgentStepStatus.CANCELLED)
                     insertAssistant(
                         db, conversationId, content, null, null,
@@ -1609,7 +1609,7 @@ class AssistantControllerImpl(
                     turn.thinking = false
                     turn.resetStream(reveal = true)
                     turn.finishTyping(content)
-                    turn.recorder.cancelTool(stepIndex, com.lucent.app.i18n.S.agentTraceCancelled)
+                    turn.recorder.cancelTool(stepIndex, "cancelled")
                     turn.recorder.finish(AgentStepStatus.CANCELLED)
                     insertAssistant(
                         db, conversationId, content, null, null,
@@ -1888,18 +1888,11 @@ class AssistantControllerImpl(
 
     private fun recordContextBudget(turn: Turn, result: com.lucent.app.harness.ContextBudgetResult) {
         turn.contextBudget = result.stats
-        turn.recorder.setContextBudget(contextBudgetLine(result.stats))
-    }
-
-    private fun contextBudgetLine(stats: com.lucent.app.harness.ContextBudgetStats): String {
-        val head = com.lucent.app.i18n.S.agentContextBudgetSent(TokenEstimator.label(stats.tokensAfter))
-        val dropped = if (stats.turnsDropped > 0) {
-            " \u00b7 " + com.lucent.app.i18n.S.agentContextBudgetDropped(stats.turnsDropped)
-        } else ""
-        val trimmed = if (stats.toolResultsTrimmed > 0) {
-            " \u00b7 " + com.lucent.app.i18n.S.agentContextBudgetTrimmed(stats.toolResultsTrimmed)
-        } else ""
-        return head + dropped + trimmed
+        turn.recorder.setContextBudgetStats(
+            TokenEstimator.label(result.stats.tokensAfter),
+            result.stats.turnsDropped,
+            result.stats.toolResultsTrimmed
+        )
     }
 
     private fun normalizeRoles(turns: List<ChatTurn>): List<ChatTurn> {
@@ -2245,7 +2238,7 @@ class AssistantControllerImpl(
         }
         if (usage.cachedTokens > 0) {
             val tokens = java.text.NumberFormat.getIntegerInstance().format(usage.cachedTokens.toLong())
-            turn.recorder.addNote(com.lucent.app.i18n.S.agentTraceCacheUsed(tokens, usage.hitPercent))
+            turn.recorder.addNoteKey("cacheUsed", tokens, usage.hitPercent)
         }
     }
 
@@ -2258,7 +2251,7 @@ class AssistantControllerImpl(
             networkErrorMessage =
                 com.lucent.app.i18n.S.networkCantReach +
                     (t.message?.takeIf { it.isNotBlank() && it != "network error" }?.let { "\n\n($it)" } ?: "")
-            recordTraceFailure(turn, t.message ?: com.lucent.app.i18n.S.noDetails)
+            recordTraceFailure(turn, t.message.orEmpty())
         } else {
             postError(turn, "${t.javaClass.simpleName}: ${t.message ?: com.lucent.app.i18n.S.noDetails}")
         }
@@ -2271,10 +2264,10 @@ class AssistantControllerImpl(
     }
 
     private fun recordTraceFailure(turn: Turn, detail: String) {
-        turn.recorder.addNote(
-            com.lucent.app.i18n.S.agentTraceError,
-            AgentTraceLabels.summarize(detail, 240),
-            AgentStepStatus.FAILED
+        turn.recorder.addNoteKey(
+            "traceError",
+            detail = AgentTraceLabels.summarize(detail, 240),
+            status = AgentStepStatus.FAILED
         )
         turn.recorder.finish(AgentStepStatus.FAILED)
         errorTrace = turn.recorder.snapshot()
