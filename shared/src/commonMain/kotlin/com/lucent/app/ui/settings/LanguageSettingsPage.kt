@@ -31,7 +31,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.lucent.app.AppScope
 import com.lucent.app.data.FontStore
 import com.lucent.app.data.SettingsCache
@@ -167,8 +166,7 @@ fun LanguageSettingsPage(
 
     if (showPicker) {
         Dialog(
-            onDismissRequest = { showPicker = false },
-            properties = DialogProperties(scrimColor = Color.Transparent)
+            onDismissRequest = { showPicker = false }
         ) {
             Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
                 Text(
