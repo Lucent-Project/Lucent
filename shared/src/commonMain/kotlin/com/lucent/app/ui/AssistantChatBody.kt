@@ -881,7 +881,7 @@ fun AssistantChatBody(
                             val hasProcessContent = savedTrace != null || reasoning.isNotBlank()
                             var processVisible by remember(msg.id) { mutableStateOf<Boolean?>(null) }
 
-                            if (!isUser) {
+                            if (!isUser && (assistantName.isNotBlank() || hasProcessContent)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(bottom = 3.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -906,41 +906,6 @@ fun AssistantChatBody(
                                                 modifier = Modifier.size(16.dp)
                                             )
                                         }
-                                    }
-                                    IconButton(
-                                        onClick = {
-                                            contextMenuOffset = Offset.Zero
-                                            contextMenuMessage = msg
-                                        },
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.MoreVert,
-                                            contentDescription = com.lucent.app.i18n.S.a11yMoreOptions,
-                                            tint = onGradientMuted,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
-                            } else {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp),
-                                    horizontalArrangement = Arrangement.End,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    IconButton(
-                                        onClick = {
-                                            contextMenuOffset = Offset.Zero
-                                            contextMenuMessage = msg
-                                        },
-                                        modifier = Modifier.size(20.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.MoreVert,
-                                            contentDescription = com.lucent.app.i18n.S.a11yMoreOptions,
-                                            tint = onGradientMuted,
-                                            modifier = Modifier.size(14.dp)
-                                        )
                                     }
                                 }
                             }
