@@ -369,7 +369,7 @@ object WebSearchClient {
         return parsePairs(
             html,
             Regex(
-                """<h2[^>]*>\s*<a[^>]*\bhref="([^"]+)"[^>]*>(.*?)</a>""",
+                """<a[^>]*\bhref="([^"]+)"[^>]*>\s*<h2[^>]*>(.*?)</h2>""",
                 setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
             ),
             Regex(
