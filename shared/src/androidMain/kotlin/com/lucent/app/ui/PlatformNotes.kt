@@ -53,8 +53,15 @@ actual fun shareText(context: PlatformContext, subject: String?, text: String, c
         type = "text/plain"
         subject?.let { putExtra(Intent.EXTRA_SUBJECT, it) }
         putExtra(Intent.EXTRA_TEXT, text)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
-    context.startActivity(Intent.createChooser(sendIntent, chooserTitle))
+    val chooser = Intent.createChooser(sendIntent, chooserTitle).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    try {
+        context.startActivity(chooser)
+    } catch (t: Throwable) {
+    }
 }
 
 actual val notesGridColumns: Int = 2
