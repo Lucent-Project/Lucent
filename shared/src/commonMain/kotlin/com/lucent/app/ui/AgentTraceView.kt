@@ -51,9 +51,10 @@ fun AgentTracePanel(
     tint: Color,
     mutedTint: Color,
     initiallyExpanded: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showWhenEmpty: Boolean = false
 ) {
-    if (!trace.hasContent) return
+    if (!trace.hasContent && !showWhenEmpty) return
     var expanded by remember(initiallyExpanded) { mutableStateOf(initiallyExpanded) }
     var thinkingOpen by remember(initiallyExpanded) { mutableStateOf(false) }
 

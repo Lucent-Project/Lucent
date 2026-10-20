@@ -1174,14 +1174,24 @@ fun AssistantChatBody(
                                         modifier = Modifier.padding(bottom = 3.dp)
                                     )
                                 }
-                                if (agentModeOn && liveTrace != null && liveTrace.steps.isNotEmpty()) {
-                                    AgentTracePanel(
-                                        trace = liveTrace,
-                                        tint = onGradient,
-                                        mutedTint = onGradientMuted,
-                                        initiallyExpanded = false
-                                    )
-                                    Spacer(modifier = Modifier.height(6.dp))
+                                if (liveTrace != null) {
+                                    if (agentModeOn) {
+                                        AgentTracePanel(
+                                            trace = liveTrace,
+                                            tint = onGradient,
+                                            mutedTint = onGradientMuted,
+                                            initiallyExpanded = false,
+                                            showWhenEmpty = true
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                    } else if (liveTrace.reasoning.isNotBlank()) {
+                                        AssistantReasoningBlock(
+                                            reasoning = liveTrace.reasoning,
+                                            tint = onGradient,
+                                            mutedTint = onGradientMuted
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                    }
                                 }
                                 SelectionContainer {
                                     MarkdownText(streamingText.withLineStartPunctuationAllowed())
@@ -1194,14 +1204,24 @@ fun AssistantChatBody(
                     item(key = "thinking") {
                         Box(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.align(Alignment.CenterStart).frostedGlass().padding(12.dp)) {
-                                if (agentModeOn && liveTrace != null && liveTrace.steps.isNotEmpty()) {
-                                    AgentTracePanel(
-                                        trace = liveTrace,
-                                        tint = onGradient,
-                                        mutedTint = onGradientMuted,
-                                        initiallyExpanded = false
-                                    )
-                                    Spacer(modifier = Modifier.height(6.dp))
+                                if (liveTrace != null) {
+                                    if (agentModeOn) {
+                                        AgentTracePanel(
+                                            trace = liveTrace,
+                                            tint = onGradient,
+                                            mutedTint = onGradientMuted,
+                                            initiallyExpanded = false,
+                                            showWhenEmpty = true
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                    } else if (liveTrace.reasoning.isNotBlank()) {
+                                        AssistantReasoningBlock(
+                                            reasoning = liveTrace.reasoning,
+                                            tint = onGradient,
+                                            mutedTint = onGradientMuted
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                    }
                                 }
                                 ThinkingBubble(
                                     name = assistantName,
