@@ -96,6 +96,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -115,6 +116,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -122,6 +124,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalTextToolbar
+import androidx.compose.ui.platform.TextToolbar
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import com.lucent.app.BackClaim
@@ -813,7 +817,21 @@ fun AssistantChatBody(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = {
+                            if (selectingMessageId != null) {
+                                selectingMessageId = null
+                                selectionSeedPoint = null
+                            }
+                        }
+                    )
+                }
+        ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().hazeSource(state = LocalHazeState.current),
                 state = listState,
@@ -878,7 +896,7 @@ fun AssistantChatBody(
                                             }
                                         },
                                         onTap = {
-                                            if (selectingMessageId == msg.id) {
+                                            if (selectingMessageId != null) {
                                                 selectingMessageId = null
                                                 selectionSeedPoint = null
                                             }
@@ -1011,7 +1029,11 @@ fun AssistantChatBody(
                                 SelectableMessageContent(
                                     msg = msg,
                                     seedPoint = selectionSeedPoint,
-                                    onSeedConsumed = { selectionSeedPoint = null }
+                                    onSeedConsumed = { selectionSeedPoint = null },
+                                    onSelectionDone = {
+                                        selectingMessageId = null
+                                        selectionSeedPoint = null
+                                    }
                                 )
                             } else {
                                 messageContent()
@@ -1601,9 +1623,15 @@ private fun String.withLineStartPunctuationAllowed(): String {
 private fun SelectableMessageContent(
     msg: ChatMessage,
     seedPoint: Offset?,
-    onSeedConsumed: () -> Unit
+    onSeedConsumed: () -> Unit,
+    onSelectionDone: () -> Unit
 ) {
     val onGradient = LocalOnGradient.current
+    val systemToolbar = LocalTextToolbar.current
+    val currentOnSelectionDone by rememberUpdatedState(onSelectionDone)
+    val oneShotToolbar = remember(systemToolbar) {
+        OneShotTextToolbar(systemToolbar) { currentOnSelectionDone() }
+    }
     var fieldValue by remember(msg.id) { mutableStateOf(TextFieldValue(msg.content)) }
     var layoutResult by remember(msg.id) { mutableStateOf<TextLayoutResult?>(null) }
     var fieldPosInBubble by remember(msg.id) { mutableStateOf<Offset?>(null) }
@@ -1621,15 +1649,56 @@ private fun SelectableMessageContent(
             onSeedConsumed()
         }
     }
-    BasicTextField(
-        value = fieldValue,
-        onValueChange = { fieldValue = it },
-        readOnly = true,
-        textStyle = LocalTextStyle.current.copy(color = onGradient),
-        cursorBrush = SolidColor(onGradient),
-        modifier = Modifier.onGloballyPositioned { fieldPosInBubble = it.positionInParent() },
-        onTextLayout = { layoutResult = it }
-    )
+    CompositionLocalProvider(LocalTextToolbar provides oneShotToolbar) {
+        BasicTextField(
+            value = fieldValue,
+            onValueChange = { fieldValue = it },
+            readOnly = true,
+            textStyle = LocalTextStyle.current.copy(color = onGradient),
+            cursorBrush = SolidColor(onGradient),
+            modifier = Modifier.onGloballyPositioned { fieldPosInBubble = it.positionInParent() },
+            onTextLayout = { layoutResult = it }
+        )
+    }
+}
+
+private class OneShotTextToolbar(
+    private val delegate: TextToolbar,
+    private val onCopied: () -> Unit
+) : TextToolbar by delegate {
+    override fun showMenu(
+        rect: Rect,
+        onCopyRequested: (() -> Unit)?,
+        onPasteRequested: (() -> Unit)?,
+        onCutRequested: (() -> Unit)?,
+        onSelectAllRequested: (() -> Unit)?
+    ) {
+        delegate.showMenu(
+            rect,
+            onCopyRequested?.let { copy -> { copy(); onCopied() } },
+            onPasteRequested,
+            onCutRequested,
+            onSelectAllRequested
+        )
+    }
+
+    override fun showMenu(
+        rect: Rect,
+        onCopyRequested: (() -> Unit)?,
+        onPasteRequested: (() -> Unit)?,
+        onCutRequested: (() -> Unit)?,
+        onSelectAllRequested: (() -> Unit)?,
+        onShareRequested: (() -> Unit)?
+    ) {
+        delegate.showMenu(
+            rect,
+            onCopyRequested?.let { copy -> { copy(); onCopied() } },
+            onPasteRequested,
+            onCutRequested,
+            onSelectAllRequested,
+            onShareRequested
+        )
+    }
 }
 
 private fun Modifier.swipeToReply(
