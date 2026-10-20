@@ -1,5 +1,6 @@
 package com.lucent.app.data
 
+import com.lucent.app.nativebridge.LucentNative
 import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.Cipher
@@ -20,12 +21,16 @@ actual fun pbkdf2Sha256(
     iterations: Int,
     keyLengthBits: Int
 ): ByteArray {
+    if (keyLengthBits % 8 == 0) {
+        LucentNative.pbkdf2Sha256(password, salt, iterations, keyLengthBits / 8)?.let { return it }
+    }
     val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
     val spec = PBEKeySpec(password, salt, iterations, keyLengthBits)
     return factory.generateSecret(spec).encoded
 }
 
 actual fun aesGcmEncrypt(key: ByteArray, iv: ByteArray, plaintext: ByteArray, aad: ByteArray?): ByteArray {
+    LucentNative.aesGcmSeal(key, iv, aad ?: ByteArray(0), plaintext)?.let { return it }
     val cipher = Cipher.getInstance("AES/GCM/NoPadding")
     val secretKeySpec = SecretKeySpec(key, "AES")
     val gcmParameterSpec = GCMParameterSpec(128, iv)
@@ -35,6 +40,7 @@ actual fun aesGcmEncrypt(key: ByteArray, iv: ByteArray, plaintext: ByteArray, aa
 }
 
 actual fun aesGcmDecrypt(key: ByteArray, iv: ByteArray, ciphertext: ByteArray, aad: ByteArray?): ByteArray {
+    LucentNative.aesGcmOpen(key, iv, aad ?: ByteArray(0), ciphertext)?.let { return it }
     val cipher = Cipher.getInstance("AES/GCM/NoPadding")
     val secretKeySpec = SecretKeySpec(key, "AES")
     val gcmParameterSpec = GCMParameterSpec(128, iv)

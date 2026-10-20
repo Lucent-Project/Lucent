@@ -22,22 +22,37 @@ object Snapshots {
 
     private fun index(): String = fs.join(dir(), INDEX)
 
+    private fun readIndexLines(): List<String> {
+        val target = index().toPath()
+        if (!okio.FileSystem.SYSTEM.exists(target)) return emptyList()
+        val content = HarnessVault.read(null, target)
+        return if (content.isBlank()) emptyList() else content.lines().filter { it.isNotBlank() }
+    }
+
+    private fun writeIndexLines(lines: List<String>) {
+        val target = index().toPath()
+        val body = if (lines.isEmpty()) "" else lines.joinToString("\n") + "\n"
+        HarnessVault.write(null, target, body)
+    }
+
     fun capture(path: String) {
         if (!fs.exists(path) || fs.isDirectory(path)) return
         try {
+            val plainBytes = fs.readBytes(path)
             val id = "${harnessCurrentTimeMillis()}-${(1000..9999).random()}"
             val store = fs.join(dir(), id)
             fs.mkdirs(store)
             val copy = fs.join(store, fs.nameOf(path))
-            fs.copy(path, copy, overwrite = true)
+            HarnessVault.writeBytes(null, copy.toPath(), plainBytes)
             val line = buildJsonObject {
                 put("id", JsonPrimitive(id))
                 put("at", JsonPrimitive(harnessCurrentTimeMillis()))
                 put("path", JsonPrimitive(fs.canonicalize(path)))
                 put("store", JsonPrimitive(fs.canonicalize(copy)))
-                put("bytes", JsonPrimitive(fs.length(copy)))
+                put("bytes", JsonPrimitive(plainBytes.size.toLong()))
             }.toString()
-            fs.appendText(index(), line + "\n")
+            val updated = readIndexLines() + line
+            writeIndexLines(updated)
             prune()
         } catch (_: Throwable) {
         }
@@ -47,20 +62,16 @@ object Snapshots {
         all().filter { it.path == path }.takeLast(limit.coerceIn(1, 200)).reversed()
 
     fun all(): List<SnapshotEntry> {
-        val target = index()
-        if (!fs.exists(target)) return emptyList()
         return try {
-            fs.readLines(target).mapNotNull { line ->
-                if (line.isBlank()) null else {
-                    val o = try { Json.parseToJsonElement(line).jsonObject } catch (e: Exception) { return@mapNotNull null }
-                    SnapshotEntry(
-                        id = o["id"]?.jsonPrimitive?.content ?: "",
-                        at = o["at"]?.jsonPrimitive?.longOrNull ?: 0L,
-                        path = o["path"]?.jsonPrimitive?.content ?: "",
-                        store = o["store"]?.jsonPrimitive?.content ?: "",
-                        bytes = o["bytes"]?.jsonPrimitive?.longOrNull ?: 0L
-                    )
-                }
+            readIndexLines().mapNotNull { line ->
+                val o = try { Json.parseToJsonElement(line).jsonObject } catch (e: Exception) { return@mapNotNull null }
+                SnapshotEntry(
+                    id = o["id"]?.jsonPrimitive?.content ?: "",
+                    at = o["at"]?.jsonPrimitive?.longOrNull ?: 0L,
+                    path = o["path"]?.jsonPrimitive?.content ?: "",
+                    store = o["store"]?.jsonPrimitive?.content ?: "",
+                    bytes = o["bytes"]?.jsonPrimitive?.longOrNull ?: 0L
+                )
             }
         } catch (e: Exception) {
             emptyList()
@@ -75,7 +86,8 @@ object Snapshots {
         if (!Workspace.writable(HarnessRuntime.config(), target)) throw HarnessError("${entry.path} is outside the workspace", blocked = true)
         val parent = fs.parentOf(target)
         if (parent != null) fs.mkdirs(parent)
-        fs.copy(copy, target, overwrite = true)
+        val plainBytes = HarnessVault.readBytes(null, copy.toPath())
+        okio.FileSystem.SYSTEM.write(target.toPath()) { write(plainBytes) }
         return target
     }
 
@@ -101,33 +113,53 @@ object Snapshots {
             }
         }
         val keep = entries.drop(entries.size - limit).map { it.id }.toSet()
-        val kept = try {
-            fs.readLines(index()).filter { line ->
-                val id = try { Json.parseToJsonElement(line).jsonObject["id"]?.jsonPrimitive?.content ?: "" } catch (e: Exception) { "" }
-                keep.contains(id)
-            }
-        } catch (e: Exception) {
-            emptyList()
+        val kept = readIndexLines().filter { line ->
+            val id = try { Json.parseToJsonElement(line).jsonObject["id"]?.jsonPrimitive?.content ?: "" } catch (e: Exception) { "" }
+            keep.contains(id)
         }
-        try { fs.writeText(index(), kept.joinToString("\n") + "\n") } catch (_: Throwable) {
-        }
+        writeIndexLines(kept)
     }
 
-    fun capture(ctx: HarnessCtx, path: String) = capture(path)
+    fun capture(ctx: HarnessCtx, path: String) {
+        HarnessVault.bindContext(ctx.context)
+        capture(path)
+    }
+
     fun capture(path: okio.Path) = capture(path.toString())
-    fun capture(ctx: HarnessCtx, file: okio.Path) = capture(file.toString())
+
+    fun capture(ctx: HarnessCtx, file: okio.Path) {
+        HarnessVault.bindContext(ctx.context)
+        capture(file.toString())
+    }
+
     fun restoreFile(id: String): okio.Path = restore(id).toPath()
+
     fun restoreFile(ctx: HarnessCtx, id: String): okio.Path = restore(ctx, id).toPath()
 
-    fun history(ctx: HarnessCtx, path: String, limit: Int = 20): List<SnapshotEntry> = history(path, limit)
+    fun history(ctx: HarnessCtx, path: String, limit: Int = 20): List<SnapshotEntry> {
+        HarnessVault.bindContext(ctx.context)
+        return history(path, limit)
+    }
 
-    fun all(ctx: HarnessCtx): List<SnapshotEntry> = all()
+    fun all(ctx: HarnessCtx): List<SnapshotEntry> {
+        HarnessVault.bindContext(ctx.context)
+        return all()
+    }
 
-    fun restore(ctx: HarnessCtx, id: String): String = restore(id)
+    fun restore(ctx: HarnessCtx, id: String): String {
+        HarnessVault.bindContext(ctx.context)
+        return restore(id)
+    }
 
-    fun latest(ctx: HarnessCtx, path: String): SnapshotEntry? = latest(path)
+    fun latest(ctx: HarnessCtx, path: String): SnapshotEntry? {
+        HarnessVault.bindContext(ctx.context)
+        return latest(path)
+    }
 
-    fun totalBytes(ctx: HarnessCtx): Long = totalBytes()
+    fun totalBytes(ctx: HarnessCtx): Long {
+        HarnessVault.bindContext(ctx.context)
+        return totalBytes()
+    }
 
     fun clear(ctx: HarnessCtx) = clear()
 

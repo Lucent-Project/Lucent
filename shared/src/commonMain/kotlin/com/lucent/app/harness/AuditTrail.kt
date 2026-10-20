@@ -10,8 +10,6 @@ import kotlinx.serialization.json.*
 import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
-import okio.buffer
-import okio.use
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -64,11 +62,15 @@ object AuditTrail {
             synchronized(lock) {
                 try {
                     val target = file(app)
-                    FileSystem.SYSTEM.appendingSink(target).buffer().use { it.writeUtf8(line + "\n") }
-                    if ((FileSystem.SYSTEM.metadata(target).size ?: -1) > MAX_BYTES) {
-                        val kept = FileSystem.SYSTEM.read(target) { readUtf8() }.takeLast(KEEP_BYTES)
-                        FileSystem.SYSTEM.write(target) { writeUtf8(kept.substringAfter("\n", kept)) }
+                    val existing = HarnessVault.read(app, target)
+                    val combined = if (existing.isEmpty()) "$line\n" else "${existing.trimEnd('\n')}\n$line\n"
+                    val trimmed = if (combined.length > MAX_BYTES) {
+                        val tail = combined.takeLast(KEEP_BYTES)
+                        tail.substringAfter("\n", tail)
+                    } else {
+                        combined
                     }
+                    HarnessVault.write(app, target, trimmed)
                 } catch (_: Throwable) {
                 }
             }
@@ -79,14 +81,17 @@ object AuditTrail {
         val target = file(context)
         if (!FileSystem.SYSTEM.exists(target)) return emptyList()
         val lines = synchronized(lock) {
-            try { FileSystem.SYSTEM.read(target) { readUtf8() }.lines() } catch (e: Exception) { emptyList() }
+            try { HarnessVault.read(context, target).lines() } catch (e: Exception) { emptyList() }
         }
         return lines.asReversed().take(limit).mapNotNull { parse(it) }
     }
 
     fun clear(context: PlatformContext) {
         synchronized(lock) {
-            try { FileSystem.SYSTEM.write(file(context)) { writeUtf8("") } } catch (_: Throwable) {
+            try {
+                val target = file(context)
+                if (FileSystem.SYSTEM.exists(target)) FileSystem.SYSTEM.delete(target)
+            } catch (_: Throwable) {
             }
         }
     }

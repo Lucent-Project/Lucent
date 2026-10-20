@@ -6,11 +6,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, ".."))
 
 HARNESS_DIRS = [
-    os.path.join(REPO, "shared", "src", "main", "kotlin", "com", "lucent", "app", "harness"),
-    os.path.join(REPO, "shared", "src", "platformMain", "kotlin", "com", "lucent", "app", "harness"),
+    os.path.join(REPO, "shared", "src", "commonMain", "kotlin", "com", "lucent", "app", "harness"),
+    os.path.join(REPO, "shared", "src", "jvmMain", "kotlin", "com", "lucent", "app", "harness"),
 ]
 TESTS = [
     os.path.join(REPO, "shared", "src", "commonTest", "kotlin"),
+    os.path.join(REPO, "shared", "src", "desktopTest", "kotlin"),
     os.path.join(REPO, "desktop", "src", "test", "kotlin"),
     os.path.join(REPO, "app", "src", "test"),
 ]
@@ -22,6 +23,14 @@ INDIRECTLY_COVERED = {
     "Ooxml.kt",
     "McpClient.kt",
     "HarnessSpec.kt",
+    "HarnessTypes.kt",
+    "JsonMap.kt",
+    "ZipReader.kt",
+    "ZipWriter.kt",
+    "ZlibInflate.kt",
+    "McpTypes.kt",
+    "XmlNode.kt",
+    "PluginTypes.kt",
 }
 
 TOOL_NAME = re.compile(r'name\s*=\s*"([a-z][a-z0-9_]*)"')

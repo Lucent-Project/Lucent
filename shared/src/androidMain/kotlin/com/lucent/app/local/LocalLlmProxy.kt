@@ -212,10 +212,22 @@ internal object LocalLlmProxy {
         }
     }
 
+    fun purgeStagedImages(context: Context? = LocalLlmContextHolder.appContext?.applicationContext) {
+        val appCtx = context ?: return
+        try {
+            val dir = File(appCtx.cacheDir, IMAGE_CACHE_DIR)
+            if (dir.isDirectory) {
+                dir.listFiles()?.forEach { it.delete() }
+            }
+        } catch (_: Throwable) {
+        }
+    }
+
     private fun stageImages(images: List<ByteArray>): List<File> {
-        if (images.isEmpty()) return emptyList()
         val ctx = LocalLlmContextHolder.appContext?.applicationContext
             ?: throw IllegalStateException("LocalLlmContextHolder has no context yet")
+        if (!cachedIsGenerating) purgeStagedImages(ctx)
+        if (images.isEmpty()) return emptyList()
         val dir = File(ctx.cacheDir, IMAGE_CACHE_DIR).apply { mkdirs() }
         val written = mutableListOf<File>()
         try {

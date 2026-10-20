@@ -1793,12 +1793,29 @@ object AppTools {
                             success = false
                         )
                         is com.lucent.app.data.EmbeddingProvider.Outcome.Success -> {
-                            val hits = com.lucent.app.data.EmbeddingStore.search(
-                                appContext, outcome.vector, outcome.model, topK = 8
-                            )
-                            val byId = db.noteDao.getByIds(hits.map { it.noteId })
+                            val activeNotes = db.noteDao.getAllOnce()
                                 .filter { it.trashedAt == null && !it.hidden && !it.isDraft }
-                                .associateBy { it.id }
+                            val existingByNote = db.noteEmbeddingDao.getForModel(outcome.model)
+                                .associateBy { it.noteId }
+                            val staleNotes = activeNotes.filter { note ->
+                                val prev = existingByNote[note.id]
+                                prev == null || prev.updatedAt < note.updatedAt
+                            }.take(16)
+                            for (note in staleNotes) {
+                                val text = "${note.title}\n${note.body}".trim().take(4000)
+                                if (text.isNotEmpty()) {
+                                    val embedded = com.lucent.app.data.EmbeddingProvider.embed(appContext, text)
+                                    if (embedded is com.lucent.app.data.EmbeddingProvider.Outcome.Success) {
+                                        com.lucent.app.data.EmbeddingStore.store(
+                                            db, note.id, embedded.model, embedded.vector, note.updatedAt
+                                        )
+                                    }
+                                }
+                            }
+                            val hits = com.lucent.app.data.EmbeddingStore.search(
+                                db, outcome.vector, outcome.model, topK = 8
+                            )
+                            val byId = activeNotes.associateBy { it.id }
                             val ranked = hits.mapNotNull { byId[it.noteId] }
                             if (ranked.isEmpty()) {
                                 ToolExecResult("Nothing seems related to \"$query\".")

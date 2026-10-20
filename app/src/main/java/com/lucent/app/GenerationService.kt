@@ -55,7 +55,10 @@ class GenerationService : Service() {
                     val safeImagePaths = imagePaths ?: emptyArray()
                     val images = safeImagePaths.mapNotNull { path ->
                         try {
-                            File(path).readBytes()
+                            val file = File(path)
+                            val bytes = file.readBytes()
+                            file.delete()
+                            bytes
                         } catch (t: Throwable) {
                             null
                         }
@@ -96,6 +99,10 @@ class GenerationService : Service() {
 
     override fun onDestroy() {
         engineScope.cancel()
+        try {
+            File(applicationContext.cacheDir, "local_llm_ipc_images").listFiles()?.forEach { it.delete() }
+        } catch (_: Throwable) {
+        }
         super.onDestroy()
     }
 

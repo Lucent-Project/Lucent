@@ -294,10 +294,7 @@ class BackupRoundTripTest {
         val manifestSource = listOf(
             File("shared/src/commonMain/kotlin/com/lucent/app/data/BackupManifest.kt"),
             File("../shared/src/commonMain/kotlin/com/lucent/app/data/BackupManifest.kt"),
-            File("${System.getProperty("user.dir")}/../shared/src/commonMain/kotlin/com/lucent/app/data/BackupManifest.kt"),
-            File("shared/src/main/kotlin/com/lucent/app/data/BackupManifest.kt"),
-            File("../shared/src/main/kotlin/com/lucent/app/data/BackupManifest.kt"),
-            File("${System.getProperty("user.dir")}/../shared/src/main/kotlin/com/lucent/app/data/BackupManifest.kt")
+            File("${System.getProperty("user.dir")}/../shared/src/commonMain/kotlin/com/lucent/app/data/BackupManifest.kt")
         ).firstOrNull { it.exists() } ?: error("cannot locate BackupManifest.kt from ${System.getProperty("user.dir")}")
         val source = manifestSource.readText()
         for (key in backable) {

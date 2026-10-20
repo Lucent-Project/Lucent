@@ -419,7 +419,7 @@ class UpdateDownloadService : Service() {
     private fun applyPersistedLanguage() {
         try {
             com.lucent.app.i18n.L.apply(
-                kotlinx.coroutines.runBlocking { com.lucent.app.data.createSettingsRepository(this).appLanguageOnce() }
+                kotlinx.coroutines.runBlocking { com.lucent.app.data.createSettingsRepository(this@UpdateDownloadService).appLanguageOnce() }
             )
         } catch (_: Throwable) { }
     }

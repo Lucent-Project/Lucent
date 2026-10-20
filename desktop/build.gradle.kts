@@ -27,11 +27,9 @@ kotlin {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
     sourceSets {
-        main {
-            kotlin.srcDir(rootProject.file("shared/src/main/kotlin"))
-        }
         test {
             kotlin.srcDir(rootProject.file("shared/src/commonTest/kotlin"))
+            kotlin.srcDir(rootProject.file("shared/src/desktopTest/kotlin"))
         }
     }
 }

@@ -82,6 +82,7 @@ import com.lucent.app.local.LocalLlm
 import com.lucent.app.local.LocalModelStore
 import com.lucent.app.local.UriImportSource
 import com.lucent.app.ui.settings.CloudModelSettingsPage
+import com.lucent.app.ui.settings.SharedSimpleConfirmDialog
 import com.lucent.app.ui.settings.AppearanceSettingsPage
 import com.lucent.app.ui.settings.AssistantSettingsPage
 import com.lucent.app.ui.settings.BackgroundSettingsPage
@@ -1996,27 +1997,26 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ClearDataDialog() {
-        LucentGlassAlertDialog(
-            onDismissRequest = { showClearData = false },
-            title = { Text(S.clearAllDataTitle) },
-            text = { Text(S.clearAllDataBody) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showClearData = false
-                    requireLockAuth { com.lucent.app.data.backgroundWrite(context, "clear all data") {
-                        com.lucent.app.data.wipeAllData(appContext, db, repo)
+        SharedSimpleConfirmDialog(
+            title = S.clearAllDataTitle,
+            body = S.clearAllDataBody,
+            confirmLabel = S.deleteEverything,
+            onConfirm = {
+                showClearData = false
+                requireLockAuth { com.lucent.app.data.backgroundWrite(context, "clear all data") {
+                    com.lucent.app.data.wipeAllData(appContext, db, repo)
 
-                        withContext(Dispatchers.Main) {
-                            backupStatus = ""
-                            lmRefresh++
-                            fontRefresh++
-                            AssistantController.onAllChatsCleared(appContext)
-                            LucentToast.show(appContext, S.allDataClearedToast)
-                        }
+                    withContext(Dispatchers.Main) {
+                        backupStatus = ""
+                        lmRefresh++
+                        fontRefresh++
+                        AssistantController.onAllChatsCleared(appContext)
+                        LucentToast.show(appContext, S.allDataClearedToast)
                     }
-                } }) { Text(S.deleteEverything) }
+                }
+                }
             },
-            dismissButton = { TextButton(onClick = { showClearData = false }) { Text(S.actionCancel) } }
+            onDismiss = { showClearData = false }
         )
     }
     if (showClearData) { ClearDataDialog() }
@@ -2024,23 +2024,22 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ClearNotesDialog() {
-        LucentGlassAlertDialog(
-            onDismissRequest = { showClearNotes = false },
-            title = { Text(S.clearNotesTitle) },
-            text = { Text(S.clearNotesBody) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showClearNotes = false
-                    requireLockAuth { com.lucent.app.data.backgroundWrite(context, "clear notes") {
-                        db.noteVersionDao.clearAll()
-                        db.noteDao.clearAll()
-                        com.lucent.app.data.AttachmentMigration.pruneOrphans(appContext)
-                        com.lucent.app.widget.WidgetUpdater.refreshContent(appContext)
-                        withContext(Dispatchers.Main) { LucentToast.show(appContext, S.notesClearedToast) }
-                    }
-                } }) { Text(S.deleteNotesBtn) }
+        SharedSimpleConfirmDialog(
+            title = S.clearNotesTitle,
+            body = S.clearNotesBody,
+            confirmLabel = S.deleteNotesBtn,
+            onConfirm = {
+                showClearNotes = false
+                requireLockAuth { com.lucent.app.data.backgroundWrite(context, "clear notes") {
+                    db.noteVersionDao.clearAll()
+                    db.noteDao.clearAll()
+                    com.lucent.app.data.AttachmentMigration.pruneOrphans(appContext)
+                    com.lucent.app.widget.WidgetUpdater.refreshContent(appContext)
+                    withContext(Dispatchers.Main) { LucentToast.show(appContext, S.notesClearedToast) }
+                }
+                }
             },
-            dismissButton = { TextButton(onClick = { showClearNotes = false }) { Text(S.actionCancel) } }
+            onDismiss = { showClearNotes = false }
         )
     }
     if (showClearNotes) { ClearNotesDialog() }
@@ -2048,26 +2047,25 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ClearTasksDialog() {
-        LucentGlassAlertDialog(
-            onDismissRequest = { showClearTasks = false },
-            title = { Text(S.clearTasksTitle) },
-            text = { Text(S.clearTasksBody) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showClearTasks = false
-                    requireLockAuth { com.lucent.app.data.backgroundWrite(context, "clear tasks") {
-                        db.taskDao.getAllOnce().forEach {
-                            com.lucent.app.reminders.ReminderScheduler.cancel(appContext, it.id)
-                        }
-                        db.taskVersionDao.clearAll()
-                        db.taskDao.clearAll()
-                        com.lucent.app.data.AttachmentMigration.pruneOrphans(appContext)
-                        com.lucent.app.widget.WidgetUpdater.refreshContent(appContext)
-                        withContext(Dispatchers.Main) { LucentToast.show(appContext, S.tasksClearedToast) }
+        SharedSimpleConfirmDialog(
+            title = S.clearTasksTitle,
+            body = S.clearTasksBody,
+            confirmLabel = S.deleteTasksBtn,
+            onConfirm = {
+                showClearTasks = false
+                requireLockAuth { com.lucent.app.data.backgroundWrite(context, "clear tasks") {
+                    db.taskDao.getAllOnce().forEach {
+                        com.lucent.app.reminders.ReminderScheduler.cancel(appContext, it.id)
                     }
-                } }) { Text(S.deleteTasksBtn) }
+                    db.taskVersionDao.clearAll()
+                    db.taskDao.clearAll()
+                    com.lucent.app.data.AttachmentMigration.pruneOrphans(appContext)
+                    com.lucent.app.widget.WidgetUpdater.refreshContent(appContext)
+                    withContext(Dispatchers.Main) { LucentToast.show(appContext, S.tasksClearedToast) }
+                }
+                }
             },
-            dismissButton = { TextButton(onClick = { showClearTasks = false }) { Text(S.actionCancel) } }
+            onDismiss = { showClearTasks = false }
         )
     }
     if (showClearTasks) { ClearTasksDialog() }
@@ -2076,17 +2074,15 @@ fun SettingsScreen(active: Boolean = true) {
     @NonRestartableComposable
     fun DeleteApiProfileDialog(idx: Int) {
         val name = profiles.getOrNull(idx)?.name?.ifBlank { S.apiFallbackName(idx + 1) } ?: S.thisApiFallback
-        LucentGlassAlertDialog(
-            onDismissRequest = { profilePendingDelete = null },
-            title = { Text(S.apiDeleteConfirmTitle) },
-            text = { Text(S.apiDeleteConfirmBody(name)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    deleteProfile(idx)
-                    profilePendingDelete = null
-                }) { Text(S.actionDelete) }
+        SharedSimpleConfirmDialog(
+            title = S.apiDeleteConfirmTitle,
+            body = S.apiDeleteConfirmBody(name),
+            confirmLabel = S.actionDelete,
+            onConfirm = {
+                deleteProfile(idx)
+                profilePendingDelete = null
             },
-            dismissButton = { TextButton(onClick = { profilePendingDelete = null }) { Text(S.actionCancel) } }
+            onDismiss = { profilePendingDelete = null }
         )
     }
     profilePendingDelete?.let { DeleteApiProfileDialog(it) }
@@ -2094,22 +2090,21 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ClearChatsDialog() {
-        LucentGlassAlertDialog(
-            onDismissRequest = { showClearChats = false },
-            title = { Text(S.clearChatsTitle) },
-            text = { Text(S.clearChatsBody) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showClearChats = false
-                    requireLockAuth { com.lucent.app.data.backgroundWrite(context, "clear chats") {
-                        db.chatDao.clearAll()
-                        db.chatConversationDao.clearAll()
-                        AssistantController.onAllChatsCleared(appContext)
-                        withContext(Dispatchers.Main) { LucentToast.show(appContext, S.chatsClearedToast) }
-                    }
-                } }) { Text(S.deleteChatsBtn) }
+        SharedSimpleConfirmDialog(
+            title = S.clearChatsTitle,
+            body = S.clearChatsBody,
+            confirmLabel = S.deleteChatsBtn,
+            onConfirm = {
+                showClearChats = false
+                requireLockAuth { com.lucent.app.data.backgroundWrite(context, "clear chats") {
+                    db.chatDao.clearAll()
+                    db.chatConversationDao.clearAll()
+                    AssistantController.onAllChatsCleared(appContext)
+                    withContext(Dispatchers.Main) { LucentToast.show(appContext, S.chatsClearedToast) }
+                }
+                }
             },
-            dismissButton = { TextButton(onClick = { showClearChats = false }) { Text(S.actionCancel) } }
+            onDismiss = { showClearChats = false }
         )
     }
     if (showClearChats) { ClearChatsDialog() }
@@ -2117,17 +2112,15 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun DeleteLocalModelDialog(slot: LocalModelStore.ModelSlot) {
-        LucentGlassAlertDialog(
-            onDismissRequest = { lmSlotPendingDelete = null },
-            title = { Text(S.lmDeleteTitle) },
-            text = { Text(S.lmDeleteBody(slot.name.ifBlank { "model.gguf" })) },
-            confirmButton = {
-                TextButton(onClick = {
-                    deleteLocalModel(slot)
-                    lmSlotPendingDelete = null
-                }) { Text(S.actionDelete) }
+        SharedSimpleConfirmDialog(
+            title = S.lmDeleteTitle,
+            body = S.lmDeleteBody(slot.name.ifBlank { "model.gguf" }),
+            confirmLabel = S.actionDelete,
+            onConfirm = {
+                deleteLocalModel(slot)
+                lmSlotPendingDelete = null
             },
-            dismissButton = { TextButton(onClick = { lmSlotPendingDelete = null }) { Text(S.actionCancel) } }
+            onDismiss = { lmSlotPendingDelete = null }
         )
     }
     lmSlotPendingDelete?.let { DeleteLocalModelDialog(it) }
@@ -2196,17 +2189,15 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun DeleteImportedFontDialog(slot: FontStore.FontSlot) {
-        LucentGlassAlertDialog(
-            onDismissRequest = { fontPendingDelete = null },
-            title = { Text(S.fontDeleteTitle) },
-            text = { Text(S.fontDeleteBody(slot.name.ifBlank { slot.fileName })) },
-            confirmButton = {
-                TextButton(onClick = {
-                    deleteImportedFont(slot)
-                    fontPendingDelete = null
-                }) { Text(S.actionDelete) }
+        SharedSimpleConfirmDialog(
+            title = S.fontDeleteTitle,
+            body = S.fontDeleteBody(slot.name.ifBlank { slot.fileName }),
+            confirmLabel = S.actionDelete,
+            onConfirm = {
+                deleteImportedFont(slot)
+                fontPendingDelete = null
             },
-            dismissButton = { TextButton(onClick = { fontPendingDelete = null }) { Text(S.actionCancel) } }
+            onDismiss = { fontPendingDelete = null }
         )
     }
     fontPendingDelete?.let { DeleteImportedFontDialog(it) }
@@ -2244,18 +2235,16 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ConfirmUseLocalDialog() {
-        LucentGlassAlertDialog(
-            onDismissRequest = { lmConfirmUseLocalOn = false },
-            title = { Text(S.lmUseLocalWarnTitle) },
-            text = { Text(S.lmUseLocalWarnBody) },
-            confirmButton = {
-                TextButton(onClick = {
-                    lmConfirmUseLocalOn = false
-                    SettingsCache.localModelEnabled = true
-                    AppScope.io.launch { repo.setLocalModelEnabled(true) }
-                }) { Text(S.lmWarnEnableAnyway) }
+        SharedSimpleConfirmDialog(
+            title = S.lmUseLocalWarnTitle,
+            body = S.lmUseLocalWarnBody,
+            confirmLabel = S.lmWarnEnableAnyway,
+            onConfirm = {
+                lmConfirmUseLocalOn = false
+                SettingsCache.localModelEnabled = true
+                AppScope.io.launch { repo.setLocalModelEnabled(true) }
             },
-            dismissButton = { TextButton(onClick = { lmConfirmUseLocalOn = false }) { Text(S.actionCancel) } }
+            onDismiss = { lmConfirmUseLocalOn = false }
         )
     }
     if (lmConfirmUseLocalOn) { ConfirmUseLocalDialog() }
@@ -2263,18 +2252,16 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ConfirmToolsDialog() {
-        LucentGlassAlertDialog(
-            onDismissRequest = { lmConfirmToolsOn = false },
-            title = { Text(S.lmToolsWarnTitle) },
-            text = { Text(S.lmToolsWarnBody) },
-            confirmButton = {
-                TextButton(onClick = {
-                    lmConfirmToolsOn = false
-                    SettingsCache.localToolsEnabled = true
-                    AppScope.io.launch { repo.setLocalToolsEnabled(true) }
-                }) { Text(S.lmWarnEnableAnyway) }
+        SharedSimpleConfirmDialog(
+            title = S.lmToolsWarnTitle,
+            body = S.lmToolsWarnBody,
+            confirmLabel = S.lmWarnEnableAnyway,
+            onConfirm = {
+                lmConfirmToolsOn = false
+                SettingsCache.localToolsEnabled = true
+                AppScope.io.launch { repo.setLocalToolsEnabled(true) }
             },
-            dismissButton = { TextButton(onClick = { lmConfirmToolsOn = false }) { Text(S.actionCancel) } }
+            onDismiss = { lmConfirmToolsOn = false }
         )
     }
     if (lmConfirmToolsOn) { ConfirmToolsDialog() }
@@ -2282,18 +2269,16 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ConfirmGpuDialog() {
-        LucentGlassAlertDialog(
-            onDismissRequest = { lmConfirmGpuOn = false },
-            title = { Text(S.lmGpuWarnTitle) },
-            text = { Text(S.lmGpuWarnBody) },
-            confirmButton = {
-                TextButton(onClick = {
-                    lmConfirmGpuOn = false
-                    SettingsCache.localGpuEnabled = true
-                    AppScope.io.launch { repo.setLocalGpuEnabled(true) }
-                }) { Text(S.lmWarnEnableAnyway) }
+        SharedSimpleConfirmDialog(
+            title = S.lmGpuWarnTitle,
+            body = S.lmGpuWarnBody,
+            confirmLabel = S.lmWarnEnableAnyway,
+            onConfirm = {
+                lmConfirmGpuOn = false
+                SettingsCache.localGpuEnabled = true
+                AppScope.io.launch { repo.setLocalGpuEnabled(true) }
             },
-            dismissButton = { TextButton(onClick = { lmConfirmGpuOn = false }) { Text(S.actionCancel) } }
+            onDismiss = { lmConfirmGpuOn = false }
         )
     }
     if (lmConfirmGpuOn) { ConfirmGpuDialog() }
@@ -2301,18 +2286,16 @@ fun SettingsScreen(active: Boolean = true) {
     @Composable
     @NonRestartableComposable
     fun ConfirmBackgroundDialog() {
-        LucentGlassAlertDialog(
-            onDismissRequest = { lmConfirmBackgroundOn = false },
-            title = { Text(S.lmBackgroundWarnTitle) },
-            text = { Text(S.lmBackgroundWarnBody) },
-            confirmButton = {
-                TextButton(onClick = {
-                    lmConfirmBackgroundOn = false
-                    SettingsCache.localBackgroundReplyEnabled = true
-                    AppScope.io.launch { repo.setLocalBackgroundReplyEnabled(true) }
-                }) { Text(S.lmWarnEnableAnyway) }
+        SharedSimpleConfirmDialog(
+            title = S.lmBackgroundWarnTitle,
+            body = S.lmBackgroundWarnBody,
+            confirmLabel = S.lmWarnEnableAnyway,
+            onConfirm = {
+                lmConfirmBackgroundOn = false
+                SettingsCache.localBackgroundReplyEnabled = true
+                AppScope.io.launch { repo.setLocalBackgroundReplyEnabled(true) }
             },
-            dismissButton = { TextButton(onClick = { lmConfirmBackgroundOn = false }) { Text(S.actionCancel) } }
+            onDismiss = { lmConfirmBackgroundOn = false }
         )
     }
     if (lmConfirmBackgroundOn) { ConfirmBackgroundDialog() }
