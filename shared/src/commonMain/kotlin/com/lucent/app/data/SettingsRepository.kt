@@ -1,5 +1,6 @@
 package com.lucent.app.data
 
+import com.lucent.app.LucentBuild
 import com.lucent.app.platform.PlatformContext
 import kotlinx.coroutines.flow.Flow
 
@@ -73,7 +74,7 @@ interface SettingsRepository {
         val terminalKeyBarVisible: Boolean = true,
         val globalTextSelectionEnabled: Boolean = false,
         val cloudPasswordEnc: String = "",
-        val updateChannel: String = "stable",
+        val updateChannel: String = if (LucentBuild.BUILD_TRACK == "preview") "preview" else "stable",
         val installedPreviewIdentity: String = "",
         val stagedUpdateIdentity: String = "",
         val autoUpdateEnabled: Boolean = false,
@@ -212,6 +213,9 @@ interface SettingsRepository {
 
     val updateChannel: Flow<String>
     suspend fun setUpdateChannel(value: String)
+
+    suspend fun notificationChannelLangOnce(channelId: String): String
+    suspend fun setNotificationChannelLang(channelId: String, lang: String)
 
     val installedPreviewIdentity: Flow<String>
     suspend fun setInstalledPreviewIdentity(value: String)

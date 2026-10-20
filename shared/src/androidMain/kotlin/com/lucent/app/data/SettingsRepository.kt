@@ -281,7 +281,7 @@ class AndroidSettingsRepository(private val context: Context) : SettingsReposito
             terminalKeyBarVisible = secret(prefs, SettingsKeys.TERMINAL_KEY_BAR_VISIBLE_ENC, SettingsKeys.LEGACY_TERMINAL_KEY_BAR_VISIBLE, "true").toBooleanStrictOrNull() ?: true,
             globalTextSelectionEnabled = secret(prefs, SettingsKeys.GLOBAL_TEXT_SELECTION_ENABLED_ENC, SettingsKeys.LEGACY_GLOBAL_TEXT_SELECTION_ENABLED, "false").toBooleanStrictOrNull() ?: false,
             cloudPasswordEnc = prefs[SettingsKeys.CLOUD_PASSWORD_ENC] ?: "",
-            updateChannel = secret(prefs, SettingsKeys.UPDATE_CHANNEL_ENC, SettingsKeys.LEGACY_UPDATE_CHANNEL, "stable"),
+            updateChannel = secret(prefs, SettingsKeys.UPDATE_CHANNEL_ENC, SettingsKeys.LEGACY_UPDATE_CHANNEL, if (com.lucent.app.LucentBuild.BUILD_TRACK == "preview") "preview" else "stable"),
             installedPreviewIdentity = prefs[SettingsKeys.INSTALLED_PREVIEW_IDENTITY] ?: "",
             stagedUpdateIdentity = prefs[SettingsKeys.STAGED_UPDATE_IDENTITY] ?: "",
             autoUpdateEnabled = prefs[SettingsKeys.AUTO_UPDATE_ENABLED] ?: false,
@@ -651,11 +651,18 @@ class AndroidSettingsRepository(private val context: Context) : SettingsReposito
     }
 
     override val updateChannel: Flow<String> = context.settingsDataStore.data.map {
-        secret(it, SettingsKeys.UPDATE_CHANNEL_ENC, SettingsKeys.LEGACY_UPDATE_CHANNEL, "stable")
+        secret(it, SettingsKeys.UPDATE_CHANNEL_ENC, SettingsKeys.LEGACY_UPDATE_CHANNEL, if (com.lucent.app.LucentBuild.BUILD_TRACK == "preview") "preview" else "stable")
     }
     override suspend fun setUpdateChannel(value: String) {
         SettingsCache.updateChannel = value
         putSecret(SettingsKeys.UPDATE_CHANNEL_ENC, SettingsKeys.LEGACY_UPDATE_CHANNEL, value)
+    }
+
+    override suspend fun notificationChannelLangOnce(channelId: String): String =
+        context.settingsDataStore.data.first()[stringPreferencesKey("notif_channel_lang_$channelId")] ?: ""
+
+    override suspend fun setNotificationChannelLang(channelId: String, lang: String) {
+        context.settingsDataStore.edit { it[stringPreferencesKey("notif_channel_lang_$channelId")] = lang }
     }
 
     override val installedPreviewIdentity: Flow<String> = context.settingsDataStore.data.map { it[SettingsKeys.INSTALLED_PREVIEW_IDENTITY] ?: "" }

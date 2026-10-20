@@ -186,7 +186,7 @@ object SettingsCache {
     var cloudAutoBackup: Boolean = false
 
     @Volatile
-    var updateChannel: String = "stable"
+    var updateChannel: String = if (com.lucent.app.LucentBuild.BUILD_TRACK == "preview") "preview" else "stable"
 
     @Volatile
     var installedPreviewIdentity: String = ""

@@ -10,7 +10,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
-import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -22,6 +21,11 @@ class PostUpdateReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Intent.ACTION_MY_PACKAGE_REPLACED) return
         val appContext = context.applicationContext
+        try {
+            com.lucent.app.i18n.L.apply(
+                kotlinx.coroutines.runBlocking { createSettingsRepository(appContext).appLanguageOnce() }
+            )
+        } catch (_: Throwable) { }
         val version = runCatching {
             appContext.packageManager.getPackageInfo(appContext.packageName, 0).versionName
         }.getOrNull().orEmpty()
@@ -53,12 +57,8 @@ class PostUpdateReceiver : BroadcastReceiver() {
     @SuppressLint("MissingPermission")
     private fun notifyTapToOpen(context: Context, version: String) {
         if (!canPost(context)) return
-        val channel = NotificationChannelCompat
-            .Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_HIGH)
-            .setName(com.lucent.app.i18n.S.updateChannelName)
-            .build()
+        UpdateNotifChannels.ensureLocalizedChannel(context, CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_HIGH, withDescription = false)
         val manager = NotificationManagerCompat.from(context)
-        manager.createNotificationChannel(channel)
         val open = Intent(context, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE

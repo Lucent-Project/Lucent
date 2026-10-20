@@ -412,6 +412,7 @@ class MainActivity : FragmentActivity() {
                 } catch (t: Throwable) {
                     StartupLog.event(applicationContext, "i18n: apply($languageKey) failed (${t::class.simpleName}: ${t.message})")
                 }
+                com.lucent.app.UpdateDownloadService.refreshLocale(applicationContext)
             }
 
             val autoUpdateOn by settingsRepo.autoUpdateEnabled.collectAsState(

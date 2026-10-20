@@ -11,7 +11,6 @@ import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.os.IBinder
 import android.provider.DocumentsContract
-import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
@@ -41,6 +40,7 @@ class UpdateDownloadService : Service() {
     companion object {
         const val ACTION_START = "com.lucent.app.action.UPDATE_DOWNLOAD_START"
         const val ACTION_CANCEL = "com.lucent.app.action.UPDATE_DOWNLOAD_CANCEL"
+        const val ACTION_REFRESH = "com.lucent.app.action.UPDATE_DOWNLOAD_REFRESH_LOCALE"
         const val EXTRA_URL = "url"
         const val EXTRA_NAME = "name"
         const val EXTRA_FALLBACK_URL = "fallback_url"
@@ -51,6 +51,15 @@ class UpdateDownloadService : Service() {
         private const val DOWNLOAD_TIMEOUT_MS = 20L * 60L * 1000L
         private const val COPY_BUFFER_BYTES = 64 * 1024
         private const val NOTIFY_INTERVAL_MS = 400L
+
+        @Volatile
+        private var running = false
+
+        fun refreshLocale(context: Context) {
+            if (!running) return
+            val intent = Intent(context, UpdateDownloadService::class.java).setAction(ACTION_REFRESH)
+            runCatching { context.startService(intent) }
+        }
 
         fun start(context: Context, asset: ReleaseAsset) {
             val intent = Intent(context, UpdateDownloadService::class.java)
@@ -116,6 +125,12 @@ class UpdateDownloadService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    override fun onCreate() {
+        super.onCreate()
+        running = true
+        applyPersistedLanguage()
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_CANCEL -> {
@@ -127,6 +142,9 @@ class UpdateDownloadService : Service() {
                 AutoUpdate.report(com.lucent.app.i18n.S.updateDownloadCancelled)
                 StartupLog.event(applicationContext, "update: the download was cancelled by the user")
                 finish()
+            }
+            ACTION_REFRESH -> {
+                handleLocaleRefresh()
             }
             else -> {
                 val url = intent?.getStringExtra(EXTRA_URL).orEmpty()
@@ -390,12 +408,30 @@ class UpdateDownloadService : Service() {
     )
 
     private fun createChannel() {
-        val channel = NotificationChannelCompat
-            .Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_LOW)
-            .setName(com.lucent.app.i18n.S.updateChannelName)
-            .setDescription(com.lucent.app.i18n.S.updateChannelDesc)
-            .build()
-        NotificationManagerCompat.from(applicationContext).createNotificationChannel(channel)
+        com.lucent.app.data.UpdateNotifChannels.ensureLocalizedChannel(
+            this,
+            CHANNEL_ID,
+            NotificationManagerCompat.IMPORTANCE_LOW,
+            withDescription = true
+        )
+    }
+
+    private fun applyPersistedLanguage() {
+        try {
+            com.lucent.app.i18n.L.apply(
+                kotlinx.coroutines.runBlocking { com.lucent.app.data.createSettingsRepository(this).appLanguageOnce() }
+            )
+        } catch (_: Throwable) { }
+    }
+
+    private fun handleLocaleRefresh() {
+        applyPersistedLanguage()
+        createChannel()
+        if (foregroundStarted) {
+            val label = if (lastPercent < 0) com.lucent.app.i18n.S.updateNotifPreparing
+                else com.lucent.app.i18n.S.updateNotifDownloading(lastPercent)
+            postNotification(buildDownloadNotification(lastPercent, label))
+        }
     }
 
     private fun stopForegroundCompat() {
@@ -409,6 +445,7 @@ class UpdateDownloadService : Service() {
     }
 
     override fun onDestroy() {
+        running = false
         scope.cancel()
         super.onDestroy()
     }

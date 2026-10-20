@@ -41,6 +41,9 @@ data class ReleaseInfo(
     val identity: String
         get() = version
 
+    val displayVersion: String
+        get() = if (channel == "preview" && !version.endsWith("-alpha")) "$version-alpha" else version
+
     val releaseUrl: String
         get() = notesUrl.ifBlank { LucentBuild.HOMEPAGE + "/releases/tag/" + tag }
 }
@@ -76,6 +79,27 @@ object UpdateChecker {
             val right = b.getOrElse(i) { 0 }
             if (left != right) return left > right
         }
+        return false
+    }
+
+    internal fun sameVersion(a: String, b: String): Boolean {
+        val pa = parseVersion(a)
+        val pb = parseVersion(b)
+        if (pa == null || pb == null) return a.trim() == b.trim()
+        return pa == pb
+    }
+
+    internal fun tailVeto(
+        digitNewer: Boolean,
+        channel: String,
+        candidateIdentity: String,
+        candidateVersion: String,
+        currentVersion: String
+    ): Boolean {
+        if (!digitNewer && candidateIdentity == currentVersion) return true
+        if (channel != "preview") return false
+        if (parseVersion(candidateVersion) == null) return true
+        if (!digitNewer && isNewer(currentVersion, candidateVersion)) return true
         return false
     }
 
@@ -231,28 +255,18 @@ object UpdateChecker {
             candidate = stable
         }
 
-        var result = candidate ?: return@withContext null
+        val result = candidate ?: return@withContext null
         val engine = AutoUpdate.installer
-        if (engine != null && !engine.hasAsset(result)) {
-            val fallback = stable
-            if (result.channel == "preview" && fallback != null && engine.hasAsset(fallback)) {
-                result = fallback
-            } else {
-                return@withContext null
-            }
-        }
+        if (engine != null && !engine.hasAsset(result)) return@withContext null
         val candidateVersion = engine?.versionOf(result) ?: result.version
         val candidateIdentity = engine?.identityOf(result) ?: result.identity
         val installedIdentity = SettingsCache.installedPreviewIdentity
         if (installedIdentity.isNotBlank() && candidateIdentity == installedIdentity) return@withContext null
-        if (candidateIdentity == currentVersion) return@withContext null
-        if (result.channel == "preview") {
-            if (parseVersion(candidateVersion) == null) return@withContext null
-            if (isNewer(currentVersion, candidateVersion)) return@withContext null
-            if (candidateVersion == currentVersion && stableTag.isNotBlank()) {
-                val tagCommit = fetchTagCommit(stableTag)
-                if (tagCommit != null && candidateIdentity == tagCommit) return@withContext null
-            }
+        val digitNewer = result.buildId != null && isNewerBuildId(result.buildId, LucentBuild.BUILD_ID)
+        if (tailVeto(digitNewer, result.channel, candidateIdentity, candidateVersion, currentVersion)) return@withContext null
+        if (result.channel == "preview" && !digitNewer && sameVersion(candidateVersion, currentVersion) && stableTag.isNotBlank()) {
+            val tagCommit = fetchTagCommit(stableTag)
+            if (tagCommit != null && candidateIdentity == tagCommit) return@withContext null
         }
         result
     }

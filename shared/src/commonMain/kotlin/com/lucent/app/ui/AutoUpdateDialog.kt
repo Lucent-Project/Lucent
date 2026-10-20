@@ -51,7 +51,7 @@ fun AutoUpdateDialog(repo: SettingsRepository, onOpenUrl: ((String) -> Unit)? = 
                 if (AutoUpdate.awaitingFolder) {
                     Text(S.updateNeedsFolder)
                 } else {
-                    Text(if (ready) S.updateReadyBody(info.version) else S.updateAvailableBody(info.version))
+                    Text(if (ready) S.updateReadyBody(info.displayVersion) else S.updateAvailableBody(info.displayVersion))
                 }
                 if (downloading) {
                     Spacer(modifier = Modifier.height(12.dp))

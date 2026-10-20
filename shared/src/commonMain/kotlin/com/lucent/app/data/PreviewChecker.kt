@@ -102,6 +102,9 @@ object PreviewChecker {
         )
     }
 
+    internal fun isPreviewTrack(info: ReleaseInfo): Boolean =
+        info.buildId?.startsWith('P') == true || info.tag.startsWith('P')
+
     internal fun isNewerRelease(candidate: ReleaseInfo, current: ReleaseInfo): Boolean {
         return UpdateChecker.compareBuildIds(candidate.buildId ?: candidate.tag, current.buildId ?: current.tag) > 0
     }
@@ -121,7 +124,9 @@ object PreviewChecker {
             val item = releases[i] as? JsonObject ?: continue
             if (item["prerelease"]?.jsonPrimitive?.booleanOrNull != true) continue
             if (item["draft"]?.jsonPrimitive?.booleanOrNull == true) continue
-            parsed.add(parsePrerelease(item) ?: continue)
+            val info = parsePrerelease(item) ?: continue
+            if (!isPreviewTrack(info)) continue
+            parsed.add(info)
         }
         val candidate = selectNewest(parsed) ?: return null
         val runsRoot = fetch(LucentBuild.REPO_API + "/actions/runs?status=success&per_page=20", client)

@@ -284,7 +284,7 @@ class DesktopSettingsRepository(private val context: PlatformContext) : Settings
             terminalKeyBarVisible = secret(prefs, K.TERMINAL_KEY_BAR_VISIBLE_ENC, "true").toBooleanStrictOrNull() ?: true,
             globalTextSelectionEnabled = secret(prefs, K.GLOBAL_TEXT_SELECTION_ENABLED_ENC, "false").toBooleanStrictOrNull() ?: false,
             cloudPasswordEnc = str(prefs, K.CLOUD_PASSWORD_ENC) ?: "",
-            updateChannel = secret(prefs, K.UPDATE_CHANNEL_ENC, "stable"),
+            updateChannel = secret(prefs, K.UPDATE_CHANNEL_ENC, if (com.lucent.app.LucentBuild.BUILD_TRACK == "preview") "preview" else "stable"),
             installedPreviewIdentity = str(prefs, K.INSTALLED_PREVIEW_IDENTITY) ?: "",
             stagedUpdateIdentity = str(prefs, K.STAGED_UPDATE_IDENTITY) ?: "",
             autoUpdateEnabled = bool(prefs, K.AUTO_UPDATE_ENABLED) ?: false,
@@ -639,11 +639,18 @@ class DesktopSettingsRepository(private val context: PlatformContext) : Settings
 
 
     override val updateChannel: Flow<String> = state.map {
-        secret(it, K.UPDATE_CHANNEL_ENC, "stable")
+        secret(it, K.UPDATE_CHANNEL_ENC, if (com.lucent.app.LucentBuild.BUILD_TRACK == "preview") "preview" else "stable")
     }
     override suspend fun setUpdateChannel(value: String) {
         SettingsCache.updateChannel = value
         putSecret(K.UPDATE_CHANNEL_ENC, value)
+    }
+
+    override suspend fun notificationChannelLangOnce(channelId: String): String =
+        str(state.first(), "notif_channel_lang_$channelId") ?: ""
+
+    override suspend fun setNotificationChannelLang(channelId: String, lang: String) {
+        edit { it["notif_channel_lang_$channelId"] = lang }
     }
 
     override val installedPreviewIdentity: Flow<String> = state.map { str(it, K.INSTALLED_PREVIEW_IDENTITY) ?: "" }

@@ -108,6 +108,7 @@ fun AboutSettingsPage(
                     onClick = {
                         SettingsCache.updateChannel = target
                         scope.launch { repo.setUpdateChannel(target) }
+                        scope.launch { AutoUpdate.check(versionName) }
                         pendingChannel.value = null
                     }
                 ) { Text(S.trackSwitchConfirm) }
@@ -191,7 +192,7 @@ private fun AboutUpdateCard(
         offered?.let { info ->
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                S.updateAvailableBody(info.version),
+                S.updateAvailableBody(info.displayVersion),
                 color = onGradientMuted,
                 fontSize = 12.sp
             )
