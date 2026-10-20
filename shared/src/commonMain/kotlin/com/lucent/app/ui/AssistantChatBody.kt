@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.DisableSelection
@@ -112,16 +113,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import com.lucent.app.BackClaim
 import com.lucent.app.platform.LocalPlatformContext
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -262,6 +268,7 @@ fun AssistantChatBody(
     var contextMenuMessage by remember { mutableStateOf<ChatMessage?>(null) }
     var contextMenuOffset by remember { mutableStateOf(Offset.Zero) }
     var selectingMessageId by remember { mutableStateOf<Long?>(null) }
+    var selectionSeedPoint by remember { mutableStateOf<Offset?>(null) }
     var messageToDelete by remember { mutableStateOf<ChatMessage?>(null) }
     var showClearConfirm by remember { mutableStateOf(false) }
     var conversationMenuOpen by remember { mutableStateOf(false) }
@@ -862,13 +869,19 @@ fun AssistantChatBody(
                                 }
                                 .pointerInput(msg.id) {
                                     detectTapGestures(
-                                        onLongPress = {
-                                            Haptics.tick(context)
-                                            contextMenuOffset = Offset.Zero
-                                            contextMenuMessage = msg
+                                        onLongPress = { press ->
+                                            if (selectingMessageId != msg.id) {
+                                                Haptics.tick(context)
+                                                contextMenuOffset = press
+                                                selectionSeedPoint = press
+                                                contextMenuMessage = msg
+                                            }
                                         },
                                         onTap = {
-                                            if (selectingMessageId == msg.id) selectingMessageId = null
+                                            if (selectingMessageId == msg.id) {
+                                                selectingMessageId = null
+                                                selectionSeedPoint = null
+                                            }
                                         }
                                     )
                                 }
@@ -995,7 +1008,11 @@ fun AssistantChatBody(
                                 }
                             }
                             if (selectingMessageId == msg.id) {
-                                SelectionContainer { messageContent() }
+                                SelectableMessageContent(
+                                    msg = msg,
+                                    seedPoint = selectionSeedPoint,
+                                    onSeedConsumed = { selectionSeedPoint = null }
+                                )
                             } else {
                                 messageContent()
                             }
@@ -1040,7 +1057,7 @@ fun AssistantChatBody(
                             offset = with(androidx.compose.ui.platform.LocalDensity.current) {
                                 DpOffset(
                                     contextMenuOffset.x.toDp(),
-                                    (contextMenuOffset.y - messageSize.height - 64.dp.toPx()).toDp()
+                                    (contextMenuOffset.y - messageSize.height - 12.dp.toPx()).toDp()
                                 )
                             }
                         ) {
@@ -1580,6 +1597,41 @@ private fun String.withLineStartPunctuationAllowed(): String {
     return sb.toString()
 }
 
+@Composable
+private fun SelectableMessageContent(
+    msg: ChatMessage,
+    seedPoint: Offset?,
+    onSeedConsumed: () -> Unit
+) {
+    val onGradient = LocalOnGradient.current
+    var fieldValue by remember(msg.id) { mutableStateOf(TextFieldValue(msg.content)) }
+    var layoutResult by remember(msg.id) { mutableStateOf<TextLayoutResult?>(null) }
+    var fieldPosInBubble by remember(msg.id) { mutableStateOf<Offset?>(null) }
+    var seedApplied by remember(msg.id) { mutableStateOf(false) }
+    LaunchedEffect(layoutResult, fieldPosInBubble) {
+        val result = layoutResult
+        val pos = fieldPosInBubble
+        if (!seedApplied && result != null && pos != null) {
+            seedApplied = true
+            val point = seedPoint
+            if (point != null) {
+                val offset = result.getOffsetForPosition(point - pos)
+                fieldValue = fieldValue.copy(selection = result.getWordBoundary(offset))
+            }
+            onSeedConsumed()
+        }
+    }
+    BasicTextField(
+        value = fieldValue,
+        onValueChange = { fieldValue = it },
+        readOnly = true,
+        textStyle = LocalTextStyle.current.copy(color = onGradient),
+        cursorBrush = SolidColor(onGradient),
+        modifier = Modifier.onGloballyPositioned { fieldPosInBubble = it.positionInParent() },
+        onTextLayout = { layoutResult = it }
+    )
+}
+
 private fun Modifier.swipeToReply(
     enabled: Boolean,
     onQuote: () -> Unit
@@ -1601,21 +1653,21 @@ private fun Modifier.swipeToReply(
         this
             .drawWithContent {
                 drawContent()
-                val currentOffset = -offsetX.value
+                val currentOffset = offsetX.value
                 if (currentOffset > 4.dp.toPx()) {
                     val alpha = (currentOffset / triggerPx).coerceIn(0f, 1f)
-                    val centerX = size.width - (currentOffset / 2f)
+                    val centerX = currentOffset / 2f
                     val centerY = size.height / 2f
                     val arrowPath = Path().apply {
-                        moveTo(centerX - 7.dp.toPx(), centerY)
-                        lineTo(centerX - 1.dp.toPx(), centerY - 6.dp.toPx())
-                        moveTo(centerX - 7.dp.toPx(), centerY)
-                        lineTo(centerX - 1.dp.toPx(), centerY + 6.dp.toPx())
-                        moveTo(centerX - 7.dp.toPx(), centerY)
+                        moveTo(centerX + 7.dp.toPx(), centerY)
+                        lineTo(centerX + 1.dp.toPx(), centerY - 6.dp.toPx())
+                        moveTo(centerX + 7.dp.toPx(), centerY)
+                        lineTo(centerX + 1.dp.toPx(), centerY + 6.dp.toPx())
+                        moveTo(centerX + 7.dp.toPx(), centerY)
                         cubicTo(
-                            centerX + 2.dp.toPx(), centerY,
-                            centerX + 7.dp.toPx(), centerY + 2.dp.toPx(),
-                            centerX + 7.dp.toPx(), centerY + 7.dp.toPx()
+                            centerX - 2.dp.toPx(), centerY,
+                            centerX - 7.dp.toPx(), centerY + 2.dp.toPx(),
+                            centerX - 7.dp.toPx(), centerY + 7.dp.toPx()
                         )
                     }
                     drawPath(
@@ -1652,9 +1704,12 @@ private fun Modifier.swipeToReply(
                         totalDy += dy
 
                         if (!locked) {
+                            if (kotlin.math.abs(totalDx) > kotlin.math.abs(totalDy) * 1.5f && totalDx > 0f) {
+                                change.consume()
+                            }
                             val distance = kotlin.math.hypot(totalDx, totalDy)
                             if (distance > touchSlop) {
-                                if (totalDx < 0f && kotlin.math.abs(totalDx) > kotlin.math.abs(totalDy) * 1.5f) {
+                                if (totalDx > 0f && kotlin.math.abs(totalDx) > kotlin.math.abs(totalDy) * 1.5f) {
                                     locked = true
                                     change.consume()
                                 } else {
@@ -1663,13 +1718,13 @@ private fun Modifier.swipeToReply(
                             }
                         } else {
                             change.consume()
-                            val rawDistance = (-totalDx).coerceAtLeast(0f)
+                            val rawDistance = totalDx.coerceAtLeast(0f)
                             val dampedDistance = if (rawDistance <= triggerPx) {
                                 rawDistance
                             } else {
                                 triggerPx + (rawDistance - triggerPx) * 0.25f
                             }
-                            val targetOffset = -dampedDistance.coerceAtMost(maxOffsetPx)
+                            val targetOffset = dampedDistance.coerceAtMost(maxOffsetPx)
                             scope.launch { offsetX.snapTo(targetOffset) }
 
                             if (!isArmed && rawDistance >= triggerPx) {
