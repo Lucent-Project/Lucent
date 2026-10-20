@@ -87,10 +87,23 @@ object UpdateChecker {
         return prefix to timestamp
     }
 
+    fun compareBuildIds(a: String, b: String): Int {
+        val aValid = parseBuildId(a) != null
+        val bValid = parseBuildId(b) != null
+        if (aValid != bValid) return if (aValid) 1 else -1
+        if (!aValid) return 0
+        val aDigits = a.substring(1)
+        val bDigits = b.substring(1)
+        val headLen = minOf(aDigits.length, bDigits.length)
+        val aHead = aDigits.substring(0, headLen).toLong()
+        val bHead = bDigits.substring(0, headLen).toLong()
+        if (aHead != bHead) return if (aHead > bHead) 1 else -1
+        return aDigits.length.compareTo(bDigits.length)
+    }
+
     fun isNewerBuildId(candidate: String, current: String): Boolean {
-        val candParsed = parseBuildId(candidate) ?: return false
-        val currParsed = parseBuildId(current) ?: return false
-        return candParsed.second > currParsed.second
+        if (parseBuildId(candidate) == null || parseBuildId(current) == null) return false
+        return compareBuildIds(candidate, current) > 0
     }
 
     fun buildIdTrack(id: String): String {

@@ -102,17 +102,28 @@ object PreviewChecker {
         )
     }
 
+    internal fun isNewerRelease(candidate: ReleaseInfo, current: ReleaseInfo): Boolean {
+        return UpdateChecker.compareBuildIds(candidate.buildId ?: candidate.tag, current.buildId ?: current.tag) > 0
+    }
+
+    internal fun selectNewest(infos: List<ReleaseInfo>): ReleaseInfo? {
+        var newest: ReleaseInfo? = null
+        for (info in infos) {
+            if (newest == null || isNewerRelease(info, newest)) newest = info
+        }
+        return newest
+    }
+
     suspend fun getPreviewCandidate(client: OkHttpClient): ReleaseInfo? {
         val releases = fetchArray(LucentBuild.REPO_API + "/releases?per_page=20", client) ?: return null
-        var firstPrerelease: JsonObject? = null
+        val parsed = mutableListOf<ReleaseInfo>()
         for (i in 0 until releases.size) {
             val item = releases[i] as? JsonObject ?: continue
-            if (item["prerelease"]?.jsonPrimitive?.booleanOrNull == true && item["draft"]?.jsonPrimitive?.booleanOrNull != true) {
-                firstPrerelease = item
-                break
-            }
+            if (item["prerelease"]?.jsonPrimitive?.booleanOrNull != true) continue
+            if (item["draft"]?.jsonPrimitive?.booleanOrNull == true) continue
+            parsed.add(parsePrerelease(item) ?: continue)
         }
-        val candidate = firstPrerelease?.let { parsePrerelease(it) } ?: return null
+        val candidate = selectNewest(parsed) ?: return null
         val runsRoot = fetch(LucentBuild.REPO_API + "/actions/runs?status=success&per_page=20", client)
         val runs = runsRoot?.get("workflow_runs")?.jsonArray
         var newestApkSha: String? = null
