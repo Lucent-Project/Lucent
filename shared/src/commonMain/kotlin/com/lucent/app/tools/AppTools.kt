@@ -59,6 +59,13 @@ object AppTools {
         if (com.lucent.app.harness.HarnessGate.isHarnessTool(name)) com.lucent.app.harness.HarnessGate.needsConfirmation(name)
         else name !in READ_ONLY_TOOLS
 
+    fun shouldConfirm(name: String, argumentsJson: String = "{}", confirmNoteTools: Boolean = true): Boolean =
+        if (com.lucent.app.harness.HarnessGate.isHarnessTool(name)) {
+            com.lucent.app.harness.HarnessGate.needsConfirmation(name, argumentsJson)
+        } else {
+            confirmNoteTools && name !in READ_ONLY_TOOLS
+        }
+
     fun describeToolCall(name: String, argumentsJson: String): String {
         val a = try { Json.parseToJsonElement(argumentsJson).jsonObject } catch (e: Exception) { JsonObject(emptyMap()) }
         fun s(vararg keys: String): String {
@@ -845,7 +852,8 @@ object AppTools {
         argumentsJson: String,
         uploadMime: String? = null,
         uploadData: String? = null,
-        uploadName: String? = null
+        uploadName: String? = null,
+        confirmedByUser: Boolean = false
     ): ToolExecResult {
         val appContext = context.applicationContext
         val args = try { Json.parseToJsonElement(argumentsJson).jsonObject } catch (e: Exception) { JsonObject(emptyMap()) }
@@ -1847,7 +1855,13 @@ object AppTools {
             else -> FormattingTools.execute(db, name, args)
                 ?: NotebookTools.execute(db, name, args)
                 ?: if (com.lucent.app.harness.HarnessGate.isHarnessTool(name)) {
-                    com.lucent.app.harness.HarnessGate.execute(appContext, db, name, argumentsJson)
+                    com.lucent.app.harness.HarnessGate.execute(
+                        appContext,
+                        db,
+                        name,
+                        argumentsJson,
+                        confirmedByUser = confirmedByUser
+                    )
                 } else {
                     ToolExecResult("Unknown tool: $name", success = false)
                 }

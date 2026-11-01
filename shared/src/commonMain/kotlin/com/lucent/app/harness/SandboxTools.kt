@@ -164,9 +164,11 @@ object SandboxTools : HarnessGroupTools {
         val proot = prootVersion()
         val route = route(ctx, docker, proot)
         val timeout = (args["timeout"]?.jsonPrimitive?.intOrNull ?: ctx.config.timeoutSeconds).coerceIn(5, 1800)
-        val workdir = if ((args["workdir"]?.jsonPrimitive?.content ?: "").isBlank()) HarnessRuntime.workspacePath().toPath() else try {
-            Workspace.resolveFile(args["workdir"]?.jsonPrimitive?.content ?: "")
+        val rawWorkdir = (args["workdir"] as? JsonPrimitive)?.contentOrNull.orEmpty()
+        val workdir = if (rawWorkdir.isBlank()) HarnessRuntime.workspacePath().toPath() else try {
+            Workspace.forWriteFile(ctx, rawWorkdir)
         } catch (e: HarnessError) {
+            if (e.blocked) throw e
             return ToolExecResult(e.message ?: "That working directory cannot be used", success = false)
         }
         val quoted = command.replace("'", "'\\''")

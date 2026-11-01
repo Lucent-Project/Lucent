@@ -26,9 +26,22 @@ object Workspace {
         false
     }
 
+    private fun isAllowedSelfTestCache(clean: String): Boolean {
+        val host = HarnessRuntime.host ?: return false
+        val rawCache = runCatching { normalize(host.cacheDirPath()) }.getOrNull().orEmpty()
+        val canonCache = runCatching { normalize(fs.canonicalize(host.cacheDirPath())) }.getOrNull().orEmpty()
+        return listOf(rawCache, canonCache)
+            .filter { it.isNotEmpty() }
+            .any { base ->
+                val allowed = "$base/perm-selftest"
+                clean == allowed || clean.startsWith("$allowed/")
+            }
+    }
+
     fun blocked(path: String): Boolean {
         val clean = normalize(path)
         if (clean.isEmpty()) return false
+        if (isAllowedSelfTestCache(clean)) return false
         if (harnessIsAndroid) {
             if (BLOCKED_PREFIXES.any { clean == it || clean.startsWith("$it/") }) return true
         } else {
@@ -46,7 +59,9 @@ object Workspace {
         } else {
             if (fs.isAbsolute(clean)) clean else fs.join(HarnessRuntime.workspacePath(), clean)
         }
-        return fs.canonicalize(resolved)
+        val canonical = fs.canonicalize(resolved)
+        if (blocked(canonical)) throw HarnessError("$canonical is off limits", blocked = true)
+        return canonical
     }
 
     fun resolve(ctx: HarnessCtx, raw: String): String = resolve(raw)
@@ -68,20 +83,36 @@ object Workspace {
 
     fun readable(ctx: HarnessCtx, path: String): Boolean = readable(ctx.config, path)
 
+    fun checkOutsideAccess(ctx: HarnessCtx, path: String, write: Boolean) {
+        val insideAllowed = if (write) writable(ctx, path) else readable(ctx, path)
+        if (insideAllowed) return
+        val action = if (write) "writing" else "reading"
+        when (ctx.config.approvalFor(HarnessPermission.SENSITIVE)) {
+            Approval.ALLOW -> return
+            Approval.CONFIRM -> {
+                if (ctx.outsideApproved) return
+                throw HarnessError(
+                    "${display(path)} is outside the workspace, and $action outside requires confirmation",
+                    blocked = true
+                )
+            }
+            Approval.DENY -> throw HarnessError(
+                "${display(path)} is outside the workspace and $action outside is blocked",
+                blocked = true
+            )
+        }
+    }
+
     fun forRead(ctx: HarnessCtx, raw: String): String {
         val path = resolve(ctx, raw)
+        checkOutsideAccess(ctx, path, write = false)
         if (!fs.exists(path)) throw HarnessError("${display(path)} does not exist")
-        if (!readable(ctx, path) && ctx.config.approvalFor(HarnessPermission.SENSITIVE) == Approval.DENY) {
-            throw HarnessError("${display(path)} is outside the workspace and reading outside is blocked", blocked = true)
-        }
         return path
     }
 
     fun forWrite(ctx: HarnessCtx, raw: String): String {
         val path = resolve(ctx, raw)
-        if (!writable(ctx, path)) {
-            throw HarnessError("${display(path)} is outside the workspace, so it cannot be written", blocked = true)
-        }
+        checkOutsideAccess(ctx, path, write = true)
         return path
     }
 

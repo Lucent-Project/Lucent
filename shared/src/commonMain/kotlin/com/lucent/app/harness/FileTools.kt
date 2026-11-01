@@ -515,18 +515,27 @@ object FileTools : HarnessGroupTools {
             ToolExecResult("Could not create ${Workspace.display(ctx, dir)}.", success = false)
     }
 
+    private fun canDeleteExisting(ctx: HarnessCtx): Boolean {
+        val approval = ctx.config.approvalFor(HarnessPermission.DELETE)
+        return approval == Approval.ALLOW || (approval == Approval.CONFIRM && ctx.deleteApproved)
+    }
+
     private fun movePath(ctx: HarnessCtx, args: JsonObject): ToolExecResult {
         val from = Workspace.forWriteFile(ctx, args["from"]?.jsonPrimitive?.content ?: "")
         val to = Workspace.forWriteFile(ctx, args["to"]?.jsonPrimitive?.content ?: "")
         if (!FileSystem.SYSTEM.exists(from)) return ToolExecResult("${Workspace.display(ctx, from.toString())} does not exist.", success = false)
-        if (FileSystem.SYSTEM.exists(to) && !(args["overwrite"]?.jsonPrimitive?.booleanOrNull ?: false)) {
+        val overwrite = args["overwrite"]?.jsonPrimitive?.booleanOrNull ?: false
+        if (FileSystem.SYSTEM.exists(to) && !overwrite) {
             return ToolExecResult("${Workspace.display(ctx, to.toString())} already exists.", success = false)
+        }
+        if (FileSystem.SYSTEM.exists(to) && overwrite && !canDeleteExisting(ctx)) {
+            return ToolExecResult("Delete access is blocked by the permission policy, so overwriting ${Workspace.display(ctx, to.toString())} was not run.", success = false)
         }
         if ((FileSystem.SYSTEM.metadataOrNull(from)?.isRegularFile == true) && ctx.config.snapshots) Snapshots.capture(ctx, from.toString())
         to.parent?.let { FileSystem.SYSTEM.createDirectories(it) }
-        val ok = if ((args["overwrite"]?.jsonPrimitive?.booleanOrNull ?: false) && FileSystem.SYSTEM.exists(to)) {
-            try { okio.FileSystem.SYSTEM.deleteRecursively(to); okio.FileSystem.SYSTEM.atomicMove(from, to); true } catch (e: Exception) { false }
-        } else try { okio.FileSystem.SYSTEM.atomicMove(from, to); true } catch (e: Exception) { false }
+        val ok = if (overwrite && FileSystem.SYSTEM.exists(to)) {
+            try { okio.FileSystem.SYSTEM.deleteRecursively(to); okio.FileSystem.SYSTEM.atomicMove(from, to); true } catch (_: Exception) { false }
+        } else try { okio.FileSystem.SYSTEM.atomicMove(from, to); true } catch (_: Exception) { false }
         return if (ok) {
             ToolExecResult("Moved ${Workspace.display(ctx, from.toString())} to ${Workspace.display(ctx, to.toString())}.")
         } else ToolExecResult("Could not move ${Workspace.display(ctx, from.toString())}.", success = false)
@@ -535,8 +544,12 @@ object FileTools : HarnessGroupTools {
     private fun copyPath(ctx: HarnessCtx, args: JsonObject): ToolExecResult {
         val from = Workspace.forReadFile(ctx, args["from"]?.jsonPrimitive?.content ?: "")
         val to = Workspace.forWriteFile(ctx, args["to"]?.jsonPrimitive?.content ?: "")
-        if (FileSystem.SYSTEM.exists(to) && !(args["overwrite"]?.jsonPrimitive?.booleanOrNull ?: false)) {
+        val overwrite = args["overwrite"]?.jsonPrimitive?.booleanOrNull ?: false
+        if (FileSystem.SYSTEM.exists(to) && !overwrite) {
             return ToolExecResult("${Workspace.display(ctx, to.toString())} already exists.", success = false)
+        }
+        if (FileSystem.SYSTEM.exists(to) && overwrite && !canDeleteExisting(ctx)) {
+            return ToolExecResult("Delete access is blocked by the permission policy, so overwriting ${Workspace.display(ctx, to.toString())} was not run.", success = false)
         }
         if ((FileSystem.SYSTEM.metadataOrNull(from)?.isDirectory == true)) {
             run {
@@ -551,12 +564,12 @@ object FileTools : HarnessGroupTools {
                         }
                     }
                 }
-                if ((args["overwrite"]?.jsonPrimitive?.booleanOrNull ?: false) && FileSystem.SYSTEM.exists(to)) FileSystem.SYSTEM.deleteRecursively(to)
+                if (overwrite && FileSystem.SYSTEM.exists(to)) FileSystem.SYSTEM.deleteRecursively(to)
                 copyWalk(from, to)
             }
         } else {
             to.parent?.let { FileSystem.SYSTEM.createDirectories(it) }
-            run { if ((args["overwrite"]?.jsonPrimitive?.booleanOrNull ?: false) && FileSystem.SYSTEM.exists(to)) FileSystem.SYSTEM.delete(to); okio.FileSystem.SYSTEM.source(from).use { s -> okio.FileSystem.SYSTEM.sink(to).buffer().use { it.writeAll(s) } } }
+            run { if (overwrite && FileSystem.SYSTEM.exists(to)) FileSystem.SYSTEM.delete(to); okio.FileSystem.SYSTEM.source(from).use { s -> okio.FileSystem.SYSTEM.sink(to).buffer().use { it.writeAll(s) } } }
         }
         return ToolExecResult("Copied ${Workspace.display(ctx, from.toString())} to ${Workspace.display(ctx, to.toString())}.")
     }
@@ -581,8 +594,7 @@ object FileTools : HarnessGroupTools {
     }
 
     private fun fileInfo(ctx: HarnessCtx, args: JsonObject): ToolExecResult {
-        val path = Workspace.resolveFile((args["path"]?.jsonPrimitive?.content ?: "")).toString().toPath()
-        if (!FileSystem.SYSTEM.exists(path)) return ToolExecResult("${Workspace.display(ctx, path.toString())} does not exist.", success = false)
+        val path = Workspace.forReadFile(ctx, args["path"]?.jsonPrimitive?.content ?: "")
         val inside = Workspace.isInside(path.toString(), HarnessRuntime.workspacePath())
         val snapshots = Snapshots.history(ctx, path.toString(), 5)
         val sb = StringBuilder()
@@ -647,9 +659,12 @@ object FileTools : HarnessGroupTools {
                         }
                     }
                     "delete" -> {
+                        if (!canDeleteExisting(ctx)) {
+                            return ToolExecResult("Delete access is blocked by the permission policy, so batch_files delete was not run.", success = false)
+                        }
                         val file = Workspace.forWrite(ctx, raw).toPath()
                         if ((FileSystem.SYSTEM.metadataOrNull(file)?.isRegularFile == true) && ctx.config.snapshots) Snapshots.capture(ctx, file.toString())
-                        val ok = if ((FileSystem.SYSTEM.metadataOrNull(file)?.isDirectory == true)) run { try { FileSystem.SYSTEM.deleteRecursively(file); true } catch (e: Exception) { false } } else run { try { FileSystem.SYSTEM.delete(file); true } catch (e: Exception) { false } }
+                        val ok = if ((FileSystem.SYSTEM.metadataOrNull(file)?.isDirectory == true)) run { try { FileSystem.SYSTEM.deleteRecursively(file); true } catch (_: Exception) { false } } else run { try { FileSystem.SYSTEM.delete(file); true } catch (_: Exception) { false } }
                         done.add("${file.name} ${if (ok) "deleted" else "(failed)"}")
                     }
                     else -> return ToolExecResult("action must be rename, copy, move or delete.", success = false)
@@ -695,15 +710,16 @@ object FileTools : HarnessGroupTools {
     }
 
     private fun restoreFile(ctx: HarnessCtx, args: JsonObject): ToolExecResult {
-        val path = Workspace.resolveFile((args["path"]?.jsonPrimitive?.content ?: "")).toString().toPath()
         val id = (args["snapshot_id"]?.jsonPrimitive?.content ?: "")
         val entry = if (id.isNotBlank()) {
             Snapshots.all(ctx).firstOrNull { it.id == id }
                 ?: return ToolExecResult("No snapshot with id $id.", success = false)
         } else {
+            val path = Workspace.forWriteFile(ctx, args["path"]?.jsonPrimitive?.content ?: "")
             Snapshots.latest(ctx, path.toString())
                 ?: return ToolExecResult("No snapshots for ${Workspace.display(ctx, path.toString())}.", success = false)
         }
+        Workspace.forWriteFile(ctx, entry.path)
         val restored = Snapshots.restore(ctx, entry.id)
         return ToolExecResult("Restored ${Workspace.display(ctx, restored)} from snapshot ${entry.id} (${com.lucent.app.data.DueParsing.format(entry.at)}).")
     }

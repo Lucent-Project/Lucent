@@ -1,6 +1,8 @@
 package com.lucent.app.ui.settings
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,18 +16,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.lucent.app.platform.LocalPlatformContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lucent.app.harness.HarnessConfig
 import com.lucent.app.harness.HarnessRuntime
 import com.lucent.app.i18n.S
+import com.lucent.app.platform.LocalPlatformContext
 import com.lucent.app.ui.BackHeader
+import com.lucent.app.ui.DirectoryBrowse
 import com.lucent.app.ui.DirectoryPickerDialog
 import com.lucent.app.ui.LocalOnGradient
 import com.lucent.app.ui.LocalOnGradientMuted
 import com.lucent.app.ui.LucentToast
 import com.lucent.app.ui.SettingsRoute
+import com.lucent.app.ui.rememberPlatformStorageAccess
 
 @Composable
 fun WorkspaceSettingsPage(
@@ -46,12 +50,18 @@ fun WorkspaceSettingsPage(
     }
 
     fun apply(path: String) {
-        val chosen = path.trim()
+        val chosen = DirectoryBrowse.normalize(path)
         if (chosen.isEmpty()) return
         draft = chosen
         update(config.copy(workspace = chosen))
         LucentToast.show(context, S.settingsSaved)
     }
+
+    val storageAccess = rememberPlatformStorageAccess(
+        currentPath = draft.trim().ifBlank { HarnessRuntime.workspacePath() },
+        onSystemPicked = { picked -> apply(picked) }
+    )
+    val effectiveStorageGranted = storageGranted && storageAccess.granted
 
     BackHeader(onBack = { onRoute(SettingsRoute.Agent) })
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -60,18 +70,31 @@ fun WorkspaceSettingsPage(
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = draft,
-                onValueChange = { draft  = com.lucent.app.collapseExcessBlankLines(it) },
+                onValueChange = { draft = com.lucent.app.collapseExcessBlankLines(it) },
                 label = { Text(S.agentWorkspaceLabel) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(6.dp))
-            Row {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 TextButton(onClick = { picking = true }) {
                     Text(S.agentWorkspacePick, color = onGradient, fontSize = 13.sp)
                 }
-                if (!storageGranted) {
-                    TextButton(onClick = onGrantStorage) {
+                if (storageAccess.openSystemPicker != null) {
+                    TextButton(onClick = storageAccess.openSystemPicker) {
+                        Text(S.agentWorkspaceSystemPicker, color = onGradient, fontSize = 13.sp)
+                    }
+                }
+                if (!effectiveStorageGranted) {
+                    TextButton(
+                        onClick = {
+                            if (storageAccess.canRequestPermission) {
+                                storageAccess.requestAccess()
+                            } else {
+                                onGrantStorage()
+                            }
+                        }
+                    ) {
                         Text(S.agentGrantStorage, color = onGradient, fontSize = 13.sp)
                     }
                 }

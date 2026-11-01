@@ -562,7 +562,7 @@ object ConnectorTools : HarnessGroupTools {
                 "gitlab_api" -> gitlab(args)
                 "jira_api" -> jira(args)
                 "linear_api" -> linear(args)
-                "webdav_request" -> webdav(args)
+                "webdav_request" -> webdav(ctx, args)
                 "http_request" -> httpRequest(ctx, args)
                 "connector_status" -> status()
                 else -> null
@@ -1521,7 +1521,7 @@ object ConnectorTools : HarnessGroupTools {
         }
     }
 
-    private suspend fun webdav(args: JsonObject): ToolExecResult {
+    private suspend fun webdav(ctx: HarnessCtx, args: JsonObject): ToolExecResult {
         val config = lookup(WEBDAV_IDS) ?: return absent("WebDAV")
         val root = config.baseUrl.trim().trimEnd('/')
         if (root.isEmpty()) {
@@ -1563,6 +1563,14 @@ object ConnectorTools : HarnessGroupTools {
                 ToolExecResult("Created the collection $path.")
             }
             "delete" -> {
+                val deleteApproval = ctx.config.approvalFor(HarnessPermission.DELETE)
+                val allowed = deleteApproval == Approval.ALLOW || (deleteApproval == Approval.CONFIRM && ctx.deleteApproved)
+                if (!allowed) {
+                    return ToolExecResult(
+                        "Delete access is blocked by the permission policy, so WebDAV delete was not run.",
+                        success = false
+                    )
+                }
                 val reply = send("DELETE", url, headers)
                 problem(reply, "WebDAV")?.let { return it }
                 ToolExecResult("Deleted $path.")

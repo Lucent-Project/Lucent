@@ -330,11 +330,12 @@ object TerminalTools : HarnessGroupTools {
     }
 
     private fun workdirOf(ctx: HarnessCtx, args: JsonObject): Path {
-        val raw = args["workdir"]?.jsonPrimitive?.content ?: ""
+        val raw = (args["workdir"] as? JsonPrimitive)?.contentOrNull.orEmpty()
         if (raw.isBlank()) return HarnessRuntime.workspacePath().toPath()
         val dir = try {
-            Workspace.resolveFile(raw)
+            Workspace.forWriteFile(ctx, raw)
         } catch (e: HarnessError) {
+            if (e.blocked) throw e
             HarnessRuntime.workspacePath().toPath()
         }
         if (!FileSystem.SYSTEM.exists(dir)) FileSystem.SYSTEM.createDirectories(dir)
@@ -376,7 +377,7 @@ object TerminalTools : HarnessGroupTools {
             if (outcome.timedOut) append(" [timed out after ${timeout}s]")
             append(" [").append(shell?.id ?: "none").append(']')
         }
-        return ToolExecResult(body, success = shell != null)
+        return ToolExecResult(body, success = shell != null && outcome.ok)
     }
 
     private fun startJob(ctx: HarnessCtx, args: JsonObject): ToolExecResult {

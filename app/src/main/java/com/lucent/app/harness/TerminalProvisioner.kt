@@ -2,6 +2,8 @@ package com.lucent.app.harness
 
 import android.content.Context
 import com.lucent.app.AppScope
+import com.lucent.app.harness.plugins.PluginCatalog
+import com.lucent.app.harness.plugins.PluginManager
 import com.lucent.app.harness.terminal.TerminalSessions
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
@@ -15,6 +17,7 @@ object TerminalProvisioner {
         val rootfs = BuiltinShell.rootfsDir(context)
         val marker = File(rootfs, "var/lib/lucent-toolset-provisioned")
         if (marker.exists()) return
+        if (PluginManager.isInstalling()) return
         if (!BuiltinShell.builtinAvailable(context) || !File(rootfs, "bin/bash").exists()) return
         if (!isProvisioning.compareAndSet(false, true)) return
 
@@ -54,6 +57,7 @@ object TerminalProvisioner {
         args.add(proot.absolutePath)
         args.add("--kill-on-exit")
         args.add("-0")
+        args.add("--link2symlink")
         args.add("-r")
         args.add(rootfs.absolutePath)
 
@@ -64,8 +68,15 @@ object TerminalProvisioner {
             }
         }
 
-        val packages = "curl wget git openssh-client vim nano htop python3 python3-pip unzip zip iputils-ping file jq tmux less sudo dnsutils iproute2 ca-certificates gnupg"
-        val command = "apt-get update && apt-get install -y $packages"
+        val packages = listOf(
+            "curl", "wget", "git", "openssh-client", "vim", "nano", "htop",
+            "python3", "python3-pip", "unzip", "zip", "iputils-ping", "file",
+            "jq", "tmux", "less", "sudo", "dnsutils", "iproute2", "ca-certificates", "gnupg"
+        )
+        val region = PluginCatalog.effectiveRegion(HarnessRuntime.config().pluginMirrorRegion)
+        val command = PluginCatalog.buildAptInstallScript(packages)
+            .replace("{aptMirror}", PluginCatalog.aptMirror(region))
+            .replace("{aptFallback}", PluginCatalog.aptFallback(region))
 
         args.add("/bin/bash")
         args.add("-c")
@@ -96,7 +107,7 @@ object TerminalProvisioner {
         val resolv = File(rootfs, "etc/resolv.conf")
         if (!resolv.exists() || resolv.length() == 0L) {
             resolv.parentFile?.mkdirs()
-            resolv.writeText("nameserver 223.5.5.5\nnameserver 119.29.29.29\nnameserver 8.8.8.8\nnameserver 1.1.1.1\n")
+            resolv.writeText("nameserver 1.1.1.1\nnameserver 8.8.8.8\nnameserver 223.5.5.5\nnameserver 119.29.29.29\n")
         }
     }
 

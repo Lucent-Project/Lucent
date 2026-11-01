@@ -147,6 +147,27 @@ object DesktopHarnessHost : HarnessHost {
 
     override fun capabilities(): Set<String> = setOf("sqlite", "pdf", "clipboard", "notify", "open_url", "share")
 
+    override suspend fun deviceInfo(): String {
+        val osName = System.getProperty("os.name") ?: "Desktop"
+        val osVer = System.getProperty("os.version") ?: ""
+        val osArch = System.getProperty("os.arch") ?: ""
+        val cores = Runtime.getRuntime().availableProcessors()
+        val maxMem = Workspace.humanSize(Runtime.getRuntime().maxMemory())
+        val freeBytes = freeDiskBytes()
+        val freeDisk = if (freeBytes >= 0L) Workspace.humanSize(freeBytes) else "unknown"
+        val caps = capabilities().sorted().joinToString(", ")
+        return buildString {
+            append("Platform: ").append(osName)
+            if (osVer.isNotBlank()) append(' ').append(osVer)
+            if (osArch.isNotBlank()) append(" (").append(osArch).append(')')
+            append('\n')
+            append("CPU cores: ").append(cores).append(" | JVM max memory: ").append(maxMem).append('\n')
+            append("Free disk: ").append(freeDisk).append('\n')
+            append("Workspace: ").append(HarnessRuntime.workspacePath()).append('\n')
+            append("Capabilities: ").append(caps)
+        }
+    }
+
     override suspend fun askUser(question: String, options: List<String>): String =
         HarnessAskPrompt.ask(question, options)
 
@@ -221,12 +242,15 @@ object DesktopHarnessHost : HarnessHost {
     override fun exportFile(path: String): Boolean {
         val source = File(path)
         if (!source.isFile) return false
-        val target = File(defaultWorkspacePath(), source.name)
+        val home = File(System.getProperty("user.home") ?: ".")
+        val downloads = File(home, "Downloads")
+        val targetDir = if (downloads.isDirectory) downloads else File(defaultWorkspacePath())
+        val target = File(targetDir, source.name)
         return try {
             target.parentFile?.mkdirs()
             source.copyTo(target, overwrite = true)
             true
-        } catch (t: Throwable) {
+        } catch (_: Throwable) {
             false
         }
     }

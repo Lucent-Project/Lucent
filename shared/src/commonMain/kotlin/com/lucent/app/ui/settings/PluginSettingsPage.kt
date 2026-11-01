@@ -479,7 +479,22 @@ private fun PluginFailureDialog(
     onRetry: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val steps = repairSteps(report.outcome.failure, android)
+    val aptDiagnostic = remember(report) {
+        if (report.outcome.failure == PluginFailure.INSTALL || report.outcome.failure == PluginFailure.DOWNLOAD) {
+            com.lucent.app.harness.plugins.AptDiagnostics.analyze(
+                failure = report.outcome.failure,
+                message = report.outcome.message,
+                detail = report.outcome.detail
+            )
+        } else {
+            null
+        }
+    }
+    val steps = if (aptDiagnostic != null && aptDiagnostic.kind != com.lucent.app.harness.plugins.InstallFailureKind.GENERIC) {
+        setupDiagnosticSteps(aptDiagnostic.kind)
+    } else {
+        repairSteps(report.outcome.failure, android)
+    }
     LucentGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (report.outcome.failure == PluginFailure.REMOVE) S.pluginRemoveFailed else S.pluginInstallFailed) },
@@ -492,7 +507,26 @@ private fun PluginFailureDialog(
             ) {
                 Text(report.plugin.name, fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(reasonText(report.outcome.failure), fontSize = 13.sp)
+                val primaryReason = if (aptDiagnostic != null && aptDiagnostic.kind != com.lucent.app.harness.plugins.InstallFailureKind.GENERIC) {
+                    setupDiagnosticReason(aptDiagnostic.kind)
+                } else {
+                    reasonText(report.outcome.failure)
+                }
+                Text(primaryReason, fontSize = 13.sp)
+                if (aptDiagnostic != null) {
+                    if (aptDiagnostic.failingStep.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(S.setupFailingStep(aptDiagnostic.failingStep), fontSize = 12.sp)
+                    }
+                    if (aptDiagnostic.lockHolder.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(S.setupLockHolder(aptDiagnostic.lockHolder), fontSize = 12.sp)
+                    }
+                    if (aptDiagnostic.pendingPackages.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(S.setupPendingPackages(aptDiagnostic.pendingPackages.joinToString(", ")), fontSize = 12.sp)
+                    }
+                }
                 if (report.outcome.message.isNotBlank()) {
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(report.outcome.message, fontSize = 11.sp)
@@ -505,7 +539,11 @@ private fun PluginFailureDialog(
                         Text("\u2022 $step", fontSize = 12.sp)
                     }
                 }
-                val detail = report.outcome.detail.ifBlank { report.outcome.installedPath }.take(1200)
+                val detail = if (aptDiagnostic != null && aptDiagnostic.logTail.isNotEmpty()) {
+                    aptDiagnostic.logTail.joinToString("\n")
+                } else {
+                    report.outcome.detail.ifBlank { report.outcome.installedPath }.take(1200)
+                }
                 if (detail.isNotBlank()) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Text(S.pluginDetailTitle, fontSize = 13.sp)

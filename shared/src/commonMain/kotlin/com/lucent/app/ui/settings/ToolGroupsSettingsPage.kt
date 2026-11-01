@@ -41,13 +41,19 @@ fun ToolGroupsSettingsPage(onRoute: (SettingsRoute) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Section(onGradient, onGradientMuted, S.agentGroupsTitle, S.agentGroupsSub) {
             HarnessGroup.entries.forEach { group ->
-                val on = config.groupEnabled(group)
+                val on = config.groupEnabled(group) && (group != HarnessGroup.DEVICE || config.deviceEnabled)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
                 ) {
                     Text(group.title, color = onGradient, fontSize = 14.sp, modifier = Modifier.weight(1f))
-                    Switch(checked = on, onCheckedChange = { update(config.withGroup(group, it)) })
+                    Switch(
+                        checked = on,
+                        onCheckedChange = { enabled ->
+                            val next = config.withGroup(group, enabled)
+                            update(if (group == HarnessGroup.DEVICE) next.copy(deviceEnabled = enabled) else next)
+                        }
+                    )
                 }
             }
         }

@@ -84,8 +84,18 @@ class HarnessModulesTest {
     fun deviceToolsAreAndroidOnly() {
         val device = HarnessGate.allTools().filter { it.group == HarnessGroup.DEVICE }
         assertEquals(20, device.size)
-        assertTrue(device.all { it.androidOnly })
-        assertTrue(device.all { !it.available(android = false, capabilities = emptySet()) })
+        val crossPlatform = setOf(
+            "device_info",
+            "clipboard",
+            "share_text",
+            "open_link_on_device",
+            "notify_user",
+            "export_file"
+        )
+        assertEquals(crossPlatform, device.filter { !it.androidOnly }.map { it.name }.toSet())
+        assertEquals(14, device.count { it.androidOnly })
+        assertTrue(device.filter { it.androidOnly }.all { !it.available(android = false, capabilities = emptySet()) })
+        assertTrue(device.filter { !it.androidOnly }.all { it.available(android = false, capabilities = emptySet()) })
         assertTrue(device.all { it.available(android = true, capabilities = emptySet()) })
     }
 

@@ -361,7 +361,7 @@ fun MarkdownText(
                         inlineAnnotated(block.text, onGradientMuted, onGradient, brokenLinks, onWikiLink, linksEnabled),
                         color = onGradientMuted,
                         fontStyle = FontStyle.Italic,
-                        modifier = Modifier.padding(start = 8.dp)
+                        modifier = Modifier.weight(1f).padding(start = 8.dp)
                     )
                 }
 

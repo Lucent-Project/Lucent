@@ -38,6 +38,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.text.BasicTextField
@@ -55,6 +56,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -817,7 +819,7 @@ fun AssistantChatBody(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
@@ -832,6 +834,10 @@ fun AssistantChatBody(
                     )
                 }
         ) {
+            val bubbleWidths = remember(maxWidth) { computeChatBubbleWidths(maxWidth.value) }
+            val assistantMinWidth = bubbleWidths.assistantMinDp.dp
+            val assistantMaxWidth = bubbleWidths.assistantMaxDp.dp
+            val userMaxWidth = bubbleWidths.userMaxDp.dp
             LazyColumn(
                 modifier = Modifier.fillMaxSize().hazeSource(state = LocalHazeState.current),
                 state = listState,
@@ -841,7 +847,14 @@ fun AssistantChatBody(
                 if (messages.isEmpty() && assistantName.isNotBlank()) {
                     item(key = "greeting") {
                         Box(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.align(Alignment.CenterStart).frostedGlass().padding(12.dp)) {
+                            Column(
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .widthIn(min = assistantMinWidth, max = assistantMaxWidth)
+                                    .width(IntrinsicSize.Max)
+                                    .frostedGlass()
+                                    .padding(12.dp)
+                            ) {
                                 SelectionContainer {
                                     Text(
                                         com.lucent.app.i18n.S.assistantGreeting(assistantName)
@@ -873,10 +886,19 @@ fun AssistantChatBody(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(modifier = Modifier.weight(1f)) {
+                        val widthModifier = if (isUser) {
+                            Modifier
+                                .widthIn(max = userMaxWidth)
+                                .width(IntrinsicSize.Max)
+                        } else {
+                            Modifier
+                                .widthIn(min = assistantMinWidth, max = assistantMaxWidth)
+                                .width(IntrinsicSize.Max)
+                        }
                         Column(
                             modifier = Modifier
                                 .align(if (isUser) Alignment.CenterEnd else Alignment.CenterStart)
-                                .width(IntrinsicSize.Max)
+                                .then(widthModifier)
                                 .graphicsLayer { scaleX = bounce.value; scaleY = bounce.value }
                                 .frostedGlass()
                                 .onSizeChanged { messageSize = it }
@@ -921,10 +943,14 @@ fun AssistantChatBody(
                                         Text(
                                             assistantName,
                                             color = onGradientMuted,
-                                            fontSize = 11.sp
+                                            fontSize = 11.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f)
                                         )
+                                    } else {
+                                        Spacer(modifier = Modifier.weight(1f))
                                     }
-                                    Spacer(modifier = Modifier.weight(1f))
                                     if (hasProcessContent) {
                                         IconButton(
                                             onClick = { processVisible = !(processVisible ?: false) },
@@ -1165,12 +1191,21 @@ fun AssistantChatBody(
                 if (streamingText != null) {
                     item(key = "streaming") {
                         Box(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.align(Alignment.CenterStart).frostedGlass().padding(12.dp)) {
+                            Column(
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .widthIn(min = assistantMinWidth, max = assistantMaxWidth)
+                                    .width(IntrinsicSize.Max)
+                                    .frostedGlass()
+                                    .padding(12.dp)
+                            ) {
                                 if (assistantName.isNotBlank()) {
                                     Text(
                                         assistantName,
                                         color = onGradientMuted,
                                         fontSize = 11.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier.padding(bottom = 3.dp)
                                     )
                                 }
@@ -1203,7 +1238,14 @@ fun AssistantChatBody(
                 if (thinking && streamingText == null && pendingConfirmation == null) {
                     item(key = "thinking") {
                         Box(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.align(Alignment.CenterStart).frostedGlass().padding(12.dp)) {
+                            Column(
+                                modifier = Modifier
+                                    .align(Alignment.CenterStart)
+                                    .widthIn(min = assistantMinWidth, max = assistantMaxWidth)
+                                    .width(IntrinsicSize.Max)
+                                    .frostedGlass()
+                                    .padding(12.dp)
+                            ) {
                                 if (liveTrace != null) {
                                     if (agentModeOn) {
                                         AgentTracePanel(
@@ -1676,10 +1718,45 @@ private fun SelectableMessageContent(
             readOnly = true,
             textStyle = LocalTextStyle.current.copy(color = onGradient),
             cursorBrush = SolidColor(onGradient),
-            modifier = Modifier.onGloballyPositioned { fieldPosInBubble = it.positionInParent() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { fieldPosInBubble = it.positionInParent() },
             onTextLayout = { layoutResult = it }
         )
     }
+}
+
+internal data class ChatBubbleWidths(
+    val assistantMinDp: Float,
+    val assistantMaxDp: Float,
+    val userMaxDp: Float
+)
+
+internal fun computeChatBubbleWidths(availableWidthDp: Float): ChatBubbleWidths {
+    val safeAvailable = availableWidthDp.coerceAtLeast(120f)
+    val rawAssistantMax = when {
+        safeAvailable < 480f -> safeAvailable * 0.94f
+        safeAvailable < 840f -> (safeAvailable * 0.88f).coerceAtMost(760f)
+        else -> (safeAvailable * 0.82f).coerceAtMost(860f)
+    }.coerceAtMost(safeAvailable)
+
+    val rawAssistantMin = when {
+        safeAvailable < 480f -> (safeAvailable * 0.64f).coerceAtLeast(180f)
+        safeAvailable < 840f -> (safeAvailable * 0.52f).coerceIn(240f, 380f)
+        else -> (safeAvailable * 0.42f).coerceIn(280f, 440f)
+    }.coerceAtMost(rawAssistantMax)
+
+    val rawUserMax = when {
+        safeAvailable < 480f -> safeAvailable * 0.86f
+        safeAvailable < 840f -> (safeAvailable * 0.78f).coerceAtMost(640f)
+        else -> (safeAvailable * 0.72f).coerceAtMost(680f)
+    }.coerceAtMost(safeAvailable)
+
+    return ChatBubbleWidths(
+        assistantMinDp = rawAssistantMin,
+        assistantMaxDp = rawAssistantMax,
+        userMaxDp = rawUserMax
+    )
 }
 
 private class OneShotTextToolbar(

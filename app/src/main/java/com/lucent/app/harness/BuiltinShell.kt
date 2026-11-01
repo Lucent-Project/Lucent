@@ -126,7 +126,7 @@ object BuiltinShell {
             }
             val current = if (resolv.isFile) resolv.readText() else ""
             if (!current.contains("nameserver")) {
-                val servers = (deviceDnsServers(context) + listOf("223.5.5.5", "119.29.29.29", "8.8.8.8", "1.1.1.1"))
+                val servers = (deviceDnsServers(context) + listOf("1.1.1.1", "8.8.8.8", "223.5.5.5", "119.29.29.29"))
                     .distinct()
                     .take(4)
                 resolv.parentFile?.mkdirs()

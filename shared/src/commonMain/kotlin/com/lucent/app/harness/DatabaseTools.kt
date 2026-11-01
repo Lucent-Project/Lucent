@@ -149,18 +149,22 @@ object DatabaseTools : HarnessGroupTools {
         return null
     }
 
-    private fun database(ctx: HarnessCtx, args: JsonObject): Path? =
-        try {
-            Workspace.forWriteFile(ctx, (args["path"]?.jsonPrimitive?.content ?: "")).toString().toPath()
-        } catch (e: HarnessError) {
-            null
-        }
+    private fun databaseForRead(ctx: HarnessCtx, args: JsonObject): Path =
+        Workspace.forReadFile(ctx, args["path"]?.jsonPrimitive?.content ?: "")
+
+    private fun databaseForWrite(ctx: HarnessCtx, args: JsonObject): Path =
+        Workspace.forWriteFile(ctx, args["path"]?.jsonPrimitive?.content ?: "")
 
     private suspend fun query(ctx: HarnessCtx, args: JsonObject): ToolExecResult {
         val sql = (args["sql"]?.jsonPrimitive?.content ?: "").trim()
         if (sql.isEmpty()) return ToolExecResult("There is no query.", success = false)
         blocked(sql)?.let { return ToolExecResult(it, success = false) }
-        val file = database(ctx, args) ?: return ToolExecResult("That database path cannot be used.", success = false)
+        val file = try {
+            databaseForRead(ctx, args)
+        } catch (e: HarnessError) {
+            if (e.blocked) throw e
+            return ToolExecResult(e.message ?: "That database path cannot be used.", success = false)
+        }
         if (!FileSystem.SYSTEM.exists(file)) return ToolExecResult("${Workspace.display(ctx, file.toString())} does not exist.", success = false)
         val limit = (args["limit"]?.jsonPrimitive?.intOrNull ?: 200).coerceIn(1, 5000)
         val host = HarnessRuntime.host
@@ -183,7 +187,12 @@ object DatabaseTools : HarnessGroupTools {
         val sql = (args["sql"]?.jsonPrimitive?.content ?: "").trim()
         if (sql.isEmpty()) return ToolExecResult("There is no statement.", success = false)
         blocked(sql)?.let { return ToolExecResult(it, success = false) }
-        val file = database(ctx, args) ?: return ToolExecResult("That database path cannot be used.", success = false)
+        val file = try {
+            databaseForWrite(ctx, args)
+        } catch (e: HarnessError) {
+            if (e.blocked) throw e
+            return ToolExecResult(e.message ?: "That database path cannot be used.", success = false)
+        }
         if (FileSystem.SYSTEM.exists(file) && ctx.config.snapshots) Snapshots.capture(ctx, file.toString())
         val host = HarnessRuntime.host
         val answer = if (host != null && host.availableSqlite()) {
@@ -263,15 +272,24 @@ object DatabaseTools : HarnessGroupTools {
     }
 
     private suspend fun exportCsv(ctx: HarnessCtx, args: JsonObject): ToolExecResult {
+        if (ctx.config.approvalFor(HarnessPermission.WRITE) == Approval.DENY) {
+            return ToolExecResult("Write access is blocked by the permission policy, so db_export_csv was not run.", success = false)
+        }
         val selector = (args["sql_or_table"]?.jsonPrimitive?.content ?: "").trim()
         if (selector.isEmpty()) return ToolExecResult("Give me a table name or a SELECT statement.", success = false)
         val sql = if (selector.lowercase().startsWith("select")) selector
         else "SELECT * FROM " + selector.filter { it.isLetterOrDigit() || it == '_' }
         val result = query(ctx, buildJsonObject { put("path", JsonPrimitive((args["path"]?.jsonPrimitive?.content ?: ""))); put("sql", JsonPrimitive(sql)); put("limit", JsonPrimitive(100000)) })
         if (!result.success) return result
-        val dbFile = database(ctx, args) ?: return ToolExecResult("That path cannot be used.", success = false)
-        val out = if ((args["out"]?.jsonPrimitive?.content ?: "").isNotBlank()) (args["out"]?.jsonPrimitive?.content ?: "").toPath()
-        else dbFile.parent!! / (dbFile.name.substringBeforeLast(".") + "-export.csv")
+        val dbFile = try {
+            databaseForRead(ctx, args)
+        } catch (e: HarnessError) {
+            if (e.blocked) throw e
+            return ToolExecResult(e.message ?: "That path cannot be used.", success = false)
+        }
+        val rawOut = (args["out"]?.jsonPrimitive?.content ?: "").trim()
+        val defaultOut = (dbFile.parent!! / (dbFile.name.substringBeforeLast(".") + "-export.csv")).toString()
+        val out = Workspace.forWriteFile(ctx, rawOut.ifEmpty { defaultOut })
         out.parent?.let { FileSystem.SYSTEM.createDirectories(it) }
         FileSystem.SYSTEM.write(out) { writeUtf8(result.summary) }
         return ToolExecResult("Wrote ${out.name} (${Workspace.humanSize((FileSystem.SYSTEM.metadata(out).size ?: -1))}).")

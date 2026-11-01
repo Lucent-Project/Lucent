@@ -1,23 +1,48 @@
 package com.lucent.app.ui.settings
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lucent.app.harness.HarnessRuntime
+import com.lucent.app.harness.PluginState
+import com.lucent.app.harness.plugins.AptDiagnostics
+import com.lucent.app.harness.plugins.InstallDiagnostic
+import com.lucent.app.harness.plugins.InstallFailureKind
 import com.lucent.app.harness.plugins.PluginCatalog
+import com.lucent.app.harness.plugins.PluginSetup
 import com.lucent.app.harness.plugins.PluginSource
 import com.lucent.app.harness.plugins.PluginSpec
-import com.lucent.app.harness.plugins.PluginSetup
 import com.lucent.app.harness.plugins.SetupStep
 import com.lucent.app.harness.plugins.SetupStepState
 import com.lucent.app.i18n.S
@@ -27,7 +52,6 @@ import com.lucent.app.ui.LocalOnGradient
 import com.lucent.app.ui.LocalOnGradientMuted
 import com.lucent.app.ui.frostedGlass
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 
 @Composable
 fun PluginSetupWizard(onBack: () -> Unit) {
@@ -36,16 +60,18 @@ fun PluginSetupWizard(onBack: () -> Unit) {
     var steps by remember { mutableStateOf<List<SetupStep>>(emptyList()) }
     var busy by remember { mutableStateOf("") }
     var progress by remember { mutableStateOf(0f) }
-    var failKind by remember { mutableStateOf<SetupFailKind?>(null) }
+    var diagnostic by remember { mutableStateOf<InstallDiagnostic?>(null) }
     var logLines by remember { mutableStateOf(listOf<String>()) }
     var statusMsg by remember { mutableStateOf("") }
     var errorStep by remember { mutableStateOf("") }
     var setupComplete by remember { mutableStateOf(HarnessRuntime.config().setupComplete) }
+    var mirrorRegion by remember { mutableStateOf(HarnessRuntime.config().pluginMirrorRegion) }
     var pickingWorkspace by remember { mutableStateOf(false) }
     var optionalPlugins by remember { mutableStateOf<List<PluginSpec>>(emptyList()) }
 
     val reload = {
         scope.launch {
+            mirrorRegion = HarnessRuntime.config().pluginMirrorRegion
             steps = PluginSetup.computeSteps()
             val passes = PluginSetup.fullSetupPasses(steps)
             setupComplete = passes
@@ -63,6 +89,11 @@ fun PluginSetupWizard(onBack: () -> Unit) {
         }
     }
 
+    fun selectMirrorRegion(nextRegion: String) {
+        mirrorRegion = nextRegion
+        HarnessRuntime.update(HarnessRuntime.config().copy(pluginMirrorRegion = nextRegion))
+    }
+
     fun installOptional(plugin: PluginSpec) {
         if (busy.isNotEmpty()) return
         val target = HarnessRuntime.pluginHost ?: return
@@ -71,12 +102,17 @@ fun PluginSetupWizard(onBack: () -> Unit) {
         statusMsg = plugin.name
         logLines = emptyList()
         scope.launch {
-            val outcome = target.install(plugin, PluginSource("", "", ""), onProgress = { p, t ->
-                progress = p
-                statusMsg = "${plugin.name}: $t"
-            }, onOutput = { line ->
-                logLines = (logLines + line).takeLast(300)
-            })
+            val outcome = target.install(
+                plugin,
+                PluginSource("", "", ""),
+                onProgress = { p, t ->
+                    progress = p
+                    statusMsg = "${plugin.name}: $t"
+                },
+                onOutput = { line ->
+                    logLines = (logLines + line).takeLast(300)
+                }
+            )
             if (!outcome.ok) {
                 logLines = (logLines + "[install failed] " + outcome.message).takeLast(300)
             }
@@ -87,7 +123,10 @@ fun PluginSetupWizard(onBack: () -> Unit) {
     }
 
     LaunchedEffect(Unit) { reload() }
-    LaunchedEffect(Unit) { optionalPlugins = PluginCatalog.forPlatformEffective(android).filter { !it.required && it.id != "playwright" && it.id != "ubuntu" } }
+    LaunchedEffect(Unit) {
+        optionalPlugins = PluginCatalog.forPlatformEffective(android)
+            .filter { !it.required && it.id != "playwright" && it.id != "ubuntu" }
+    }
 
     DisposableEffect(Unit) {
         val listener: (com.lucent.app.harness.HarnessConfig) -> Unit = { reload() }
@@ -114,103 +153,142 @@ fun PluginSetupWizard(onBack: () -> Unit) {
         } else {
             Column(modifier = Modifier.fillMaxWidth().frostedGlass().padding(16.dp)) {
                 Text(S.setupWizardTitle, color = onGradient, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                if (android) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(S.pluginMirrorRegion, color = onGradientMuted, fontSize = 12.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(
+                            "auto" to S.pluginMirrorAuto,
+                            "global" to S.pluginMirrorGlobal,
+                            "cn" to S.pluginMirrorChina
+                        ).forEach { (key, label) ->
+                            FilterChip(
+                                selected = mirrorRegion == key,
+                                enabled = busy.isEmpty(),
+                                onClick = { selectMirrorRegion(key) },
+                                label = { Text(label, fontSize = 12.sp) }
+                            )
+                        }
+                    }
+                }
             }
             Spacer(modifier = Modifier.height(12.dp))
 
             steps.forEach { step ->
-                    SetupStepCard(
-                        step = step,
-                        busy = busy == step.id,
-                        progress = progress,
-                        failKind = if (errorStep == step.id) failKind else null,
-                        statusText = if (busy == step.id) statusMsg else "",
-                        logLines = if (busy == step.id || errorStep == step.id) logLines else emptyList(),
-                        onClearLog = { logLines = emptyList() },
-                        onGradient = onGradient,
-                        onGradientMuted = onGradientMuted,
-                        onReload = { reload() },
-                        onAction = {
-                            failKind = null
-                            errorStep = ""
-                            statusMsg = ""
-                            logLines = emptyList()
-                            when (step.id) {
-
-                                "workspace_shared" -> {
-                                    pickingWorkspace = true
-                                }
-                                "disk_space" -> {
-                                    reload()
-                                }
-                                "bundled_env" -> {
-                                    busy = step.id
-                                    scope.launch {
-                                        val outcome = HarnessRuntime.host?.extractBuiltinRuntime { line ->
-                                            statusMsg = line
-                                            logLines = (logLines + line).takeLast(300)
-                                        }
-                                        if (outcome?.ok == true) {
-                                            reload()
-                                        } else {
-                                            failKind = classifyInstallFailure(null, "", outcome?.stderr.orEmpty() + "\n" + outcome?.text.orEmpty())
-                                            errorStep = step.id
-                                        }
-                                        statusMsg = ""
-                                        busy = ""
+                SetupStepCard(
+                    step = step,
+                    busy = busy == step.id,
+                    progress = progress,
+                    diagnostic = if (errorStep == step.id) diagnostic else null,
+                    statusText = if (busy == step.id) statusMsg else "",
+                    logLines = if (busy == step.id || errorStep == step.id) logLines else emptyList(),
+                    onClearLog = { logLines = emptyList() },
+                    onGradient = onGradient,
+                    onGradientMuted = onGradientMuted,
+                    onReload = { reload() },
+                    onAction = {
+                        diagnostic = null
+                        errorStep = ""
+                        statusMsg = ""
+                        logLines = emptyList()
+                        when (step.id) {
+                            "workspace_shared" -> {
+                                pickingWorkspace = true
+                            }
+                            "disk_space" -> {
+                                reload()
+                            }
+                            "bundled_env" -> {
+                                busy = step.id
+                                scope.launch {
+                                    val captured = mutableListOf<String>()
+                                    val outcome = HarnessRuntime.host?.extractBuiltinRuntime { line ->
+                                        statusMsg = line
+                                        captured.add(line)
+                                        logLines = (logLines + line).takeLast(300)
                                     }
-                                }
-                                "base_tools" -> {
-                                    busy = step.id
-                                    scope.launch {
-                                        var failure: com.lucent.app.harness.PluginOutcome? = null
-                                        val tools = PluginCatalog.forPlatformEffective(HarnessRuntime.android).filter { it.id != "ubuntu" && it.id != "playwright" && it.required }
-                                        var preflightOk = true
-                                        if (HarnessRuntime.android && tools.isNotEmpty()) {
-                                            val region = PluginCatalog.effectiveRegion(HarnessRuntime.config().pluginMirrorRegion)
-                                            val mirrorHost = PluginCatalog.aptMirror(region).removePrefix("http://").removePrefix("https://").substringBefore("/").substringBefore(":")
-                                            val probeHost = HarnessRuntime.pluginHost
-                                            preflightOk = if (probeHost != null) {
-                                                val probe = probeHost.runPluginCommand(tools.first(), "timeout 10 bash -c 'exec 3<>/dev/tcp/$mirrorHost/80' && exec 3>&-", 15)
-                                                if (!probe.ok) logLines = (logLines + "[preflight] apt mirror unreachable: $mirrorHost").takeLast(300)
-                                                probe.ok
-                                            } else true
-                                            if (!preflightOk) failure = com.lucent.app.harness.PluginOutcome(false, "apt mirror unreachable: $mirrorHost", failure = com.lucent.app.harness.PluginFailure.DOWNLOAD)
-                                        }
-                                        if (preflightOk) {
-                                            for (tool in tools) {
-                                                if (!HarnessRuntime.config().pluginInstalled(tool.id) && HarnessRuntime.pluginHost?.detect(tool) != true) {
-                                                    val outcome = HarnessRuntime.pluginHost?.install(
-                                                        tool,
-                                                        PluginSource("", "", ""),
-                                                        onProgress = { p, t ->
-                                                            progress = p
-                                                            statusMsg = "${tool.name}: $t"
-                                                        },
-                                                        onOutput = { line ->
-                                                            logLines = (logLines + line).takeLast(300)
-                                                        }
-                                                    )
-                                                    if (outcome?.ok != true) {
-                                                        failure = outcome
-                                                        break
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        if (failure != null) {
-                                            failKind = classifyInstallFailure(failure.failure, failure.message, failure.detail)
-                                            errorStep = step.id
-                                        }
-                                        statusMsg = ""
+                                    if (outcome?.ok == true) {
                                         reload()
-                                        busy = ""
+                                    } else {
+                                        diagnostic = AptDiagnostics.analyze(
+                                            failure = null,
+                                            message = outcome?.stderr.orEmpty(),
+                                            detail = outcome?.text.orEmpty(),
+                                            liveLog = captured
+                                        )
+                                        errorStep = step.id
                                     }
+                                    statusMsg = ""
+                                    busy = ""
+                                }
+                            }
+                            "base_tools" -> {
+                                busy = step.id
+                                scope.launch {
+                                    var failure: com.lucent.app.harness.PluginOutcome? = null
+                                    val captured = mutableListOf<String>()
+                                    val tools = PluginCatalog.forPlatformEffective(HarnessRuntime.android)
+                                        .filter { it.id != "ubuntu" && it.id != "playwright" && it.required }
+                                    for (tool in tools) {
+                                        val alreadyDetected = HarnessRuntime.pluginHost?.detect(tool) == true
+                                        if (alreadyDetected) {
+                                            if (!HarnessRuntime.config().pluginInstalled(tool.id)) {
+                                                HarnessRuntime.update(
+                                                    HarnessRuntime.config().withPlugin(
+                                                        PluginState(
+                                                            id = tool.id,
+                                                            installed = true,
+                                                            source = "detected",
+                                                            version = System.currentTimeMillis().toString(),
+                                                            sizeBytes = tool.bytes,
+                                                            installedAt = System.currentTimeMillis()
+                                                        )
+                                                    )
+                                                )
+                                            }
+                                            continue
+                                        }
+                                        val outcome = HarnessRuntime.pluginHost?.install(
+                                            tool,
+                                            PluginSource("", "", ""),
+                                            onProgress = { p, t ->
+                                                progress = p
+                                                statusMsg = "${tool.name}: $t"
+                                            },
+                                            onOutput = { line ->
+                                                captured.add(line)
+                                                logLines = (logLines + line).takeLast(300)
+                                            }
+                                        )
+                                        if (outcome?.ok != true) {
+                                            failure = outcome ?: com.lucent.app.harness.PluginOutcome(
+                                                false,
+                                                "${tool.name}: plugin host unavailable",
+                                                failure = com.lucent.app.harness.PluginFailure.NO_SHELL
+                                            )
+                                            break
+                                        }
+                                    }
+                                    if (failure != null) {
+                                        diagnostic = AptDiagnostics.analyze(
+                                            failure = failure.failure,
+                                            message = failure.message,
+                                            detail = failure.detail,
+                                            liveLog = captured
+                                        )
+                                        errorStep = step.id
+                                    }
+                                    statusMsg = ""
+                                    reload()
+                                    busy = ""
                                 }
                             }
                         }
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
+                    }
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             val baseToolsDone = steps.any { it.id == "base_tools" && it.passed }
             val pendingOptionals = optionalPlugins.filter { !HarnessRuntime.config().pluginInstalled(it.id) }
@@ -238,7 +316,10 @@ fun PluginSetupWizard(onBack: () -> Unit) {
                         onGradient = onGradient,
                         onGradientMuted = onGradientMuted,
                         onAction = { installOptional(plugin) },
-                        onCancel = { busy = ""; statusMsg = "" },
+                        onCancel = {
+                            busy = ""
+                            statusMsg = ""
+                        },
                         onClearLog = { logLines = emptyList() }
                     )
                 }
@@ -264,7 +345,7 @@ private fun SetupStepCard(
     step: SetupStep,
     busy: Boolean,
     progress: Float,
-    failKind: SetupFailKind?,
+    diagnostic: InstallDiagnostic?,
     statusText: String,
     logLines: List<String>,
     onClearLog: () -> Unit,
@@ -274,10 +355,6 @@ private fun SetupStepCard(
     onReload: () -> Unit
 ) {
     val alpha = if (step.state == SetupStepState.WAITING) 0.5f else 1f
-    val configureExit = logLines.indexOfFirst { it.contains("[FIX-M] configure exit:") }
-        .takeIf { it >= 0 }
-        ?.let { i -> logLines.getOrNull(i + 1)?.trim().orEmpty() }
-        ?.takeIf { it.isNotEmpty() }
     Column(modifier = Modifier.fillMaxWidth().alpha(alpha).frostedGlass().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             val icon = when (step.state) {
@@ -291,21 +368,77 @@ private fun SetupStepCard(
                 Text(step.title, color = onGradient, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(step.body, color = onGradientMuted, fontSize = 13.sp)
-                
-                if (failKind != null) {
-                    val reason = setupFailReason(failKind)
-                    val steps = setupFailSteps(failKind)
+
+                if (diagnostic != null) {
+                    val reason = setupDiagnosticReason(diagnostic.kind)
+                    val recoverySteps = setupDiagnosticSteps(diagnostic.kind)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(S.setupInstallFailedTitle, color = androidx.compose.ui.graphics.Color(0xFFFF8A80), fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    if (configureExit != null) {
+                    Text(
+                        S.setupInstallFailedTitle,
+                        color = androidx.compose.ui.graphics.Color(0xFFFF8A80),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    if (diagnostic.failingStep.isNotBlank()) {
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(S.setupConfigureExit(configureExit), color = onGradient, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Text(
+                            S.setupFailingStep(diagnostic.failingStep),
+                            color = onGradient,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
+                    if (diagnostic.configureExitCode.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            S.setupConfigureExit(diagnostic.configureExitCode),
+                            color = onGradient,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    if (diagnostic.lockHolder.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            S.setupLockHolder(diagnostic.lockHolder),
+                            color = onGradient,
+                            fontSize = 12.sp
+                        )
+                    }
+                    if (diagnostic.pendingPackages.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            S.setupPendingPackages(diagnostic.pendingPackages.joinToString(", ")),
+                            color = onGradient,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(reason, color = onGradientMuted, fontSize = 12.sp)
-                    steps.forEach { s -> Spacer(modifier = Modifier.height(4.dp)); Text("\u2022 $s", color = onGradientMuted, fontSize = 12.sp) }
+                    recoverySteps.forEach { s ->
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("\u2022 $s", color = onGradientMuted, fontSize = 12.sp)
+                    }
+                    if (diagnostic.logTail.isNotEmpty() && logLines.isEmpty()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            S.setupRecentLogTitle,
+                            color = onGradient,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            diagnostic.logTail.joinToString("\n"),
+                            color = onGradientMuted,
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
-                    TextButton(onClick = onAction) { Text(S.actionRetry, color = onGradient, fontSize = 13.sp) }
+                    TextButton(onClick = onAction) {
+                        Text(S.actionRetry, color = onGradient, fontSize = 13.sp)
+                    }
                 }
 
                 if (busy) {
@@ -316,7 +449,7 @@ private fun SetupStepCard(
                     Spacer(modifier = Modifier.height(8.dp))
                     LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
                 } else if (step.state == SetupStepState.CURRENT) {
-                    if (step.action.isNotBlank()) {
+                    if (step.action.isNotBlank() && diagnostic == null) {
                         Spacer(modifier = Modifier.height(8.dp))
                         TextButton(onClick = onAction) {
                             Text(step.action, color = onGradient, fontSize = 13.sp)
@@ -330,30 +463,41 @@ private fun SetupStepCard(
                     }
                 }
 
-                PluginOutputLog(lines = logLines, running = busy, onGradient = onGradient, onGradientMuted = onGradientMuted, onClear = onClearLog)
+                val displayLines = if (busy) {
+                    logLines
+                } else if (diagnostic != null && diagnostic.logTail.isNotEmpty()) {
+                    diagnostic.logTail
+                } else {
+                    logLines
+                }
+                PluginOutputLog(
+                    lines = displayLines,
+                    running = busy,
+                    onGradient = onGradient,
+                    onGradientMuted = onGradientMuted,
+                    onClear = onClearLog
+                )
             }
         }
     }
 }
 
-private enum class SetupFailKind { NETWORK, DPKG, GENERIC }
-
-private fun classifyInstallFailure(failure: com.lucent.app.harness.PluginFailure?, message: String, detail: String): SetupFailKind {
-    val text = (message + "\n" + detail).lowercase()
-    if (failure == com.lucent.app.harness.PluginFailure.DOWNLOAD) return SetupFailKind.NETWORK
-    if (text.contains("dpkg returned an error") || text.contains("sub-process /usr/bin/dpkg")) return SetupFailKind.DPKG
-    if (Regex("exited 100\\b").containsMatchIn(text) || text.contains("failed to fetch") || text.contains("unable to fetch") || text.contains("could not resolve") || text.contains("network is unreachable") || text.contains("connection timed out") || text.contains("connection failed")) return SetupFailKind.NETWORK
-    return SetupFailKind.GENERIC
+internal fun setupDiagnosticReason(kind: InstallFailureKind): String = when (kind) {
+    InstallFailureKind.PROOT_ENV -> S.setupInstallReasonProot
+    InstallFailureKind.DPKG_LOCK -> S.setupInstallReasonDpkgLock
+    InstallFailureKind.DPKG_STATE -> S.setupInstallReasonDpkgState
+    InstallFailureKind.DPKG_CONFIGURE -> S.setupInstallReasonDpkgConfigure
+    InstallFailureKind.APT_UPDATE -> S.setupInstallReasonAptUpdate
+    InstallFailureKind.APT_INSTALL -> S.setupInstallReasonAptInstall
+    InstallFailureKind.GENERIC -> S.setupInstallReasonGeneric
 }
 
-private fun setupFailReason(kind: SetupFailKind): String = when (kind) {
-    SetupFailKind.NETWORK -> S.setupInstallReasonNetwork
-    SetupFailKind.DPKG -> S.setupInstallReasonDpkg
-    SetupFailKind.GENERIC -> S.setupInstallReasonGeneric
-}
-
-private fun setupFailSteps(kind: SetupFailKind): List<String> = when (kind) {
-    SetupFailKind.NETWORK -> listOf(S.setupInstallStepCheckNetwork, S.setupInstallStepRetry)
-    SetupFailKind.DPKG -> listOf(S.setupInstallStepFreeDisk, S.setupInstallStepRetry)
-    SetupFailKind.GENERIC -> listOf(S.setupInstallStepRetry)
+internal fun setupDiagnosticSteps(kind: InstallFailureKind): List<String> = when (kind) {
+    InstallFailureKind.PROOT_ENV -> listOf(S.setupInstallStepReextract, S.setupInstallStepRetry)
+    InstallFailureKind.DPKG_LOCK -> listOf(S.setupInstallStepWaitLock, S.setupInstallStepRetry)
+    InstallFailureKind.DPKG_STATE -> listOf(S.setupInstallStepFreeDisk, S.setupInstallStepReextract)
+    InstallFailureKind.DPKG_CONFIGURE -> listOf(S.setupInstallStepFreeDisk, S.setupInstallStepRetry)
+    InstallFailureKind.APT_UPDATE -> listOf(S.setupInstallStepSwitchMirror, S.setupInstallStepCheckNetwork)
+    InstallFailureKind.APT_INSTALL -> listOf(S.setupInstallStepFreeDisk, S.setupInstallStepSwitchMirror, S.setupInstallStepRetry)
+    InstallFailureKind.GENERIC -> listOf(S.setupInstallStepRetry)
 }

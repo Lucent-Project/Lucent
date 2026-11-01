@@ -48,7 +48,7 @@ data class HarnessConfig(
     val snapshots: Boolean = true,
     val snapshotLimit: Int = 120,
     val auditEnabled: Boolean = true,
-    val deviceEnabled: Boolean = false,
+    val deviceEnabled: Boolean = true,
     val subAgents: Boolean = true,
     val maxSubAgents: Int = 3,
     val skillDirs: List<String> = emptyList(),
@@ -192,25 +192,41 @@ data class HarnessConfig(
         put("pluginCatalogUrl", pluginCatalogUrl)
         put("pluginCatalogCacheEpoch", pluginCatalogCacheEpoch)
         put("pluginPendingReinstall", JsonArray(pluginPendingReinstall.map { JsonPrimitive(it) }))
+        put("groupsSchema", CURRENT_GROUPS_SCHEMA)
     }
 
     companion object {
 
         const val MAX_GITHUB_TOKENS = 5
+        const val CURRENT_GROUPS_SCHEMA = 2
 
         val DEFAULT = HarnessConfig()
 
         fun parse(raw: String): HarnessConfig {
             if (raw.isBlank()) return DEFAULT
-            val o = try { Json.parseToJsonElement(raw).jsonObject } catch (e: Exception) { return DEFAULT }
+            val o = try { Json.parseToJsonElement(raw).jsonObject } catch (_: Exception) { return DEFAULT }
             val defaults = DEFAULT
+            val parsedApprovals = map(o["approvals"]?.jsonObject)
+            val schema = o["groupsSchema"]?.jsonPrimitive?.intOrNull ?: 1
+            val rawGroups = strings(o["groups"]?.jsonArray).toSet().ifEmpty { defaults.groups }
+            val migratedGroups = if (schema < CURRENT_GROUPS_SCHEMA && o.containsKey("groups")) {
+                rawGroups + defaults.groups
+            } else {
+                rawGroups
+            }
+            val rawDeviceEnabled = o["deviceEnabled"]?.jsonPrimitive?.booleanOrNull
+            val migratedDeviceEnabled = when {
+                schema < CURRENT_GROUPS_SCHEMA && parsedApprovals[HarnessPermission.DEVICE.key] != Approval.DENY.key -> true
+                rawDeviceEnabled != null -> rawDeviceEnabled
+                else -> defaults.deviceEnabled
+            }
             return HarnessConfig(
                 enabled = o["enabled"]?.jsonPrimitive?.booleanOrNull ?: defaults.enabled,
                 workspace = o["workspace"]?.jsonPrimitive?.content ?: defaults.workspace,
                 writeRoots = strings(o["writeRoots"]?.jsonArray),
                 readOnlyRoots = strings(o["readOnlyRoots"]?.jsonArray),
-                groups = strings(o["groups"]?.jsonArray).toSet().ifEmpty { defaults.groups },
-                approvals = map(o["approvals"]?.jsonObject),
+                groups = migratedGroups,
+                approvals = parsedApprovals,
                 shellEnabled = o["shellEnabled"]?.jsonPrimitive?.booleanOrNull ?: defaults.shellEnabled,
                 sandboxMode = o["sandboxMode"]?.jsonPrimitive?.content ?: defaults.sandboxMode,
                 timeoutSeconds = o["timeoutSeconds"]?.jsonPrimitive?.intOrNull ?: defaults.timeoutSeconds,
@@ -218,7 +234,7 @@ data class HarnessConfig(
                 snapshots = o["snapshots"]?.jsonPrimitive?.booleanOrNull ?: defaults.snapshots,
                 snapshotLimit = o["snapshotLimit"]?.jsonPrimitive?.intOrNull ?: defaults.snapshotLimit,
                 auditEnabled = o["auditEnabled"]?.jsonPrimitive?.booleanOrNull ?: defaults.auditEnabled,
-                deviceEnabled = o["deviceEnabled"]?.jsonPrimitive?.booleanOrNull ?: defaults.deviceEnabled,
+                deviceEnabled = migratedDeviceEnabled,
                 subAgents = o["subAgents"]?.jsonPrimitive?.booleanOrNull ?: defaults.subAgents,
                 maxSubAgents = o["maxSubAgents"]?.jsonPrimitive?.intOrNull ?: defaults.maxSubAgents,
                 skillDirs = strings(o["skillDirs"]?.jsonArray),

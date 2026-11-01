@@ -94,7 +94,7 @@ object BrowserTools : HarnessGroupTools {
 
     override val group = HarnessGroup.BROWSER
 
-    private const val AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36 Lucent/3.1.2"
+    private const val AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36 Lucent/3.1.3"
 
     private val client: OkHttpClient by lazy {
         OkHttpClient.Builder()

@@ -12,18 +12,19 @@ object DeviceTools : HarnessGroupTools {
     private fun tool(
         name: String,
         description: String,
-        params: List<com.lucent.app.network.ToolParam> = emptyList()
+        params: List<com.lucent.app.network.ToolParam> = emptyList(),
+        androidOnly: Boolean = true
     ) = HarnessTool(
         name = name,
         group = group,
         permission = HarnessPermission.DEVICE,
         description = description,
         params = params,
-        androidOnly = true
+        androidOnly = androidOnly
     )
 
     override val tools: List<HarnessTool> = listOf(
-        tool("device_info", "Describe this phone: model, Android version, battery, storage, network and screen."),
+        tool("device_info", "Describe this device: model, OS version, battery, storage, network and screen.", androidOnly = false),
         tool("read_screen", "Read what is on screen now as a list of elements with their text and positions. Use it " +
             "before tapping anything, and read it again after every tap."),
         tool("tap", "Tap the screen, either by matching text or by coordinates. Prefer text: positions move when the " +
@@ -59,18 +60,18 @@ object DeviceTools : HarnessGroupTools {
         tool("clipboard", "Read or write the clipboard. action is get or set.", listOf(
             HarnessSchema.text("action", "get or set"),
             HarnessSchema.text("text", "Text to put on the clipboard", false)
-        )),
+        ), androidOnly = false),
         tool("share_text", "Hand text to another app through the share sheet.", listOf(
             HarnessSchema.text("text", "Text to share"),
             HarnessSchema.text("subject", "Subject line", false)
-        )),
-        tool("open_link_on_device", "Open a link in the phone's browser.", listOf(
+        ), androidOnly = false),
+        tool("open_link_on_device", "Open a link in the device browser.", listOf(
             HarnessSchema.text("url", "Link to open")
-        )),
-        tool("notify_user", "Post a notification on the phone, for a long job that has finished.", listOf(
+        ), androidOnly = false),
+        tool("notify_user", "Post a notification on the device, for a long job that has finished.", listOf(
             HarnessSchema.text("title", "Title"),
             HarnessSchema.text("text", "Body text")
-        )),
+        ), androidOnly = false),
         tool("vibrate", "Buzz the phone once, to draw attention to a finished job.", listOf(
             HarnessSchema.number("millis", "How long to buzz", false)
         )),
@@ -80,15 +81,16 @@ object DeviceTools : HarnessGroupTools {
         tool("location", "Report the current location. Requires the location permission and a fresh fix may take a " +
             "few seconds."),
         tool("sensors", "List the sensors on this phone and their latest values."),
-        tool("export_file", "Copy a file from the workspace into the phone's Downloads folder so the user can open it " +
+        tool("export_file", "Copy a file from the workspace into the Downloads folder so the user can open it " +
             "in another app.", listOf(
             HarnessSchema.text("path", "File to export")
-        ))
+        ), androidOnly = false)
     )
 
     override suspend fun execute(ctx: HarnessCtx, name: String, args: JsonObject): ToolExecResult? {
+        val spec = tools.firstOrNull { it.name == name } ?: return null
         val host = HarnessRuntime.host ?: return ToolExecResult("Device control is not available here.", success = false)
-        if (!ctx.android) return ToolExecResult("Device control only works on Android.", success = false)
+        if (spec.androidOnly && !ctx.android) return ToolExecResult("Device control only works on Android.", success = false)
         return when (name) {
             "device_info" -> text(host.deviceInfo(), "No device information came back.")
             "read_screen" -> text(host.screenText(), "The screen could not be read. The accessibility service may be off.")

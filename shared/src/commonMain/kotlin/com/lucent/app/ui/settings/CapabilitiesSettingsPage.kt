@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.lucent.app.harness.HarnessConfig
+import com.lucent.app.harness.HarnessGroup
 import com.lucent.app.harness.HarnessRuntime
 import com.lucent.app.i18n.S
 import com.lucent.app.ui.BackHeader
@@ -43,8 +44,8 @@ fun CapabilitiesSettingsPage(
             ToolkitToggleRow(S.agentSnapshots, S.agentSnapshotsSub, config.snapshots, onGradient, onGradientMuted) {
                 update(config.copy(snapshots = it))
             }
-            ToolkitToggleRow(S.agentDeviceControl, S.agentDeviceControlSub, config.deviceEnabled, onGradient, onGradientMuted) {
-                update(config.copy(deviceEnabled = it))
+            ToolkitToggleRow(S.agentDeviceControl, S.agentDeviceControlSub, config.deviceEnabled && config.groupEnabled(HarnessGroup.DEVICE), onGradient, onGradientMuted) {
+                update(config.copy(deviceEnabled = it).withGroup(HarnessGroup.DEVICE, it))
             }
             ToolkitToggleRow(S.agentScreenAccess, S.agentScreenAccessSub, accessibilityRunning, onGradient, onGradientMuted) { wanted ->
                 if (wanted && !accessibilityRunning) onOpenAccessibility()

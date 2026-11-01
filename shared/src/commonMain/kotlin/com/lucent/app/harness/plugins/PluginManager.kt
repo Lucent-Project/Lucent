@@ -10,6 +10,7 @@ import com.lucent.app.harness.PluginHost
 import com.lucent.app.harness.PluginOutcome
 import com.lucent.app.harness.PluginState
 import com.lucent.app.harness.ShellOutcome
+import com.lucent.app.harness.withHarnessLock
 import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
@@ -181,7 +182,12 @@ class PluginManager private constructor(private val context: PlatformContext?, p
             tracker.onLine(line)
         }
         val outcome = try {
-            run(plugin, script, 3600, trackingOutput)
+            markInstallDelta(1)
+            try {
+                run(plugin, script, 3600, trackingOutput)
+            } finally {
+                markInstallDelta(-1)
+            }
         } catch (e: kotlinx.coroutines.CancellationException) {
             record(plugin, "install cancelled", staged?.toString().orEmpty())
             return PluginOutcome(
@@ -193,7 +199,7 @@ class PluginManager private constructor(private val context: PlatformContext?, p
             )
         }
         if (!outcome.ok) {
-            val detail = outcome.text.takeLast(1200)
+            val detail = outcome.text.takeLast(2400)
             PluginJournal.write(plugin.id, "install", detail.take(200), false)
             record(plugin, "install failed", detail)
             return PluginOutcome(
@@ -304,6 +310,17 @@ class PluginManager private constructor(private val context: PlatformContext?, p
     }
 
     companion object {
+        private val installLock = Any()
+        private var activeInstallCount = 0
+
+        private fun markInstallDelta(delta: Int) {
+            withHarnessLock(installLock) {
+                activeInstallCount = (activeInstallCount + delta).coerceAtLeast(0)
+            }
+        }
+
+        fun isInstalling(): Boolean = withHarnessLock(installLock) { activeInstallCount > 0 }
+
         fun android(context: PlatformContext): PluginManager = PluginManager(context.appContext(), true)
 
         fun desktop(context: PlatformContext? = null): PluginManager = PluginManager(context?.appContext(), false)

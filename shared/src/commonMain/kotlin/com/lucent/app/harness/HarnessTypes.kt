@@ -15,7 +15,12 @@ data class HarnessCtx(
     val android: Boolean,
     val workspacePath: String,
     val subAgentId: String? = null,
-    val conversationId: Long? = null
+    val conversationId: Long? = null,
+    val enforcedGate: Boolean = false,
+    val outsideApproved: Boolean = false,
+    val deleteApproved: Boolean = false,
+    val gitApproved: Boolean = false,
+    val githubApproved: Boolean = false
 ) {
     val workspace: okio.Path get() = workspacePath.toPath()
 

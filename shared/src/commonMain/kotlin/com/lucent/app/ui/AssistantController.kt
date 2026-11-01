@@ -1026,7 +1026,8 @@ class AssistantControllerImpl(
                         }
 
                         val stepIndex = turn.recorder.startTool(call.name, call.argumentsJson)
-                        val confirmed = if (params.confirmTools && AppTools.isMutating(call.name)) {
+                        val needsConfirm = AppTools.shouldConfirm(call.name, call.argumentsJson, params.confirmTools)
+                        val confirmed = if (needsConfirm) {
                             confirmToolCall(turn, call.name, call.argumentsJson)
                         } else ConfirmedCall(approved = true, argumentsJson = call.argumentsJson)
 
@@ -1049,7 +1050,8 @@ class AssistantControllerImpl(
                         val r = try {
                             AppTools.execute(
                                 params.appContext, db, call.name, confirmed.argumentsJson,
-                                uploadMime, uploadData, uploadName
+                                uploadMime, uploadData, uploadName,
+                                confirmedByUser = needsConfirm
                             )
                         } catch (t: Throwable) {
                             turn.recorder.failTool(stepIndex, toolFailureDetail(t))
@@ -1581,7 +1583,8 @@ class AssistantControllerImpl(
             val cached = executed[sig]
             val result = if (cached != null) cached else {
                 val stepIndex = turn.recorder.startTool(call.name, call.argsJson)
-                val confirmed = if (confirmTools && AppTools.isMutating(call.name)) {
+                val needsConfirm = AppTools.shouldConfirm(call.name, call.argsJson, confirmTools)
+                val confirmed = if (needsConfirm) {
                     confirmToolCall(turn, call.name, call.argsJson)
                 } else ConfirmedCall(approved = true, argumentsJson = call.argsJson)
 
@@ -1625,7 +1628,8 @@ class AssistantControllerImpl(
                     val r = try {
                         AppTools.execute(
                             ctx, db, call.name, confirmed.argumentsJson,
-                            uploadMime, uploadData, uploadName
+                            uploadMime, uploadData, uploadName,
+                            confirmedByUser = needsConfirm
                         )
                     } catch (t: Throwable) {
                         turn.recorder.failTool(stepIndex, toolFailureDetail(t))

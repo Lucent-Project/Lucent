@@ -122,7 +122,7 @@ object BuiltinRuntimeInstaller {
                 resolvDest.delete()
             }
             resolvDest.parentFile?.mkdirs()
-            resolvDest.writeText("nameserver 223.5.5.5\nnameserver 119.29.29.29\nnameserver 8.8.8.8\nnameserver 1.1.1.1\n")
+            resolvDest.writeText("nameserver 1.1.1.1\nnameserver 8.8.8.8\nnameserver 223.5.5.5\nnameserver 119.29.29.29\n")
 
             val bash = File(tmp, "bin/bash")
             val ld = File(tmp, "lib/ld-linux-aarch64.so.1")
@@ -169,6 +169,31 @@ object BuiltinRuntimeInstaller {
             }
         }
         if (groupsChanged) groups.writeText(groupLines.joinToString("\n", postfix = "\n"))
+
+        runCatching {
+            listOf(File(rootfs, "tmp"), File(rootfs, "var/tmp")).forEach { tmpDir ->
+                tmpDir.mkdirs()
+                try {
+                    Os.chmod(tmpDir.absolutePath, 1023)
+                } catch (_: Throwable) {
+                }
+            }
+            val policyRc = File(rootfs, "usr/sbin/policy-rc.d")
+            policyRc.parentFile?.mkdirs()
+            if (!policyRc.exists()) {
+                policyRc.writeText("#!/bin/sh\nexit 101\n")
+            }
+            policyRc.setExecutable(true, false)
+            try {
+                Os.chmod(policyRc.absolutePath, 493)
+            } catch (_: Throwable) {
+            }
+            val unsafeIo = File(rootfs, "etc/dpkg/dpkg.cfg.d/unsafe-io")
+            unsafeIo.parentFile?.mkdirs()
+            if (!unsafeIo.exists()) {
+                unsafeIo.writeText("force-unsafe-io\n")
+            }
+        }
     }
 
     private fun supplementaryGroups(): List<Int> {

@@ -92,7 +92,13 @@ interface HarnessHost {
     suspend fun swipe(x1: Int, y1: Int, x2: Int, y2: Int, millis: Int): Boolean = false
     suspend fun typeText(text: String): Boolean = false
     suspend fun pressKey(key: String): Boolean = false
-    suspend fun deviceInfo(): String = ""
+    suspend fun deviceInfo(): String {
+        val platform = if (android) "Android" else "Desktop"
+        val free = freeDiskBytes()
+        val disk = if (free >= 0L) Workspace.humanSize(free) else "unknown"
+        val caps = capabilities().sorted().joinToString(", ").ifEmpty { "core" }
+        return "Platform: $platform\nWorkspace: ${defaultWorkspacePath()}\nFree disk: $disk\nCapabilities: $caps"
+    }
     suspend fun launchApp(packageName: String): Boolean = false
     suspend fun stopApp(packageName: String): Boolean = false
     suspend fun installedApps(query: String): String = ""

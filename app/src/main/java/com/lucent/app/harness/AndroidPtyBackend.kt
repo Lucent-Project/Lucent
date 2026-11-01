@@ -38,6 +38,7 @@ class AndroidPtyBackend(private val context: Context) : PtyBackend {
         args.add(proot.absolutePath)
         args.add("--kill-on-exit")
         args.add("-0")
+        args.add("--link2symlink")
         args.add("-r")
         args.add(rootfs.absolutePath)
 

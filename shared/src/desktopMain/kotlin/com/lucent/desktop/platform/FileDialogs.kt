@@ -73,16 +73,21 @@ object DesktopFiles {
         }
     }
 
-    fun chooseFolder(title: String = "Choose folder"): File? = try {
+    fun chooseFolder(title: String = "Choose folder", startIn: File? = null): File? = try {
+        var initialDir: File? = startIn
+        while (initialDir != null && !initialDir.isDirectory) {
+            initialDir = initialDir.parentFile
+        }
         val chooser = javax.swing.JFileChooser().apply {
             dialogTitle = title
             fileSelectionMode = javax.swing.JFileChooser.DIRECTORIES_ONLY
             isMultiSelectionEnabled = false
+            if (initialDir != null) currentDirectory = initialDir
         }
         if (chooser.showOpenDialog(null) == javax.swing.JFileChooser.APPROVE_OPTION) {
             chooser.selectedFile?.takeIf { it.isDirectory }
         } else null
-    } catch (t: Throwable) {
+    } catch (_: Throwable) {
         null
     }
 

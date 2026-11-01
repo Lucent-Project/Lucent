@@ -185,16 +185,25 @@ object GitHubTools : HarnessGroupTools {
         )
     )
 
+    private fun isAnonymousRateLimitProbe(name: String, args: JsonObject): Boolean {
+        if (name != "github_branches") return false
+        val raw = (args["action"] as? JsonPrimitive)?.contentOrNull.orEmpty()
+        val anonymous = (args["anonymous"] as? JsonPrimitive)?.booleanOrNull ?: false
+        return anonymous && HttpJson.action(raw, listOf("rate_limit")) == "rate_limit"
+    }
+
     override suspend fun execute(ctx: HarnessCtx, name: String, args: JsonObject): ToolExecResult? {
         if (tools.none { it.name == name }) return null
-        if (token().isEmpty()) return ToolExecResult(NO_TOKEN, success = false)
+        if (token().isEmpty() && !isAnonymousRateLimitProbe(name, args)) {
+            return ToolExecResult(NO_TOKEN, success = false)
+        }
         return try {
             when (name) {
                 "github_repo" -> repo(args)
                 "github_contents" -> contents(args)
                 "github_issues" -> issues(args)
                 "github_pulls" -> pulls(args)
-                "github_branches" -> branches(args)
+                "github_branches" -> branches(ctx, args)
                 "github_commits" -> commits(args)
                 "github_search" -> search(args)
                 "github_actions" -> actions(args)
@@ -214,13 +223,18 @@ object GitHubTools : HarnessGroupTools {
     private fun base(): String =
         HarnessRuntime.config().githubApi.trim().trimEnd('/').ifBlank { DEFAULT_API }
 
-    private fun headers(accept: String = JSON_ACCEPT): Map<String, String> = mapOf(
-        "Authorization" to "Bearer ${token()}",
-        "Accept" to accept,
-        "X-GitHub-Api-Version" to API_VERSION,
-        "User-Agent" to "Lucent",
-        "Content-Type" to "application/json; charset=utf-8"
-    )
+    private fun headers(accept: String = JSON_ACCEPT): Map<String, String> {
+        val currentToken = token()
+        val out = LinkedHashMap<String, String>()
+        if (currentToken.isNotEmpty()) {
+            out["Authorization"] = "Bearer $currentToken"
+        }
+        out["Accept"] = accept
+        out["X-GitHub-Api-Version"] = API_VERSION
+        out["User-Agent"] = "Lucent"
+        out["Content-Type"] = "application/json; charset=utf-8"
+        return out
+    }
 
     private suspend fun call(
         method: String,
@@ -588,7 +602,20 @@ object GitHubTools : HarnessGroupTools {
         }
     }
 
-    private suspend fun branches(args: JsonObject): ToolExecResult {
+    private suspend fun rateLimitProbe(): ToolExecResult {
+        val reply = call("GET", "/rate_limit")
+        problem(reply)?.let { return it }
+        val root = HttpJson.objectOf(reply.body) ?: return notJson(reply)
+        val core = ((root["resources"] as? JsonObject)?.get("core") as? JsonObject)
+            ?: (root["rate"] as? JsonObject)
+        val remaining = (core?.get("remaining") as? JsonPrimitive)?.intOrNull ?: 0
+        val limit = (core?.get("limit") as? JsonPrimitive)?.intOrNull ?: 0
+        val authState = if (token().isNotEmpty()) "authenticated" else "unauthenticated"
+        return ToolExecResult("GitHub API HTTP ${reply.code} ($authState, core quota $remaining/$limit remaining)")
+    }
+
+    private suspend fun branches(ctx: HarnessCtx, args: JsonObject): ToolExecResult {
+        if (isAnonymousRateLimitProbe("github_branches", args)) return rateLimitProbe()
         val root = repoBase(args) ?: return repoNeeded()
         val raw = (args["action"]?.jsonPrimitive?.content ?: "")
         val action = HttpJson.action(raw, BRANCH_ACTIONS)
@@ -632,7 +659,9 @@ object GitHubTools : HarnessGroupTools {
                 ToolExecResult("Created branch $name from $from.")
             }
             else -> {
-                if (HarnessRuntime.config().approvalFor(HarnessPermission.GITHUB) != Approval.ALLOW) {
+                val ghApproval = ctx.config.approvalFor(HarnessPermission.GITHUB)
+                val allowed = ghApproval == Approval.ALLOW || (ghApproval == Approval.CONFIRM && ctx.githubApproved)
+                if (!allowed) {
                     return ToolExecResult(
                         "Deleting a branch only runs when the GitHub approval policy is set to Allow in " +
                             "Settings → Agent → Permissions. Nothing was deleted.",

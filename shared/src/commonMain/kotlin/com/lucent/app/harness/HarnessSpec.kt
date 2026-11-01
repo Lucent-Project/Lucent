@@ -46,7 +46,7 @@ enum class HarnessGroup(val key: String) {
         }
 
     companion object {
-        val DEFAULT_ON = setOf(FILES, TERMINAL, OFFICE, PLAN, MEMORY, PLUGINS)
+        val DEFAULT_ON = entries.toSet()
 
         fun of(key: String): HarnessGroup? = entries.firstOrNull { it.key == key }
     }

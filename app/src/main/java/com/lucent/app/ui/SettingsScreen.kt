@@ -2310,16 +2310,7 @@ fun SettingsScreen(active: Boolean = true) {
     var pendingExportName by remember { mutableStateOf("lucent-export.md") }
 
     fun grantAllFiles() {
-        if (android.os.Build.VERSION.SDK_INT >= 30) {
-            runCatching {
-                context.startActivity(
-                    android.content.Intent(
-                        android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-                        ("package:" + context.packageName).toUri()
-                    )
-                )
-            }
-        }
+        com.lucent.app.harness.AndroidWorkspacePicker.requestAllFilesAccess(context)
     }
 
     fun openAccessibilitySettings() {
@@ -2596,7 +2587,7 @@ fun SettingsScreen(active: Boolean = true) {
             SettingsRoute.Workspace -> WorkspaceSettingsPage(
                 onRoute = { navigate(it) },
                 onGrantStorage = { grantAllFiles() },
-                storageGranted = com.lucent.app.harness.AndroidWorkspacePicker.storageGranted()
+                storageGranted = com.lucent.app.harness.AndroidWorkspacePicker.storageGranted(context)
             )
 
             SettingsRoute.Capabilities -> CapabilitiesSettingsPage(
@@ -2617,7 +2608,7 @@ fun SettingsScreen(active: Boolean = true) {
             SettingsRoute.Plugins -> PluginSettingsPage(
                 onRoute = { navigate(it) },
                 onOpenUrl = { url -> com.lucent.app.ui.LucentBrowser.openUrl(url) },
-                storageGranted = com.lucent.app.harness.AndroidWorkspacePicker.storageGranted(),
+                storageGranted = com.lucent.app.harness.AndroidWorkspacePicker.storageGranted(context),
                 onGrantStorage = { grantAllFiles() }
             )
 
